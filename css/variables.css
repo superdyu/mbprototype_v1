@@ -1,0 +1,16 @@
+:root {
+  --bg: #eef1f7;
+  --phone: #101828;
+  --screen: #f8fafc;
+  --card: #ffffff;
+  --text: #172033;
+  --muted: #667085;
+  --line: #d9dee8;
+  --accent: #315efb;
+  --accent-soft: #edf1ff;
+  --good: #087443;
+  --warn: #a15c07;
+  --danger: #b42318;
+  --soft: #f2f4f7;
+  --bar: #d0d5dd;
+}

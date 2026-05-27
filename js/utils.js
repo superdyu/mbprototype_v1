@@ -1,0 +1,35 @@
+// HTML-escape a value for safe injection into template strings
+function h(value) {
+  return String(value ?? "")
+    .replaceAll("&",  "&amp;")
+    .replaceAll("<",  "&lt;")
+    .replaceAll(">",  "&gt;")
+    .replaceAll('"',  "&quot;")
+    .replaceAll("'",  "&#039;");
+}
+
+// Scroll the screen content area back to the top
+function scrollTop() {
+  const root = document.getElementById("screenRoot");
+  if (root) root.scrollTop = 0;
+}
+
+// Debounced render — waits 2 seconds after the last call before rendering.
+// Used on admin number/text inputs so mid-typing keystrokes don't fire animations
+// on partial values. Select dropdowns still use render() directly (no debounce needed).
+let _debouncedRenderTimer = null;
+function debouncedRender() {
+  clearTimeout(_debouncedRenderTimer);
+  _debouncedRenderTimer = setTimeout(render, 2000);
+}
+
+// Map a screen name to its active bottom-tab identifier
+function activeTabFor(screen) {
+  if (screen === "babyBudget")     return "budget";
+  if (screen === "budgetCategory") return "budget";
+  if (["topic", "reward-preview", "lesson", "quiz", "simulation"].includes(screen)) return "learn";
+  if (screen === "marketplaceDetail") return "marketplace";
+  if (screen === "reward") return "";
+  return screen;
+}
+

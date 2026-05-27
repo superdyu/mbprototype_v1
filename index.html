@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoneyBuddy Prototype</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Phone frame -->
+  <main class="phone" aria-label="Phone frame">
+    <div class="screen">
+      <div id="screenRoot" class="screen-scroll"></div>
+      <div id="navRoot"></div>
+    </div>
+  </main>
+
+  <!-- Admin panel -->
+  <aside class="admin" aria-label="Admin Tools">
+    <div class="admin-header">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <p class="admin-title" style="margin:0;">Admin Tools</p>
+        <button class="admin-collapse-btn" type="button" onclick="state.adminCollapsed=true;render()" title="Collapse admin">‹</button>
+      </div>
+      <p class="admin-subtitle" id="adminSubtitle">Manual controls for the active screen.</p>
+      <button class="button secondary" style="margin-top:10px;width:100%;font-size:11px;" onclick="resetUserData()">Reset User Data</button>
+    </div>
+    <div id="adminRoot" class="admin-scroll"></div>
+  </aside>
+
+</div>
+
+<!-- Admin expand tab — visible only when admin is collapsed -->
+<button id="adminExpandTab" class="admin-expand-tab" type="button" onclick="state.adminCollapsed=false;render()" title="Expand admin">›</button>
+
+<!-- 1. Data -->
+<script src="js/state.js"></script>
+<script src="js/utils.js"></script>
+
+<!-- 2. Screen renderers -->
+<script src="screens/home.js"></script>
+<script src="screens/budget.js"></script>
+<script src="screens/budget-category.js"></script>
+<script src="screens/baby-budget.js"></script>
+<script src="screens/goals.js"></script>
+<script src="screens/learn.js"></script>
+<script src="screens/topic.js"></script>
+<script src="screens/reward-preview.js"></script>
+<script src="screens/lesson.js"></script>
+<script src="screens/quiz.js"></script>
+<script src="screens/simulation.js"></script>
+<script src="screens/marketplace.js"></script>
+<script src="screens/marketplace-detail.js"></script>
+<script src="screens/reward.js"></script>
+<script src="screens/settings.js"></script>
+
+<!-- 3. Shared UI components -->
+<script src="components/badge-ring.js"></script>
+<script src="components/nav.js"></script>
+
+<!-- 4. Core engine -->
+<script src="js/render.js"></script>
+<script src="js/navigation.js"></script>
+
+</body>
+</html>
