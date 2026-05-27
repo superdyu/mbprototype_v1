@@ -12,6 +12,6 @@ function renderSimulation() {
       <div class="item-card"><strong>Option B</strong><br><span class="helper">Higher monthly payment, lower APR.</span></div>
     </div>
 
-    <button class="button full" type="button" onclick="completeLesson()">Complete Simulation</button>
+    <button class="button full" type="button" onclick="go('topic')">Done</button>
   `;
 }

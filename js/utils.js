@@ -14,13 +14,13 @@ function scrollTop() {
   if (root) root.scrollTop = 0;
 }
 
-// Debounced render — waits 2 seconds after the last call before rendering.
+// Debounced render — waits 400ms after the last call before rendering.
 // Used on admin number/text inputs so mid-typing keystrokes don't fire animations
 // on partial values. Select dropdowns still use render() directly (no debounce needed).
 let _debouncedRenderTimer = null;
 function debouncedRender() {
   clearTimeout(_debouncedRenderTimer);
-  _debouncedRenderTimer = setTimeout(render, 2000);
+  _debouncedRenderTimer = setTimeout(render, 400);
 }
 
 // Map a screen name to its active bottom-tab identifier

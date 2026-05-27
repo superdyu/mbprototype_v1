@@ -74,8 +74,12 @@ function render() {
   screenRoot.innerHTML  = renderScreen();
   if (state.screen === "lesson") lpMountHook(lpWasPlaying);
   navRoot.innerHTML     = renderNav();
-  // Lesson screen is full-height — no tab bar
-  navRoot.style.display = (state.screen === "lesson" || state.screen === "babyBudget") ? "none" : "";
+  const hasNav = !!navRoot.innerHTML;
+  // Hide navRoot and clear the 78px bottom reservation when no nav is shown.
+  // screenRoot's CSS default is bottom:78px; lesson-mode and baby-budget-mode
+  // override it via class; all other no-nav screens need the inline reset.
+  navRoot.style.display  = hasNav ? "" : "none";
+  screenRoot.style.bottom = hasNav ? "" : "0";
 
   document.getElementById("adminRoot").innerHTML         = renderAdmin();
   document.getElementById("adminSubtitle").textContent   = adminSubtitle();

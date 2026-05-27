@@ -154,7 +154,7 @@ function renderRewardRing(gain, index) {
       </svg>
       <div class="ring-label">
         <span id="reward-label-${index}">${h(tierInitial)}${gain.oldLevel}</span>
-        <span class="ring-pct" id="reward-pct-${index}">${gain.newProgress}%</span>
+        <span class="ring-pct" id="reward-pct-${index}">${gain.oldProgress}%</span>
       </div>
     </div>
   `;
@@ -198,6 +198,16 @@ function initRewardAnimations() {
       // Each subsequent event: 500ms reset pause + 1500ms full level fill
       if (i < N - 1) accMs += 500 + 1500;
     });
+
+    // After all level-up events, the animation does one final reset + fill to
+    // newProgress. Update the pct label when that final fill completes so it
+    // matches the ring's actual visual position rather than showing the end
+    // value from the start.
+    const finalPctDelay = Math.round(accMs + 500 + (gain.newProgress / 100) * 1500);
+    setTimeout(function() {
+      var pctEl = document.getElementById("reward-pct-" + index);
+      if (pctEl) pctEl.textContent = gain.newProgress + "%";
+    }, finalPctDelay);
   });
 }
 

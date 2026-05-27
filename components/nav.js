@@ -1,6 +1,9 @@
-// Screens that display the bottom navigation bar
-const NAV_VISIBLE_SCREENS = ["home", "budget", "babyBudget", "goals", "learn",
-  "topic", "lesson", "quiz", "simulation", "marketplace", "marketplaceDetail",
+// Screens that display the bottom navigation bar.
+// lesson and babyBudget are excluded — their CSS mode classes (lesson-mode,
+// baby-budget-mode) already extend screenRoot to bottom:0, and the nav
+// would visually conflict with their full-height layouts.
+const NAV_VISIBLE_SCREENS = ["home", "budget", "budgetCategory", "goals", "learn",
+  "topic", "quiz", "simulation", "marketplace", "marketplaceDetail",
   "reward", "settings"];
 
 function renderNav() {

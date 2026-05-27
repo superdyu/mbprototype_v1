@@ -53,9 +53,9 @@ function selectLesson(id) {
   const lesson = state.lessons.find(l => l.id === id);
   if (!lesson) return;
   state.currentLesson = lesson;
-  // Mark in-progress immediately so topic page shows correct state if user
-  // backs out without completing
-  lesson.status = "in-progress";
+  // Mark in-progress only if not already completed — a revisit that gets
+  // abandoned should not downgrade a completed lesson's status
+  if (lesson.status !== "completed") lesson.status = "in-progress";
   // Reset quiz state for a clean session
   state.activeQuizIndex        = 0;
   state.activeQuizChoice       = null;
@@ -90,8 +90,19 @@ function advanceBadge(badgeName, xpToApply) {
   // so a C7→C9 journey shows C7→C8 pulse, then C8→C9 pulse — not a single jump.
   const levelUpHistory = [];
 
-  // Handle level-up: each time progress hits 100, the badge levels up
+  // Handle level-up: each time progress hits 100, the badge levels up.
+  // Check for absolute max BEFORE incrementing so we don't push a spurious
+  // levelUpHistory entry when the badge is already capped at the final tier+level.
   while (newProgress >= 100) {
+    const tierDef = state.tiers.find(t => t.name === newTier);
+    const isAbsoluteMax = tierDef
+      && newLevel >= tierDef.maxLevel
+      && !state.tiers[state.tiers.indexOf(tierDef) + 1];
+    if (isAbsoluteMax) {
+      newProgress = Math.min(newProgress, 99); // cap; loop will not re-enter
+      break;
+    }
+
     newProgress -= 100;
     newLevel++;
     leveledUp = true;
@@ -104,10 +115,8 @@ function advanceBadge(badgeName, xpToApply) {
       if (nextTier) {
         newTier  = nextTier.name;
         newLevel = 1; // tier advance resets level to 1
-      } else {
-        // Already at max tier — cap level at maxLevel, no further advance
-        newLevel = currentTierDef.maxLevel;
       }
+      // No else needed — isAbsoluteMax guard above handles the final tier case
     }
 
     // Record the state reached after this specific level-up.

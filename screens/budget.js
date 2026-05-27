@@ -57,7 +57,7 @@ function budgetMonthlyIncome() {
 function budgetMonthlyNetSpend() {
   const b = state.budget;
   const income = budgetMonthlyIncome();
-  return Math.round((b.balanceStart - b.balanceEnd + income * 3 - b.debtDrawn + b.assetsSold) / 3);
+  return Math.round((b.balanceStart - b.balanceEnd + income * 3 - b.debtRepaid + b.assetsSold) / 3);
 }
 
 function budgetCategoryTotal(cat) {
@@ -249,9 +249,9 @@ function renderBudgetComplete(status) {
       <!-- Income allocation bar -->
       <div style="margin-top:10px;">
         <div class="progress" style="height:8px;border-radius:99px;overflow:hidden;background:var(--bar);">
-          <div class="progress-fill" style="width:${Math.min(100, plan/income*100).toFixed(1)}%;background:${plan > income ? "var(--danger)" : "var(--accent)"};border-radius:99px;height:100%;transition:width .3s ease;"></div>
+          <div class="progress-fill" style="width:${income > 0 ? Math.min(100, plan/income*100).toFixed(1) : "0"}%;background:${plan > income ? "var(--danger)" : "var(--accent)"};border-radius:99px;height:100%;transition:width .3s ease;"></div>
         </div>
-        <div class="helper" style="margin-top:4px;text-align:right;">${(plan/income*100).toFixed(0)}% of income allocated</div>
+        <div class="helper" style="margin-top:4px;text-align:right;">${income > 0 ? (plan/income*100).toFixed(0) : "0"}% of income allocated</div>
       </div>
 
       <!-- Reconciliation signal -->
@@ -455,7 +455,8 @@ function renderBudgetAdmin() {
     <div class="admin-card">
       <p class="admin-card-title">3-Month Balance Inputs</p>
       <p class="helper" style="margin-bottom:10px;">
-        monthlyNetSpend = (start − end + income×3 − debt + assets) ÷ 3
+        monthlyNetSpend = (start − end + income×3 − debtRepaid + assets) ÷ 3<br>
+        <em>debtRepaid = extra principal paid from checking (not lifestyle spending)</em>
       </p>
       <div class="grid-two">
         <div class="input-group" style="margin:0;">
@@ -471,9 +472,9 @@ function renderBudgetAdmin() {
       </div>
       <div class="grid-two" style="margin-top:8px;">
         <div class="input-group" style="margin:0;">
-          <label>Debt drawn ($)</label>
-          <input type="number" value="${b.debtDrawn}"
-                 oninput="state.budget.debtDrawn=parseInt(this.value)||0;debouncedRender()">
+          <label>Extra debt repaid ($)</label>
+          <input type="number" value="${b.debtRepaid}"
+                 oninput="state.budget.debtRepaid=parseInt(this.value)||0;debouncedRender()">
         </div>
         <div class="input-group" style="margin:0;">
           <label>Assets sold ($)</label>

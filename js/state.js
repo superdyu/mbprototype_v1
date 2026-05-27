@@ -631,10 +631,12 @@ const state = {
     },
 
     // Bottom-line math (3-month checking balance trend)
-    // monthlyNetSpend = (balanceStart - balanceEnd + income*3 - debtDrawn + assetsSold) / 3
+    // monthlyNetSpend = (balanceStart - balanceEnd + income*3 - debtRepaid + assetsSold) / 3
+    // debtRepaid: extra debt principal paid from checking (reduces apparent spend;
+    //             it left checking but is not discretionary lifestyle spending)
     balanceStart:  12000,
     balanceEnd:    14400,
-    debtDrawn:     0,
+    debtRepaid:    0,
     assetsSold:    0,
 
     // Fixed overhead — shown as a summary line below category tiles, not as a tile
