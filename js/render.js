@@ -9,6 +9,8 @@ function adminSubtitle() {
   if (state.screen === "goals")          return "Adjust sample goal and milestone progress.";
   if (state.screen === "marketplace")    return "Adjust marketplace preferences and offers.";
   if (state.screen === "reward")         return "Last reward output (read-only).";
+  if (state.screen === "myDebts")        return "Manage debt instruments, add or remove entries.";
+  if (state.screen === "debtAnalyzer")   return "Adjust extra payment, toggle debts in/out of simulation.";
   return "Manual controls for this wireframe screen.";
 }
 
@@ -28,6 +30,8 @@ function renderScreen() {
   if (state.screen === "marketplaceDetail") return renderMarketplaceDetail();
   if (state.screen === "reward")            return renderReward();
   if (state.screen === "settings")          return renderSettings();
+  if (state.screen === "myDebts")           return renderMyDebts();
+  if (state.screen === "debtAnalyzer")      return renderDebtAnalyzer();
   return renderHome();
 }
 
@@ -42,6 +46,8 @@ function renderAdmin() {
   if (state.screen === "budget")           return renderBudgetAdmin();
   if (state.screen === "babyBudget")       return renderBabyBudgetAdmin();
   if (state.screen === "budgetCategory")   return renderBudgetCategoryAdmin();
+  if (state.screen === "myDebts")          return renderMyDebtsAdmin();
+  if (state.screen === "debtAnalyzer")     return renderDebtAnalyzerAdmin();
 
   return `
     <div class="admin-card">

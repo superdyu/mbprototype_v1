@@ -275,6 +275,9 @@ function renderBudgetComplete(status) {
       ${b.categories.map(cat => renderBudgetTile(cat, income)).join("")}
     </div>
 
+    <!-- Your Debt summary -->
+    ${renderBudgetDebtCard(b.debts)}
+
     <!-- Fixed overhead summary -->
     <div class="card" style="margin-bottom:14px;">
       <div class="row">
@@ -301,6 +304,43 @@ function renderBudgetComplete(status) {
     <!-- Footer -->
     <div style="padding-bottom:8px;">
       <button class="button secondary full" type="button" onclick="go('babyBudget')">Edit Budget</button>
+    </div>
+  `;
+}
+
+function renderBudgetDebtCard(debts) {
+  if (!debts || debts.length === 0) {
+    return `
+      <div class="card" style="margin-bottom:14px;">
+        <div class="row">
+          <div>
+            <div style="font-size:12px;font-weight:850;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;">Your Debt</div>
+            <div style="font-size:15px;font-weight:850;color:var(--muted);">No debts added</div>
+            <div class="helper" style="margin-top:2px;">Add cashflow debt to unlock the Debt Analyzer.</div>
+          </div>
+          <button class="button secondary" style="font-size:11px;padding:8px 12px;" type="button"
+                  onclick="goMyDebts()">Add Debts →</button>
+        </div>
+      </div>
+    `;
+  }
+  const totalBal = debtTotalBalance();
+  const totalMin = debtTotalMinPayment();
+  return `
+    <div class="card" style="margin-bottom:14px;">
+      <div class="row">
+        <div>
+          <div style="font-size:12px;font-weight:850;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;">Your Debt</div>
+          <div style="font-size:15px;font-weight:850;">${budgetFmt(totalBal)}</div>
+          <div class="helper" style="margin-top:2px;">${debts.length} account${debts.length > 1 ? "s" : ""} · ${budgetFmt(totalMin)}/mo minimums</div>
+        </div>
+        <button class="button secondary" style="font-size:11px;padding:8px 12px;" type="button"
+                onclick="goMyDebts()">Manage →</button>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line);">
+        <button class="button secondary full" style="font-size:12px;" type="button"
+                onclick="goDebtAnalyzer()">📊 Open Debt Analyzer</button>
+      </div>
     </div>
   `;
 }

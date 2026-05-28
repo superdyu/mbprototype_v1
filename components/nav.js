@@ -4,7 +4,7 @@
 // would visually conflict with their full-height layouts.
 const NAV_VISIBLE_SCREENS = ["home", "budget", "budgetCategory", "goals", "learn",
   "topic", "quiz", "simulation", "marketplace", "marketplaceDetail",
-  "reward", "settings"];
+  "reward", "settings", "myDebts", "debtAnalyzer"];
 
 function renderNav() {
   if (!NAV_VISIBLE_SCREENS.includes(state.screen)) return "";

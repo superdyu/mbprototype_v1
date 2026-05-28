@@ -611,9 +611,11 @@ const state = {
 
   // ─── Budget ───────────────────────────────────────────────────────────────
   // Main budget dashboard state. Status drives which experience renders.
-  // Baby Budget → state bridge is FUTURE WORK; state is admin-seeded for now.
   // status values: "empty" | "in-progress" | "complete" | "refresh" | "checkup"
   selectedBudgetCategory: null,
+  selectedDebt: null,
+  debtAnalyzerExtraPayment: 200,
+  debtAnalyzerIncluded: {},
   budget: {
     status: "empty",
     inProgressPct: 60,
@@ -695,9 +697,46 @@ const state = {
           { key: "debt_extra", name: "Extra Debt Payoff",  amount: 50  }
         ]
       }
+    ],
+
+    // Debt instruments — cashflow debt only (credit cards, loans, etc.; not mortgage).
+    // Populated by Baby Budget wizard via postMessage bridge or admin panel.
+    debts: [
+      {
+        id: "d_1", type: "creditCard", name: "Chase Sapphire",
+        balance: 4200, apr: 22.99, minPayment: 95,
+        remainingMonths: 0, payoffBehavior: "sometimes",
+        repaymentType: "standard", pslfPaymentsMade: 0,
+        contactName: "", customSubtype: "", revolving: true,
+        expanded: false
+      },
+      {
+        id: "d_2", type: "autoLoan", name: "Honda Civic Loan",
+        balance: 11800, apr: 6.9, minPayment: 287,
+        remainingMonths: 44,
+        repaymentType: "standard", pslfPaymentsMade: 0,
+        contactName: "", customSubtype: "", revolving: false,
+        expanded: false
+      },
+      {
+        id: "d_3", type: "studentLoan", name: "Federal Student Loan",
+        balance: 28500, apr: 5.05, minPayment: 295,
+        remainingMonths: 108,
+        repaymentType: "standard", pslfPaymentsMade: 0,
+        contactName: "", customSubtype: "", revolving: false,
+        expanded: false
+      }
     ]
   }
 };
+
+function debtTotalBalance() {
+  return state.budget.debts.reduce((s, d) => s + d.balance, 0);
+}
+
+function debtTotalMinPayment() {
+  return state.budget.debts.reduce((s, d) => s + (d.minPayment || 0), 0);
+}
 
 // Wipes user-entered profile data and re-renders. Called from admin panel.
 function resetUserData() {
@@ -709,5 +748,8 @@ function resetUserData() {
   };
   state.budget.status = "empty";
   state.budget.profile.lastUpdated = null;
+  state.budget.debts = [];
+  state.selectedDebt = null;
+  state.debtAnalyzerIncluded = {};
   render();
 }

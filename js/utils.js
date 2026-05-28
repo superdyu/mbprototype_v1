@@ -27,6 +27,8 @@ function debouncedRender() {
 function activeTabFor(screen) {
   if (screen === "babyBudget")     return "budget";
   if (screen === "budgetCategory") return "budget";
+  if (screen === "myDebts")        return "budget";
+  if (screen === "debtAnalyzer")   return "budget";
   if (["topic", "reward-preview", "lesson", "quiz", "simulation"].includes(screen)) return "learn";
   if (screen === "marketplaceDetail") return "marketplace";
   if (screen === "reward") return "";

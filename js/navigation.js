@@ -35,6 +35,33 @@ function selectBudgetCategory(key) {
   go("budgetCategory");
 }
 
+function goMyDebts(editId) {
+  state.selectedDebt = editId || null;
+  go("myDebts");
+}
+
+function goDebtAnalyzer() {
+  // Initialize inclusion map on first entry — all debts included by default
+  if (!state.debtAnalyzerIncluded || Object.keys(state.debtAnalyzerIncluded).length === 0) {
+    state.debtAnalyzerIncluded = {};
+    state.budget.debts.forEach(function(d) { state.debtAnalyzerIncluded[d.id] = true; });
+  }
+  go("debtAnalyzer");
+}
+
+function applyDebtDataFromWizard(rawDebts) {
+  if (!Array.isArray(rawDebts)) return;
+  var ts = Date.now();
+  state.budget.debts = rawDebts.map(function(d, i) {
+    return Object.assign({}, d, { id: "d_" + ts + "_" + i, expanded: false });
+  });
+  // Keep "Debt Minimum Payments" fixed-overhead line in sync
+  var minLine = state.budget.fixedOverhead.find(function(f) { return f.name === "Debt Minimum Payments"; });
+  if (minLine) minLine.amount = debtTotalMinPayment();
+  // Reset analyzer inclusion for new debt set
+  state.debtAnalyzerIncluded = {};
+}
+
 function selectOffer(name) {
   state.selectedOffer = name;
   go("marketplaceDetail");
@@ -195,6 +222,7 @@ render();
 window.addEventListener("message", function(e) {
   if (!e.data) return;
   if (e.data.type === "bb-complete") {
+    applyDebtDataFromWizard(e.data.debts);
     state.budget.status = "complete";
     state.budget.profile.lastUpdated = new Date().toISOString().slice(0, 10);
     go("budget");

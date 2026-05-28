@@ -863,3 +863,43 @@
   transform: translateX(-50%);
   opacity: 0.8;
 }
+
+/* ─── Debt screens ─────────────────────────────────────────────────────────── */
+.debt-card-chevron {
+  font-size: 12px;
+  color: var(--muted);
+  transition: transform .15s;
+  display: inline-block;
+}
+.debt-card-chevron.open {
+  transform: rotate(180deg);
+}
+.debt-best-badge {
+  font-size: 10px;
+  font-weight: 850;
+  background: #eefaf4;
+  color: var(--good);
+  border: 1px solid #b7e4ce;
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.debt-graph-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+.debt-strategy-best {
+  border-color: var(--good) !important;
+}
+
+.payoff-behavior-btn {
+  background: #fff;
+  color: inherit;
+  border: 1.5px solid var(--line);
+}
+.payoff-behavior-btn.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
