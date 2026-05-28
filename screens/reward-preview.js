@@ -31,7 +31,7 @@ function renderRewardPreview() {
 
     <!-- Daily bonus callout — shown only for daily-task lessons -->
     ${lesson.dailyTask ? `
-      <div class="card" style="border-color:#f5d78e;background:#fff8ec;">
+      <div class="card card--warn">
         <div style="font-size:13px;font-weight:850;color:var(--warn);">⚡ Daily Task Bonus</div>
         <p class="helper" style="margin-top:4px;">
           Completing this lesson earns

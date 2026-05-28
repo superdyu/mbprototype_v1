@@ -137,10 +137,10 @@ function runAllStrategies() {
 
 // ─── Strategy metadata ────────────────────────────────────────────────────────
 var STRATEGY_META = {
-  snowball:  { name: "Snowball",       tagline: "Pay smallest balance first — quick wins build momentum.",         color: "#315efb" },
-  avalanche: { name: "Avalanche",      tagline: "Attack the highest APR first — saves the most money overall.",   color: "#087443" },
-  equal:     { name: "Equal Split",    tagline: "Divide extra payment evenly across all active debts.",            color: "#a15c07" },
-  minimum:   { name: "Minimum Only",   tagline: "Pay only the minimums — this is your baseline to beat.",          color: "#667085" }
+  snowball:  { name: "Snowball",       tagline: "Pay smallest balance first — quick wins build momentum.",         color: "var(--accent)" },
+  avalanche: { name: "Avalanche",      tagline: "Attack the highest APR first — saves the most money overall.",   color: "var(--good)"   },
+  equal:     { name: "Equal Split",    tagline: "Divide extra payment evenly across all active debts.",            color: "var(--warn)"   },
+  minimum:   { name: "Minimum Only",   tagline: "Pay only the minimums — this is your baseline to beat.",          color: "var(--muted)"  }
 };
 
 // ─── SVG Charts ───────────────────────────────────────────────────────────────
@@ -162,12 +162,12 @@ function renderInterestBarChart(analyses) {
     var meta   = STRATEGY_META[k];
     var label  = val > 0 ? "$" + Math.round(val).toLocaleString() : "$0";
     return `
-      <text x="0" y="${y + barH - 3}" font-size="11" fill="#667085" font-family="Arial,sans-serif"
+      <text x="0" y="${y + barH - 3}" font-size="11" style="fill:var(--muted)" font-family="Arial,sans-serif"
             font-weight="bold">${h(meta.name)}</text>
       <rect x="${labelW}" y="${y}" width="${barW}" height="${barH}"
-            rx="4" fill="${meta.color}" opacity="0.85"/>
+            rx="4" style="fill:${meta.color}" opacity="0.85"/>
       <text x="${labelW + barW + 6}" y="${y + barH - 3}" font-size="11"
-            fill="#172033" font-family="Arial,sans-serif" font-weight="bold">${h(label)}</text>
+            style="fill:var(--text)" font-family="Arial,sans-serif" font-weight="bold">${h(label)}</text>
     `;
   }).join("");
 
@@ -209,7 +209,7 @@ function renderBalanceTimeline(analyses) {
   var yLabels = [startBal, 0].map(function(v) {
     var y = yScale(v);
     var label = v >= 1000 ? "$" + Math.round(v / 1000) + "k" : "$" + Math.round(v);
-    return `<text x="${padL - 4}" y="${y + 4}" font-size="9" fill="#667085"
+    return `<text x="${padL - 4}" y="${y + 4}" font-size="9" style="fill:var(--muted)"
               text-anchor="end" font-family="Arial,sans-serif">${h(label)}</text>`;
   }).join("");
 
@@ -217,16 +217,16 @@ function renderBalanceTimeline(analyses) {
   var xLabels = [0, maxMonths].map(function(m, i) {
     var x = xScale(m);
     var label = m === 0 ? "Now" : m + "mo";
-    return `<text x="${x}" y="${H - 4}" font-size="9" fill="#667085"
+    return `<text x="${x}" y="${H - 4}" font-size="9" style="fill:var(--muted)"
               text-anchor="${i === 0 ? "start" : "end"}" font-family="Arial,sans-serif">${h(label)}</text>`;
   }).join("");
 
   // Axes
   var axes = `
     <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + chartH}"
-          stroke="#d9dee8" stroke-width="1"/>
+          style="stroke:var(--line)" stroke-width="1"/>
     <line x1="${padL}" y1="${padT + chartH}" x2="${padL + chartW}" y2="${padT + chartH}"
-          stroke="#d9dee8" stroke-width="1"/>
+          style="stroke:var(--line)" stroke-width="1"/>
   `;
 
   // Lines
@@ -245,7 +245,7 @@ function renderBalanceTimeline(analyses) {
       var last = r.timeline[r.timeline.length - 1];
       pts.push(xScale(last.month).toFixed(1) + "," + yScale(last.totalBalance).toFixed(1));
     }
-    return `<polyline points="${pts.join(" ")}" fill="none" stroke="${meta.color}"
+    return `<polyline points="${pts.join(" ")}" fill="none" style="stroke:${meta.color}"
                 stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>`;
   }).join("");
 
@@ -255,8 +255,8 @@ function renderBalanceTimeline(analyses) {
     var meta = STRATEGY_META[k];
     var lx   = padL + 6 + i * 68;
     return `
-      <rect x="${lx}" y="${legendY}" width="14" height="4" rx="2" fill="${meta.color}" opacity="0.85"/>
-      <text x="${lx + 18}" y="${legendY + 5}" font-size="9" fill="#667085"
+      <rect x="${lx}" y="${legendY}" width="14" height="4" rx="2" style="fill:${meta.color}" opacity="0.85"/>
+      <text x="${lx + 18}" y="${legendY + 5}" font-size="9" style="fill:var(--muted)"
             font-family="Arial,sans-serif">${h(meta.name)}</text>
     `;
   }).join("");
@@ -303,7 +303,7 @@ function renderStrategyCard(key, result, isBest) {
          style="margin-bottom:12px;${isBest ? "border-width:2px;" : ""}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;">
         <div>
-          <div style="font-size:14px;font-weight:850;color:${meta.color};">${h(meta.name)}</div>
+          <div class="strategy-pill--${key}" style="font-size:14px;font-weight:850;">${h(meta.name)}</div>
           <div class="helper" style="margin-top:2px;line-height:1.4;">${h(meta.tagline)}</div>
         </div>
         ${isBest ? `<span class="debt-best-badge">Best choice</span>` : ""}

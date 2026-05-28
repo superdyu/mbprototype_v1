@@ -51,8 +51,8 @@
   font-size: 10px;
   font-weight: 850;
   color: var(--warn);
-  background: #fff8ec;
-  border: 1px solid #f5d78e;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
   border-radius: 999px;
   padding: 2px 7px;
   white-space: nowrap;
@@ -70,7 +70,7 @@
 }
 .state-badge.not-started { background: var(--soft);         color: var(--muted);  }
 .state-badge.in-progress  { background: var(--accent-soft); color: var(--accent); }
-.state-badge.completed    { background: #eefaf4; color: var(--good); border: 1px solid #b7e4ce; }
+.state-badge.completed    { background: var(--good-bg); color: var(--good); border: 1px solid var(--good-border); }
 
 /* ─── Content type tags ──────────────────────────────────────────────────────
    Lesson vs refresher must feel visually distinct — PRD requires they are
@@ -86,14 +86,14 @@
   margin-bottom: 4px;
 }
 .content-type-tag.lesson    { background: var(--accent-soft); color: var(--accent); }
-.content-type-tag.refresher { background: #fff8ec;            color: var(--warn);   }
+.content-type-tag.refresher { background: var(--warn-bg);     color: var(--warn);   }
 
 /* ─── Quiz answer states ─────────────────────────────────────────────────────
    Correct/incorrect feedback on quiz choices. Wrong answers go red and are
    visually disabled — user must keep trying until correct. This is intentional
    UX per spec: quiz is a learning tool, not a pass/fail gate. */
-.choice.correct  { border-color: var(--good); background: #eefaf4; color: var(--good); }
-.choice.wrong    { border-color: var(--danger); background: #fef3f2; color: var(--danger);
+.choice.correct  { border-color: var(--good); background: var(--good-bg); color: var(--good); }
+.choice.wrong    { border-color: var(--danger); background: var(--danger-bg); color: var(--danger);
                    opacity: 0.6; cursor: not-allowed; }
 
 /* ─── Ring label level-up pulse ──────────────────────────────────────────────
@@ -118,8 +118,8 @@
   font-size: 9px;
   font-weight: 850;
   color: var(--warn);
-  background: #fff8ec;
-  border: 1px solid #f5d78e;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
   border-radius: 999px;
   padding: 2px 6px;
   white-space: nowrap;
@@ -141,8 +141,18 @@
   font-size: 10px;
   font-weight: 850;
   color: var(--good);
-  background: #eefaf4;
-  border: 1px solid #b7e4ce;
+  background: var(--good-bg);
+  border: 1px solid var(--good-border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.reward-event-badge--warn {
+  font-size: 10px;
+  font-weight: 850;
+  color: var(--warn);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
   border-radius: 999px;
   padding: 2px 8px;
   white-space: nowrap;
@@ -307,7 +317,7 @@
 .lp-progress {
   flex: 1;
   height: 6px;
-  background: #e7ebf2;
+  background: var(--progress-bg);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -344,7 +354,7 @@
 }
 
 .item-card {
-  background: #fff;
+  background: var(--card);
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 14px;
@@ -418,7 +428,7 @@
 
 .button.secondary {
   border-color: var(--line);
-  background: #fff;
+  background: var(--card);
   color: var(--text);
 }
 
@@ -450,7 +460,7 @@
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: #fff;
+  background: var(--card);
   color: var(--text);
   font-size: 13px;
   padding: 9px;
@@ -466,7 +476,7 @@
 /* Progress */
 .progress {
   height: 10px;
-  background: #e7ebf2;
+  background: var(--progress-bg);
   border-radius: 999px;
   overflow: hidden;
   margin-top: 10px;
@@ -486,7 +496,7 @@
 }
 
 .pill {
-  border: 1px solid #d8e0ff;
+  border: 1px solid var(--accent-border);
   background: var(--accent-soft);
   color: var(--accent);
   border-radius: 999px;
@@ -503,7 +513,7 @@
 }
 
 .badge-card {
-  background: #fff;
+  background: var(--card);
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 13px;
@@ -521,7 +531,7 @@
   font-weight: 850;
   color: var(--muted);
   margin-bottom: 10px;
-  background: #f7f9fc;
+  background: var(--soft);
 }
 
 .badge-name {
@@ -544,7 +554,7 @@
   height: 38px;
   border-radius: 13px;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--card);
   color: var(--muted);
   font-size: 12px;
   font-weight: 850;
@@ -563,7 +573,7 @@
   grid-template-columns: 1fr auto;
   gap: 12px;
   align-items: center;
-  background: #fff;
+  background: var(--card);
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 14px;
@@ -572,7 +582,7 @@
 
 .task-card.completed {
   opacity: .72;
-  background: #fbfcff;
+  background: var(--soft);
 }
 
 .task-title {
@@ -589,8 +599,8 @@
 }
 
 .done-state {
-  border: 1px solid #b7e4ce;
-  background: #eefaf4;
+  border: 1px solid var(--good-border);
+  background: var(--good-bg);
   color: var(--good);
   border-radius: 13px;
   padding: 9px 11px;
@@ -611,7 +621,7 @@
   height: 64px;
   border: 1px solid var(--line);
   border-radius: 15px;
-  background: #f7f9fc;
+  background: var(--soft);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -623,7 +633,7 @@
 /* Quiz */
 .choice {
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--card);
   border-radius: 15px;
   padding: 13px;
   text-align: left;
@@ -649,7 +659,7 @@
 
 /* Notes */
 .note {
-  background: #fff;
+  background: var(--card);
   border: 1px dashed var(--line);
   border-radius: 16px;
   padding: 12px;
@@ -734,11 +744,11 @@
   width: fit-content;
   white-space: nowrap;
 }
-.budget-signal-pill.on-track      { background: #dcfce7; color: #166534; }
-.budget-signal-pill.intentional   { background: var(--accent-soft); color: var(--accent); }
-.budget-signal-pill.worth-a-look  { background: #fef9c3; color: #854d0e; }
-.budget-signal-pill.worth-a-look.strong { background: #fef3c7; color: #92400e; }
-.budget-signal-pill.context-only  { background: var(--soft); color: var(--muted); }
+.budget-signal-pill.on-track      { background: var(--good-pill-bg);        color: var(--good-pill-text); }
+.budget-signal-pill.intentional   { background: var(--accent-soft);         color: var(--accent); }
+.budget-signal-pill.worth-a-look  { background: var(--warn-pill-bg);        color: var(--warn-pill-text); }
+.budget-signal-pill.worth-a-look.strong { background: var(--warn-pill-strong-bg); color: var(--warn-pill-strong-text); }
+.budget-signal-pill.context-only  { background: var(--soft);                color: var(--muted); }
 
 /* Goals mini — inside Savings tile */
 .budget-goals-mini {
@@ -864,6 +874,25 @@
   opacity: 0.8;
 }
 
+/* Card color variants — accent-soft or warn backgrounds */
+.card.card--accent { background: var(--accent-soft); border-color: var(--accent-border); }
+.card.card--warn   { background: var(--warn-bg);     border-color: var(--warn-border);   }
+
+/* Inline alert strip — warn variant (reconciliation signal, budget alerts) */
+.budget-alert--warn {
+  padding: 10px 12px;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+/* Debt strategy pills — semantic colors for each payoff strategy */
+.strategy-pill--snowball  { color: var(--accent); }
+.strategy-pill--avalanche { color: var(--good);   }
+.strategy-pill--equal     { color: var(--warn);   }
+.strategy-pill--minimum   { color: var(--muted);  }
+
 /* ─── Debt screens ─────────────────────────────────────────────────────────── */
 .debt-card-chevron {
   font-size: 12px;
@@ -877,9 +906,9 @@
 .debt-best-badge {
   font-size: 10px;
   font-weight: 850;
-  background: #eefaf4;
+  background: var(--good-bg);
   color: var(--good);
-  border: 1px solid #b7e4ce;
+  border: 1px solid var(--good-border);
   border-radius: 999px;
   padding: 2px 8px;
   white-space: nowrap;
@@ -894,8 +923,8 @@
 }
 
 .payoff-behavior-btn {
-  background: #fff;
-  color: inherit;
+  background: var(--card);
+  color: var(--text);
   border: 1.5px solid var(--line);
 }
 .payoff-behavior-btn.active {

@@ -24,7 +24,7 @@ const RING_ROTATION = 135;     // degrees — positions arc start at 7:30
 // Reads from state.tiers so changing tiers in state.js propagates automatically.
 function tierColor(tierName) {
   const tier = state.tiers.find(t => t.name === tierName);
-  return tier ? tier.color : "#b87333"; // fallback to Copper
+  return tier ? tier.color : "var(--tier-copper)"; // fallback to Copper
 }
 
 // Returns whether any lesson tied to this badge is a daily task bonus lesson.
@@ -60,7 +60,7 @@ function renderBadgeRing(badge, size = "md", pct = null) {
         <!-- Track: permanent 270° gray arc — always visible as the "empty" rail -->
         <circle cx="40" cy="40" r="${RING_R}"
                 fill="none"
-                stroke="#e7ebf2"
+                style="stroke:var(--progress-bg)"
                 stroke-width="8"
                 stroke-dasharray="${RING_ARC} ${RING_CIRC}"
                 transform="rotate(${RING_ROTATION}, 40, 40)" />
@@ -68,13 +68,12 @@ function renderBadgeRing(badge, size = "md", pct = null) {
              stroke-dashoffset transitions smoothly via CSS — no JS loop. -->
         <circle cx="40" cy="40" r="${RING_R}"
                 fill="none"
-                stroke="${color}"
+                style="stroke:${color};transition:stroke-dashoffset 0.8s ease;"
                 stroke-width="8"
                 stroke-linecap="round"
                 stroke-dasharray="${RING_ARC} ${RING_CIRC}"
                 stroke-dashoffset="${dashoffset}"
-                transform="rotate(${RING_ROTATION}, 40, 40)"
-                style="transition:stroke-dashoffset 0.8s ease;" />
+                transform="rotate(${RING_ROTATION}, 40, 40)" />
       </svg>
       <!-- Label: centered over the SVG via absolute positioning in .ring-wrap -->
       <div class="ring-label">

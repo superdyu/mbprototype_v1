@@ -77,6 +77,7 @@ function render() {
 
   screenRoot.classList.toggle("baby-budget-mode", state.screen === "babyBudget");
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");
+  document.querySelector(".screen").classList.toggle("dark-mode", state.settings.colorMode === "dark");
   screenRoot.innerHTML  = renderScreen();
   if (state.screen === "lesson") lpMountHook(lpWasPlaying);
   navRoot.innerHTML     = renderNav();
@@ -90,12 +91,22 @@ function render() {
   document.getElementById("adminRoot").innerHTML         = renderAdmin();
   document.getElementById("adminSubtitle").textContent   = adminSubtitle();
 
+  // Color mode button label — shows the mode you'd switch TO
+  const cmBtn = document.getElementById("colorModeBtn");
+  if (cmBtn) cmBtn.textContent = state.settings.colorMode === "dark" ? "Light Mode" : "Dark Mode";
+
   // Admin collapse — toggle class on page root, show/hide expand tab
   document.querySelector(".page").classList.toggle("admin-collapsed", !!state.adminCollapsed);
   const expandTab = document.getElementById("adminExpandTab");
   if (expandTab) expandTab.style.display = state.adminCollapsed ? "flex" : "none";
 
   if (state.screen === "babyBudget") mountBabyBudget();
+
+  // Send current theme to BB iframe on every render (live toggle while wizard is open)
+  const bbLive = document.getElementById("babyBudgetFrame");
+  if (bbLive && bbLive.dataset.loaded === "true") {
+    try { bbLive.contentWindow.postMessage({ type: "bb-theme", colorMode: state.settings.colorMode }, "*"); } catch(e) {}
+  }
   if (state.screen === "reward")     initRewardAnimations();
 
   // Restore search input focus after render so typing mid-search doesn't lose cursor.

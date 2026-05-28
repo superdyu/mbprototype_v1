@@ -176,7 +176,7 @@ function renderBudgetInProgress() {
   const pct = Math.min(100, Math.max(0, state.budget.inProgressPct || 0));
   const cats = state.budget.categories;
   return `
-    <div class="card" style="background:var(--accent-soft);border-color:#c7d4ff;margin-bottom:14px;">
+    <div class="card card--accent" style="margin-bottom:14px;">
       <div style="display:flex;align-items:flex-start;gap:10px;">
         <div style="font-size:20px;flex-shrink:0;">📋</div>
         <div style="flex:1;">
@@ -206,14 +206,14 @@ function renderBudgetComplete(status) {
 
   return `
     ${status === "refresh" ? `
-      <div class="card" style="background:#fff7ed;border-color:#fed7aa;margin-bottom:14px;">
+      <div class="card card--warn" style="margin-bottom:14px;">
         <p style="font-size:13px;font-weight:850;margin:0 0 3px;">Your budget may be outdated</p>
         <p class="helper" style="margin:0 0 10px;">Last updated ${h(b.profile.lastUpdated || "a while ago")}. Enter updated balances to refresh your picture.</p>
         <button class="button secondary" type="button" onclick="go('babyBudget')">Update Now</button>
       </div>
     ` : ""}
     ${status === "checkup" ? `
-      <div class="card" style="background:var(--accent-soft);border-color:#c7d4ff;margin-bottom:14px;">
+      <div class="card card--accent" style="margin-bottom:14px;">
         <p style="font-size:13px;font-weight:850;margin:0 0 3px;">Time for a spending check-in</p>
         <p class="helper" style="margin:0 0 10px;">Compare your actual spending to your budget plan — takes 2 minutes.</p>
         <button class="button secondary" type="button" onclick="go('babyBudget')">Start Check-in</button>
@@ -256,7 +256,7 @@ function renderBudgetComplete(status) {
 
       <!-- Reconciliation signal -->
       ${gapPct > 0.10 ? `
-        <div style="margin-top:10px;padding:10px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;font-size:12px;">
+        <div class="budget-alert--warn" style="margin-top:10px;">
           <span style="font-weight:850;">Plan: ${budgetFmt(plan)}</span>
           &nbsp;·&nbsp;
           <span style="font-weight:850;">Trend: ${budgetFmt(trend)}</span>

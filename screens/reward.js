@@ -58,7 +58,7 @@ function renderRewardRing(gain, index) {
       <div class="ring-wrap md">
         <svg viewBox="0 0 80 80" width="${px}" height="${px}" style="display:block;">
           <circle cx="40" cy="40" r="32"
-                  fill="none" stroke="#e7ebf2" stroke-width="8"
+                  fill="none" style="stroke:var(--progress-bg)" stroke-width="8"
                   stroke-dasharray="${RING_ARC} ${RING_CIRC}"
                   transform="rotate(${RING_ROTATION}, 40, 40)" />
           <circle cx="40" cy="40" r="32"
@@ -141,7 +141,7 @@ function renderRewardRing(gain, index) {
     <div class="ring-wrap md">
       <svg viewBox="0 0 80 80" width="${px}" height="${px}" style="display:block;">
         <circle cx="40" cy="40" r="32"
-                fill="none" stroke="#e7ebf2" stroke-width="8"
+                fill="none" style="stroke:var(--progress-bg)" stroke-width="8"
                 stroke-dasharray="${RING_ARC} ${RING_CIRC}"
                 transform="rotate(${RING_ROTATION}, 40, 40)" />
         <circle cx="40" cy="40" r="32"
@@ -270,7 +270,7 @@ function renderReward() {
             <!-- Level-up indicator slot: fixed height so rings always align -->
             <div style="min-height:22px;display:flex;align-items:center;justify-content:center;">
               ${gain.tieredUp
-                ? `<span class="reward-event-badge" style="background:#fff8ec;border-color:#f5d78e;color:var(--warn);">✦ Tier Up!</span>`
+                ? `<span class="reward-event-badge--warn">✦ Tier Up!</span>`
                 : gain.leveledUp
                   ? `<span class="reward-event-badge">↑ Level Up</span>`
                   : ""}

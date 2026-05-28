@@ -26,6 +26,9 @@ const state = {
   // "waveform": animated bars above title | "clean": title only
   lpStageStyle: "waveform",
 
+  // Color mode — toggled from admin panel, resets to light on page refresh
+  settings: { colorMode: "light" },
+
   // UI interaction state
   babyStep: 0,
   selectedBadge: "Credit Cards",
