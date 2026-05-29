@@ -223,7 +223,10 @@ function renderReward() {
         <h1 class="title">Nice work!</h1>
         <p class="subtitle">Lesson complete.</p>
       </div>
-      <button class="button full" type="button" onclick="go('home')">Return Home</button>
+      <div class="flow-footer">
+        <button class="button secondary" type="button" onclick="go('learn')">Back to Learn</button>
+        <button class="button full" type="button" onclick="go('home')">Return Home</button>
+      </div>
     `;
   }
 
@@ -288,6 +291,7 @@ function renderReward() {
     </div>
 
     <div class="flow-footer" style="margin-top:8px;">
+      <button class="button secondary" type="button" onclick="go('learn')">Back to Learn</button>
       <button class="button full" type="button" onclick="go('home')">Return Home</button>
     </div>
   `;

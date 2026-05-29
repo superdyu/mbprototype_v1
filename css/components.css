@@ -89,12 +89,13 @@
 .content-type-tag.refresher { background: var(--warn-bg);     color: var(--warn);   }
 
 /* ─── Quiz answer states ─────────────────────────────────────────────────────
-   Correct/incorrect feedback on quiz choices. Wrong answers go red and are
-   visually disabled — user must keep trying until correct. This is intentional
+   Correct/incorrect feedback on quiz choices. Wrong answers show red background
+   and are visually disabled — user must keep trying until correct. This is intentional
    UX per spec: quiz is a learning tool, not a pass/fail gate. */
 .choice.correct  { border-color: var(--good); background: var(--good-bg); color: var(--good); }
-.choice.wrong    { border-color: var(--danger); background: var(--danger-bg); color: var(--danger);
-                   opacity: 0.6; cursor: not-allowed; }
+.choice.wrong    { border-color: var(--danger); background: var(--danger-bg);
+                   color: var(--danger); opacity: 0.55;
+                   text-decoration: line-through; }
 
 /* ─── Ring label level-up pulse ──────────────────────────────────────────────
    Applied momentarily via JS when the level number increments during the reward
@@ -634,6 +635,7 @@
 .choice {
   border: 1px solid var(--line);
   background: var(--card);
+  color: var(--text);
   border-radius: 15px;
   padding: 13px;
   text-align: left;
