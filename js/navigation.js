@@ -41,7 +41,7 @@ function restoreNavSnapshot(snap) {
 function go(screen) {
   if (state.screen === screen) { render(); return; }
   state.screen = screen;
-  history.pushState(getNavSnapshot(), '');
+  try { history.pushState(getNavSnapshot(), ''); } catch(e) {}
   render();
 }
 
@@ -255,11 +255,14 @@ function completeLesson() {
 // is guaranteed to be defined before this call fires.
 // replaceState seeds the initial history entry (screen: "home") so that
 // pressing back from the second screen cleanly returns to Home.
-history.replaceState(getNavSnapshot(), '');
+try { history.replaceState(getNavSnapshot(), ''); } catch(e) {}
 render();
 
 // Restore navigation state when the user presses browser back/forward.
+// Guard against null state — srcdoc iframes can fire popstate with e.state=null
+// in some browsers, which would spuriously recreate the baby budget iframe.
 window.addEventListener('popstate', function(e) {
+  if (!e.state) return;
   restoreNavSnapshot(e.state);
   render();
 });
