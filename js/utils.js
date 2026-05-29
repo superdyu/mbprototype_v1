@@ -25,10 +25,10 @@ function debouncedRender() {
 
 // Map a screen name to its active bottom-tab identifier
 function activeTabFor(screen) {
-  if (screen === "babyBudget")     return "budget";
-  if (screen === "budgetCategory") return "budget";
-  if (screen === "myDebts")        return "budget";
-  if (screen === "debtAnalyzer")   return "budget";
+  if (screen === "babyBudget")     return "analysis";
+  if (screen === "budgetCategory") return "analysis";
+  if (screen === "myDebts")        return "analysis";
+  if (screen === "debtAnalyzer")   return "analysis";
   if (["topic", "reward-preview", "lesson", "quiz", "simulation"].includes(screen)) return "learn";
   if (screen === "marketplaceDetail") return "marketplace";
   return screen;

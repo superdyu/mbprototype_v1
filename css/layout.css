@@ -197,3 +197,12 @@ body {
     top: auto;
   }
 }
+
+@media (max-width: 768px) {
+  .admin {
+    display: none !important;
+  }
+  #adminExpandTab {
+    display: none !important;
+  }
+}

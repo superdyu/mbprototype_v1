@@ -68,7 +68,7 @@ function renderBudgetCategory() {
     <!-- Back nav + category header -->
     <div class="card" style="margin-bottom:14px;">
       <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
-              type="button" onclick="go('budget')">← Budget</button>
+              type="button" onclick="go('analysis')">← Analysis</button>
 
       <div class="row" style="align-items:flex-start;">
         <div style="flex:1;">

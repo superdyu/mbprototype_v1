@@ -4,7 +4,7 @@ function adminSubtitle() {
   if (state.screen === "topic")          return "Override lesson statuses for this badge.";
   if (state.screen === "reward-preview") return "Lesson preview — read-only. Edit content in Learn admin.";
   if (state.screen === "lesson")         return "Toggle stage style, seek to sentence for testing.";
-  if (state.screen === "budget")          return "Budget status, income model, balance inputs, category amounts.";
+  if (state.screen === "analysis")        return "Analysis tab — budget dashboard + debt analysis panel.";
   if (state.screen === "budgetCategory")  return "Intentional toggle, target spend, sub-category amounts.";
   if (state.screen === "goals")          return "Adjust sample goal and milestone progress.";
   if (state.screen === "marketplace")    return "Adjust marketplace preferences and offers.";
@@ -16,7 +16,7 @@ function adminSubtitle() {
 
 function renderScreen() {
   if (state.screen === "home")              return renderHome();
-  if (state.screen === "budget")            return renderBudget();
+  if (state.screen === "analysis")          return renderAnalysis();
   if (state.screen === "babyBudget")        return renderBabyBudget();
   if (state.screen === "goals")             return renderGoals();
   if (state.screen === "learn")             return renderLearn();
@@ -43,7 +43,7 @@ function renderAdmin() {
   if (state.screen === "marketplace") return renderMarketplaceAdmin();
   if (state.screen === "lesson")       return renderLessonAdmin();
   if (state.screen === "reward")      return renderRewardAdmin();
-  if (state.screen === "budget")           return renderBudgetAdmin();
+  if (state.screen === "analysis")         return renderBudgetAdmin();
   if (state.screen === "babyBudget")       return renderBabyBudgetAdmin();
   if (state.screen === "budgetCategory")   return renderBudgetCategoryAdmin();
   if (state.screen === "myDebts")          return renderMyDebtsAdmin();
@@ -56,7 +56,7 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="go(this.value)">
-          ${["home","budget","babyBudget","goals","learn","topic","lesson","quiz",
+          ${["home","analysis","babyBudget","goals","learn","topic","lesson","quiz",
              "simulation","marketplace","reward","settings"].map(s => `
             <option value="${s}" ${state.screen === s ? "selected" : ""}>${s}</option>
           `).join("")}

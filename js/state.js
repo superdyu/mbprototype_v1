@@ -2,7 +2,7 @@
 // This data resets on every page refresh. It represents demo/prototype content.
 
 const destinations = [
-  ["budget",      "Budget"],
+  ["analysis",    "Analysis"],
   ["babyBudget",  "Baby Budget"],
   ["goals",       "Goals"],
   ["learn",       "Learn"],
@@ -622,6 +622,7 @@ const state = {
   budget: {
     status: "empty",
     inProgressPct: 60,
+    wizardInputs: null,
 
     profile: {
       zip: "95126",
@@ -750,6 +751,7 @@ function resetUserData() {
     notes: ""
   };
   state.budget.status = "empty";
+  state.budget.wizardInputs = null;
   state.budget.profile.lastUpdated = null;
   state.budget.debts = [];
   state.selectedDebt = null;

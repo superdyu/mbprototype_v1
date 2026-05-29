@@ -1,18 +1,56 @@
 // ─── Screen navigation ────────────────────────────────────────────────────────
 
+// Captures all navigation-relevant state for history.pushState.
+// Called after state.screen and any context fields are already set.
+function getNavSnapshot() {
+  return {
+    screen:                state.screen,
+    selectedBadge:         state.selectedBadge,
+    selectedBudgetCategory:state.selectedBudgetCategory,
+    selectedDebt:          state.selectedDebt,
+    selectedOffer:         state.selectedOffer,
+    debtAnalyzerIncluded:  JSON.parse(JSON.stringify(state.debtAnalyzerIncluded || {})),
+    currentLesson:         state.currentLesson   ? JSON.parse(JSON.stringify(state.currentLesson))   : null,
+    activeQuizIndex:       state.activeQuizIndex,
+    activeQuizChoice:      state.activeQuizChoice,
+    activeQuizWrongChoices:(state.activeQuizWrongChoices || []).slice(),
+    rewardBadgeGains:      state.rewardBadgeGains ? JSON.parse(JSON.stringify(state.rewardBadgeGains)) : null,
+    rewardXp:              state.rewardXp,
+    rewardLessonTitle:     state.rewardLessonTitle,
+  };
+}
+
+// Restores navigation state from a saved snapshot (used by popstate handler).
+function restoreNavSnapshot(snap) {
+  if (!snap) return;
+  state.screen                  = snap.screen;
+  state.selectedBadge           = snap.selectedBadge;
+  state.selectedBudgetCategory  = snap.selectedBudgetCategory;
+  state.selectedDebt            = snap.selectedDebt;
+  state.selectedOffer           = snap.selectedOffer;
+  state.debtAnalyzerIncluded    = snap.debtAnalyzerIncluded   || {};
+  state.currentLesson           = snap.currentLesson          || null;
+  state.activeQuizIndex         = snap.activeQuizIndex        || 0;
+  state.activeQuizChoice        = snap.activeQuizChoice       || null;
+  state.activeQuizWrongChoices  = snap.activeQuizWrongChoices || [];
+  state.rewardBadgeGains        = snap.rewardBadgeGains       || null;
+  state.rewardXp                = snap.rewardXp               || 0;
+  state.rewardLessonTitle       = snap.rewardLessonTitle      || '';
+}
+
 function go(screen) {
+  if (state.screen === screen) { render(); return; }
   state.screen = screen;
+  history.pushState(getNavSnapshot(), '');
   render();
 }
 
 function taskGo(destination) {
-  state.screen = destination;
-  render();
+  go(destination);
 }
 
 function completeAndReward() {
-  state.screen = "reward";
-  render();
+  go("reward");
 }
 
 // ─── Badge/offer selection ────────────────────────────────────────────────────
@@ -215,7 +253,16 @@ function completeLesson() {
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 // navigation.js loads last in the script order (after render.js), so render()
 // is guaranteed to be defined before this call fires.
+// replaceState seeds the initial history entry (screen: "home") so that
+// pressing back from the second screen cleanly returns to Home.
+history.replaceState(getNavSnapshot(), '');
 render();
+
+// Restore navigation state when the user presses browser back/forward.
+window.addEventListener('popstate', function(e) {
+  restoreNavSnapshot(e.state);
+  render();
+});
 
 // Listen for Baby Budget completion signal (postMessage from the iframe).
 // When received, mark the budget complete and navigate to the dashboard.
@@ -223,11 +270,12 @@ window.addEventListener("message", function(e) {
   if (!e.data) return;
   if (e.data.type === "bb-complete") {
     applyDebtDataFromWizard(e.data.debts);
+    if (e.data.inputs) state.budget.wizardInputs = e.data.inputs;
     state.budget.status = "complete";
     state.budget.profile.lastUpdated = new Date().toISOString().slice(0, 10);
-    go("budget");
+    go("analysis");
   }
   if (e.data.type === "bb-back") {
-    go("budget");
+    go("analysis");
   }
 });
