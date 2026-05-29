@@ -583,21 +583,21 @@ function renderAdjustBuckets() {
             '<span class="budget-dollar">$</span>' +
             '<input class="budget-amount-input" type="text" inputmode="decimal" value="' + fmtAmt + '" ' +
               'onfocus="moneyFocus(this)" ' +
-              'onblur="adjustAmtBlur(this,\'' + b.key + '\')" ' +
-              'oninput="adjustVals[\'' + b.key + '\']=parseFmt(this.value);renderAdjustBuckets()" ' +
+              'onblur="adjustAmtBlur(this,\\'' + b.key + '\\')" ' +
+              'oninput="adjustVals[\\'' + b.key + '\\']=parseFmt(this.value);renderAdjustBuckets()" ' +
               'style="width:72px">' +
           '</div>' +
         '</div>' +
         '<input type="range" min="' + minAmt + '" max="' + maxAmt + '" step="10" value="' + sliderVal + '" ' +
           'style="width:100%;margin:10px 0 4px" ' +
-          'oninput="adjustVals[\'' + b.key + '\']=+this.value;renderAdjustBuckets()">' +
+          'oninput="adjustVals[\\'' + b.key + '\\']=+this.value;renderAdjustBuckets()">' +
         '<div class="slider-labels" style="font-size:11px;color:var(--muted)">' +
           '<span>' + money(minAmt) + '</span>' +
           '<span>avg ' + money(avgAmt) + '</span>' +
           '<span>' + money(maxAmt) + '</span>' +
         '</div>' +
         '<div style="margin-top:10px">' +
-          '<button type="button" onclick="toggleAdjustExpand(\'' + b.key + '\')" ' +
+          '<button type="button" onclick="toggleAdjustExpand(\\'' + b.key + '\\')" ' +
             'style="font-size:11px;padding:5px 12px;border-color:var(--line);background:var(--soft);color:var(--muted);border-radius:10px">' +
             (expanded ? "\\u25B2 Close" : "\\u25BC Things to include") +
           '</button>' +
