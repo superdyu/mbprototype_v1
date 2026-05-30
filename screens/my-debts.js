@@ -19,6 +19,28 @@
 //   The Debt Analyzer reads from the same debts array; changes here reflect
 //   immediately in any open Debt Analyzer session.
 
+// ─── Handlers ─────────────────────────────────────────────────────────────────
+
+function addDebt() {
+  state.selectedDebt = "new";
+  render();
+}
+
+function addSampleDebt(type) {
+  const templates = {
+    creditCard:   { type:"creditCard",   name:"Sample Card",   balance:2500,  apr:19.99, minPayment:55,  remainingMonths:0,  payoffBehavior:"sometimes", repaymentType:"standard", pslfPaymentsMade:0, contactName:"", customSubtype:"", revolving:true,  expanded:false },
+    studentLoan:  { type:"studentLoan",  name:"Student Loan",  balance:15000, apr:4.5,   minPayment:160, remainingMonths:96, repaymentType:"standard",   pslfPaymentsMade:0, contactName:"", customSubtype:"", revolving:false, expanded:false },
+    personalLoan: { type:"personalLoan", name:"Personal Loan", balance:5000,  apr:11.5,  minPayment:120, remainingMonths:48, repaymentType:"standard",   pslfPaymentsMade:0, contactName:"", customSubtype:"", revolving:false, expanded:false }
+  };
+  state.budget.debts.push(Object.assign({ id: "d_" + Date.now() }, templates[type]));
+  render();
+}
+
+function clearAllDebts() {
+  state.budget.debts = [];
+  render();
+}
+
 const DEBT_TYPE_META = {
   creditCard:   { label: "Credit Card",         icon: "💳" },
   storeCard:    { label: "Store Card",           icon: "🏪" },
@@ -467,7 +489,7 @@ function renderMyDebts() {
               Add credit cards, loans, and other cashflow debt.<br>
               Mortgages are tracked separately in Housing.
             </p>
-            <button class="button full" type="button" onclick="state.selectedDebt='new';render()">
+            <button class="button full" type="button" onclick="addDebt()">
               + Add Your First Debt
             </button>
           </div>
@@ -477,7 +499,7 @@ function renderMyDebts() {
     <!-- Add Debt button (shown when debts exist and form is not open) -->
     ${debts.length > 0 && !showForm ? `
       <button class="button secondary full" style="margin-bottom:8px;" type="button"
-              onclick="state.selectedDebt='new';render()">+ Add Debt</button>
+              onclick="addDebt()">+ Add Debt</button>
     ` : ""}
 
     ${debts.length > 0 ? `
@@ -503,21 +525,15 @@ function renderMyDebtsAdmin() {
       </p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
         <button class="button secondary" style="font-size:11px;" type="button"
-                onclick="state.budget.debts.push({id:'d_'+Date.now(),type:'creditCard',name:'Sample Card',balance:2500,apr:19.99,minPayment:55,remainingMonths:0,payoffBehavior:'sometimes',repaymentType:'standard',pslfPaymentsMade:0,contactName:'',customSubtype:'',revolving:true,expanded:false});render()">
-          + Credit Card
-        </button>
+                onclick="addSampleDebt('creditCard')">+ Credit Card</button>
         <button class="button secondary" style="font-size:11px;" type="button"
-                onclick="state.budget.debts.push({id:'d_'+Date.now(),type:'studentLoan',name:'Student Loan',balance:15000,apr:4.5,minPayment:160,remainingMonths:96,repaymentType:'standard',pslfPaymentsMade:0,contactName:'',customSubtype:'',revolving:false,expanded:false});render()">
-          + Student Loan
-        </button>
+                onclick="addSampleDebt('studentLoan')">+ Student Loan</button>
         <button class="button secondary" style="font-size:11px;" type="button"
-                onclick="state.budget.debts.push({id:'d_'+Date.now(),type:'personalLoan',name:'Personal Loan',balance:5000,apr:11.5,minPayment:120,remainingMonths:48,repaymentType:'standard',pslfPaymentsMade:0,contactName:'',customSubtype:'',revolving:false,expanded:false});render()">
-          + Personal Loan
-        </button>
+                onclick="addSampleDebt('personalLoan')">+ Personal Loan</button>
       </div>
       ${debts.length ? `
         <button class="button secondary" style="font-size:11px;color:var(--danger);border-color:var(--danger);"
-                type="button" onclick="state.budget.debts=[];render()">Clear All Debts</button>
+                type="button" onclick="clearAllDebts()">Clear All Debts</button>
       ` : ""}
     </div>
 

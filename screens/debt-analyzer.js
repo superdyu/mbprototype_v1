@@ -11,6 +11,23 @@
 // All four strategies run on every render. With ≤10 debts at 360 months cap
 // this takes <2ms — no debounce needed.
 
+// ─── Handlers ─────────────────────────────────────────────────────────────────
+
+function toggleDebtInclusion(debtId) {
+  state.debtAnalyzerIncluded[debtId] = !state.debtAnalyzerIncluded[debtId];
+  render();
+}
+
+function adjustExtraPayment(delta) {
+  state.debtAnalyzerExtraPayment = Math.max(0, (state.debtAnalyzerExtraPayment || 0) + delta);
+  render();
+}
+
+function includeAllDebts() {
+  state.budget.debts.forEach(function(d) { state.debtAnalyzerIncluded[d.id] = true; });
+  render();
+}
+
 // ─── Simulation Engine ────────────────────────────────────────────────────────
 function runPayoffSimulation(debts, extraPayment, strategy) {
   // Deep-clone so we don't mutate state
@@ -421,7 +438,7 @@ function renderDebtAnalyzer() {
             <button id="${h(toggleId)}"
                     class="button secondary" style="font-size:11px;padding:6px 12px;${on ? "background:var(--accent-soft);border-color:var(--accent);color:var(--accent);" : ""}"
                     type="button"
-                    onclick="state.debtAnalyzerIncluded['${h(d.id)}']=!state.debtAnalyzerIncluded['${h(d.id)}'];render()">
+                    onclick="toggleDebtInclusion('${h(d.id)}')"
               ${on ? "Included ✓" : "Excluded"}
             </button>
           </div>
@@ -443,12 +460,12 @@ function renderDebtAnalyzer() {
         <p class="helper" style="margin:0 0 12px;">Amount above minimums — distributed by each strategy.</p>
         <div class="budget-stepper">
           <button class="budget-stepper-btn" type="button"
-                  onclick="state.debtAnalyzerExtraPayment=Math.max(0,(state.debtAnalyzerExtraPayment||0)-50);render()">−</button>
+                  onclick="adjustExtraPayment(-50)">−</button>
           <input class="budget-stepper-input" type="number" min="0"
                  value="${extra}"
                  oninput="state.debtAnalyzerExtraPayment=parseInt(this.value)||0;debouncedRender()">
           <button class="budget-stepper-btn" type="button"
-                  onclick="state.debtAnalyzerExtraPayment=(state.debtAnalyzerExtraPayment||0)+50;render()">+</button>
+                  onclick="adjustExtraPayment(50)">+</button>
         </div>
         <p class="helper" style="margin-top:8px;">
           Total monthly payment: ${budgetFmt(included.reduce(function(s,d){return s+(d.minPayment||0);},0) + extra)}
@@ -494,7 +511,7 @@ function renderDebtAnalyzerAdmin() {
       <div class="input-group">
         <label>Include all debts</label>
         <button class="button secondary" style="font-size:11px;" type="button"
-                onclick="state.budget.debts.forEach(function(d){state.debtAnalyzerIncluded[d.id]=true});render()">
+                onclick="includeAllDebts()">
           Reset to All Included
         </button>
       </div>
