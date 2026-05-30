@@ -251,6 +251,20 @@ function completeLesson() {
   go("reward");
 }
 
+// ─── Navigation contract ──────────────────────────────────────────────────────
+// All screen changes MUST go through go() or taskGo(). Direct state.screen
+// assignment bypasses history tracking and the nav log.
+//
+// Tab → screens mapping (activeTabFor() in utils.js):
+//   home     → home
+//   aboutMe  → aboutMe, babyBudget, budgetCategory, myDebts, goals
+//   myMoves  → myMoves, debtAnalyzer, marketplace, marketplaceDetail
+//   learn    → learn, topic, reward-preview, lesson, quiz, simulation
+//
+// Screens with no nav bar (excluded from NAV_VISIBLE_SCREENS in nav.js):
+//   babyBudget (full-height iframe), lesson (full-height player),
+//   reward (celebration overlay)
+//
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 // navigation.js loads last in the script order (after render.js), so render()
 // is guaranteed to be defined before this call fires.
