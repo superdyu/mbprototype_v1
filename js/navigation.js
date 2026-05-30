@@ -277,9 +277,9 @@ window.addEventListener("message", function(e) {
     if (e.data.inputs) state.budget.wizardInputs = e.data.inputs;
     state.budget.status = "complete";
     state.budget.profile.lastUpdated = new Date().toISOString().slice(0, 10);
-    go("analysis");
+    go("aboutMe");
   }
   if (e.data.type === "bb-back") {
-    go("analysis");
+    go("aboutMe");
   }
 });

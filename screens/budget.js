@@ -3,27 +3,26 @@
 // state.budget.status. Utility functions (budgetFmt, budgetPeerAvg, etc.)
 // live in budget-utils.js which must load first.
 
-// ─── Analysis tab entry point ─────────────────────────────────────────────────
-// Dispatches to the correct budget state, then appends the Debt Analysis card.
-function renderAnalysis() {
+// ─── About Me tab entry point ─────────────────────────────────────────────────
+// Dispatches to the correct budget state, then appends Debt Analysis + Goals cards.
+function renderAboutMe() {
   const s = state.budget.status;
   if (s === "empty")       return renderBudgetEmpty();
   if (s === "in-progress") return renderBudgetInProgress();
-  return renderAnalysisComplete(s);
+  return renderAboutMeComplete(s);
 }
 
 // Depends on renderBudgetComplete() defined below in this file.
-function renderAnalysisComplete(status) {
+function renderAboutMeComplete(status) {
   const hasDebts = state.budget.debts && state.budget.debts.length > 0;
   return `
     ${renderBudgetComplete(status)}
-    <div style="padding:0 16px 28px">
+    <div style="padding:0 16px 14px">
       <div class="card">
         <div class="card-title">Debt Analysis</div>
         <div class="helper" style="line-height:1.45">
-          Your full debt picture, payoff timelines, and optimization scenarios.
           ${hasDebts
-            ? "You have " + state.budget.debts.length + " debt instrument" + (state.budget.debts.length > 1 ? "s" : "") + " tracked."
+            ? "You have " + state.budget.debts.length + " debt instrument" + (state.budget.debts.length > 1 ? "s" : "") + " tracked. View payoff timelines and scenarios."
             : "Add debt instruments through the budget wizard to unlock this section."
           }
         </div>
@@ -32,6 +31,15 @@ function renderAnalysisComplete(status) {
             style="${hasDebts ? "" : "opacity:.45;cursor:default"}" ${hasDebts ? "" : "disabled"}>
             Open Debt Analyzer
           </button>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0 16px 28px">
+      <div class="card">
+        <div class="card-title">Goals & Milestones</div>
+        <div class="helper" style="line-height:1.45">Track your financial goals and savings milestones.</div>
+        <div style="margin-top:12px">
+          <button class="secondary" onclick="go('goals')">View Goals →</button>
         </div>
       </div>
     </div>

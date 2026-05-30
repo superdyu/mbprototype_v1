@@ -2,17 +2,18 @@
 // This data resets on every page refresh. It represents demo/prototype content.
 
 const destinations = [
-  ["analysis",    "Analysis"],
-  ["babyBudget",  "Baby Budget"],
-  ["goals",       "Goals"],
-  ["learn",       "Learn"],
-  ["topic",       "Topic Page"],
-  ["reward-preview", "Reward Preview"],
-  ["lesson",         "Lesson Player"],
-  ["quiz",        "Quiz"],
-  ["simulation",  "Simulation"],
-  ["marketplace", "Marketplace"],
-  ["reward",      "Reward"]
+  ["aboutMe",       "About Me"],
+  ["myMoves",       "My Moves"],
+  ["babyBudget",    "Baby Budget"],
+  ["goals",         "Goals"],
+  ["learn",         "Learn"],
+  ["topic",         "Topic Page"],
+  ["reward-preview","Reward Preview"],
+  ["lesson",        "Lesson Player"],
+  ["quiz",          "Quiz"],
+  ["simulation",    "Simulation"],
+  ["marketplace",   "Marketplace"],
+  ["reward",        "Reward"]
 ];
 
 const state = {

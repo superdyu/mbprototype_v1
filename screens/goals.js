@@ -1,5 +1,11 @@
 function renderGoals() {
   return `
+    <div class="card" style="margin-bottom:14px;">
+      <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
+              type="button" onclick="go('aboutMe')">← About Me</button>
+      <h1 class="title" style="margin:0 0 2px;">Goals & Milestones</h1>
+      <p class="subtitle" style="margin:0;">Track your financial goals and savings milestones.</p>
+    </div>
     <div class="row" style="margin-bottom:14px;">
       <button class="button" type="button">Add Goal</button>
       <button class="button secondary" type="button">Add Milestone</button>

@@ -1,5 +1,11 @@
 function renderMarketplace() {
   return `
+    <div class="card" style="margin-bottom:14px;">
+      <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
+              type="button" onclick="go('myMoves')">← My Moves</button>
+      <h1 class="title" style="margin:0 0 2px;">Marketplace</h1>
+      <p class="subtitle" style="margin:0;">Financial products matched to your profile.</p>
+    </div>
     <div class="card">
       <div class="section-title">My Preferences</div>
       <p class="helper">Preferences apply across financial instrument categories.</p>

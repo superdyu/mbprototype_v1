@@ -74,7 +74,8 @@ function renderHomeAdmin() {
           <label>Tab</label>
           <select onchange="setTaskTab(${index}, this.value)">
             <option value="learn"       ${task.tab === "learn"       ? "selected" : ""}>Learn (Lesson)</option>
-            <option value="analysis"    ${task.tab === "analysis"    ? "selected" : ""}>Analysis</option>
+            <option value="aboutMe"     ${task.tab === "aboutMe"     ? "selected" : ""}>About Me</option>
+            <option value="myMoves"     ${task.tab === "myMoves"     ? "selected" : ""}>My Moves</option>
             <option value="goals"       ${task.tab === "goals"       ? "selected" : ""}>Goals</option>
             <option value="marketplace" ${task.tab === "marketplace" ? "selected" : ""}>Marketplace</option>
             <option value="settings"    ${task.tab === "settings"    ? "selected" : ""}>Settings</option>
@@ -130,7 +131,7 @@ function setTaskTab(index, tab) {
   } else {
     delete task.lessonId;
     // Set destination based on tab name where it maps to a screen
-    const tabDestMap = { analysis: "analysis", goals: "goals", marketplace: "marketplace", settings: "settings", other: "home" };
+    const tabDestMap = { aboutMe: "aboutMe", myMoves: "myMoves", goals: "goals", marketplace: "marketplace", settings: "settings", other: "home" };
     task.destination = tabDestMap[tab] || destinations[0][0];
   }
   render();
