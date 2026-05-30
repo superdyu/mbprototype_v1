@@ -21,7 +21,7 @@ function renderMyMoves() {
           : "Add debt instruments in About Me to unlock payoff analysis."}
       </p>
       <div style="margin-top:12px;">
-        <button class="${hasDebts ? "primary" : "secondary"}"
+        <button class="${hasDebts ? "button primary" : "button secondary"}"
           onclick="${hasDebts ? "goDebtAnalyzer()" : ""}"
           style="${hasDebts ? "" : "opacity:.45;cursor:default"}" ${hasDebts ? "" : "disabled"}>
           Open Debt Analyzer
@@ -34,7 +34,7 @@ function renderMyMoves() {
       <div class="card-title">Goals & Milestones</div>
       <p class="helper" style="line-height:1.45;">Track progress toward your financial goals and savings targets.</p>
       <div style="margin-top:12px;">
-        <button class="secondary" onclick="go('goals')">View Goals →</button>
+        <button class="button secondary" onclick="go('goals')">View Goals →</button>
       </div>
     </div>
 
@@ -43,7 +43,7 @@ function renderMyMoves() {
       <div class="card-title">Opportunities</div>
       <p class="helper" style="line-height:1.45;">Financial products matched to your profile and goals.</p>
       <div style="margin-top:12px;">
-        <button class="secondary" onclick="go('marketplace')">Browse Marketplace →</button>
+        <button class="button secondary" onclick="go('marketplace')">Browse Marketplace →</button>
       </div>
     </div>
   `;

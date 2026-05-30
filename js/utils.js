@@ -28,7 +28,7 @@ function activeTabFor(screen) {
   if (screen === "babyBudget")     return "aboutMe";
   if (screen === "budgetCategory") return "aboutMe";
   if (screen === "myDebts")        return "aboutMe";
-  if (screen === "debtAnalyzer")   return "aboutMe";
+  if (screen === "debtAnalyzer")   return "myMoves";
   if (screen === "goals")          return "aboutMe";
   if (screen === "marketplace")    return "myMoves";
   if (screen === "marketplaceDetail") return "myMoves";

@@ -27,7 +27,7 @@ function renderAboutMeComplete(status) {
           }
         </div>
         <div style="margin-top:12px">
-          <button class="${hasDebts ? "primary" : "secondary"}" onclick="${hasDebts ? "goDebtAnalyzer()" : ""}"
+          <button class="${hasDebts ? "button primary" : "button secondary"}" onclick="${hasDebts ? "goDebtAnalyzer()" : ""}"
             style="${hasDebts ? "" : "opacity:.45;cursor:default"}" ${hasDebts ? "" : "disabled"}>
             Open Debt Analyzer
           </button>
@@ -39,7 +39,7 @@ function renderAboutMeComplete(status) {
         <div class="card-title">Goals & Milestones</div>
         <div class="helper" style="line-height:1.45">Track your financial goals and savings milestones.</div>
         <div style="margin-top:12px">
-          <button class="secondary" onclick="go('goals')">View Goals →</button>
+          <button class="button secondary" onclick="go('goals')">View Goals →</button>
         </div>
       </div>
     </div>
