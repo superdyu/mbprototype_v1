@@ -1,19 +1,32 @@
-// ─── Prototype seed data ────────────────────────────────────────────────────
-// This data resets on every page refresh. It represents demo/prototype content.
+// ─── App State ────────────────────────────────────────────────────────────────
+// Owns the entire app state object. All seed data resets on page refresh —
+// this is intentional for a prototype; no persistence layer exists yet.
+//
+// Key sections in the state object:
+//   screen          — active screen key; always changed via go() in navigation.js
+//   budget.*        — budget profile, categories, fixed overhead, debts, status
+//   lessons/badges  — education content (seed data for the Learn tab)
+//   tasks           — home screen daily task cards
+//   userProfile     — user-entered name, income, housing (cleared by resetUserData)
+//
+// resetUserData() clears all user-entered fields (budget, debts, profile) while
+// leaving seed/demo content (lessons, badges, tasks) intact.
+//
+// destinations[] drives two surfaces: the admin "Jump to screen" dropdown and
+// the per-task destination picker in the home admin panel.
 
 const destinations = [
-  ["aboutMe",       "About Me"],
-  ["myMoves",       "My Moves"],
-  ["babyBudget",    "Baby Budget"],
-  ["goals",         "Goals"],
-  ["learn",         "Learn"],
-  ["topic",         "Topic Page"],
-  ["reward-preview","Reward Preview"],
-  ["lesson",        "Lesson Player"],
-  ["quiz",          "Quiz"],
-  ["simulation",    "Simulation"],
-  ["marketplace",   "Marketplace"],
-  ["reward",        "Reward"]
+  ["analysis",       "Analysis"],
+  ["babyBudget",     "Baby Budget"],
+  ["goals",          "Goals"],
+  ["learn",          "Learn"],
+  ["topic",          "Topic Page"],
+  ["reward-preview", "Reward Preview"],
+  ["lesson",         "Lesson Player"],
+  ["quiz",           "Quiz"],
+  ["simulation",     "Simulation"],
+  ["marketplace",    "Marketplace"],
+  ["reward",         "Reward"]
 ];
 
 const state = {

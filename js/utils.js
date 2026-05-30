@@ -1,3 +1,12 @@
+// ─── Shared Utilities ─────────────────────────────────────────────────────────
+// Helpers used across all screen files.
+//
+//   h(value)          — HTML-escape for safe injection into template strings
+//   scrollTop()       — resets screenRoot scroll position after navigation
+//   debouncedRender() — 400ms debounced render for admin input fields
+//   activeTabFor(screen) — single source of truth for which bottom tab highlights
+//                          on a given screen; used by renderNav() in nav.js
+
 // HTML-escape a value for safe injection into template strings
 function h(value) {
   return String(value ?? "")
@@ -25,13 +34,11 @@ function debouncedRender() {
 
 // Map a screen name to its active bottom-tab identifier
 function activeTabFor(screen) {
-  if (screen === "babyBudget")     return "aboutMe";
-  if (screen === "budgetCategory") return "aboutMe";
-  if (screen === "myDebts")        return "aboutMe";
-  if (screen === "debtAnalyzer")   return "myMoves";
-  if (screen === "goals")          return "aboutMe";
-  if (screen === "marketplace")    return "myMoves";
-  if (screen === "marketplaceDetail") return "myMoves";
+  if (screen === "babyBudget")        return "analysis";
+  if (screen === "budgetCategory")    return "analysis";
+  if (screen === "myDebts")           return "analysis";
+  if (screen === "debtAnalyzer")      return "analysis";
+  if (screen === "marketplaceDetail") return "marketplace";
   if (["topic", "reward-preview", "lesson", "quiz", "simulation"].includes(screen)) return "learn";
   return screen;
 }

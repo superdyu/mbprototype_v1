@@ -1,23 +1,43 @@
 // ─── Budget Dashboard ─────────────────────────────────────────────────────────
-// Renders the Analysis/About Me tab in one of five states driven by
-// state.budget.status. Utility functions (budgetFmt, budgetPeerAvg, etc.)
-// live in budget-utils.js which must load first.
+// TAB: Analysis | NAV BAR: Visible
+//
+// PURPOSE
+// Renders the Analysis tab in one of five states driven by state.budget.status.
+// Combines the budget dashboard (category tiles, peer comparison, reconciliation)
+// with the Debt Analysis entry card.
+//
+// NAVIGATION
+//   Entry: Analysis tab tap; budget wizard completion (bb-complete postMessage)
+//   Exit:  Back button not shown (top-level tab); sub-screens exit back here
+//
+// STATES
+//   empty       — ghosted promise view + CTA to start Baby Budget wizard
+//   in-progress — partial view + banner to finish wizard setup
+//   complete    — full dashboard: category tiles, peer data, reconciliation
+//   refresh     — complete view + stale-data banner (UI present, logic future)
+//   checkup     — complete view + check-in banner (UI present, logic future)
+//
+// PRODUCTION NOTES
+//   Utility functions (budgetFmt, budgetPeerAvg, etc.) live in budget-utils.js
+//   which must load before this file. Peer averages are computed at render time
+//   from state.budget.profile + BLS baseline constants in budget-utils.js.
+//   No sliders — amounts edited via tap-to-edit + ±$25 steppers in budgetCategory.
 
-// ─── About Me tab entry point ─────────────────────────────────────────────────
-// Dispatches to the correct budget state, then appends Debt Analysis + Goals cards.
-function renderAboutMe() {
+// ─── Analysis tab entry point ─────────────────────────────────────────────────
+// Dispatches to the correct budget state, then appends the Debt Analysis card.
+function renderAnalysis() {
   const s = state.budget.status;
   if (s === "empty")       return renderBudgetEmpty();
   if (s === "in-progress") return renderBudgetInProgress();
-  return renderAboutMeComplete(s);
+  return renderAnalysisComplete(s);
 }
 
 // Depends on renderBudgetComplete() defined below in this file.
-function renderAboutMeComplete(status) {
+function renderAnalysisComplete(status) {
   const hasDebts = state.budget.debts && state.budget.debts.length > 0;
   return `
     ${renderBudgetComplete(status)}
-    <div style="padding:0 16px 14px">
+    <div style="padding:0 16px 28px">
       <div class="card">
         <div class="card-title">Debt Analysis</div>
         <div class="helper" style="line-height:1.45">
@@ -31,15 +51,6 @@ function renderAboutMeComplete(status) {
             style="${hasDebts ? "" : "opacity:.45;cursor:default"}" ${hasDebts ? "" : "disabled"}>
             Open Debt Analyzer
           </button>
-        </div>
-      </div>
-    </div>
-    <div style="padding:0 16px 28px">
-      <div class="card">
-        <div class="card-title">Goals & Milestones</div>
-        <div class="helper" style="line-height:1.45">Track your financial goals and savings milestones.</div>
-        <div style="margin-top:12px">
-          <button class="button secondary" onclick="go('goals')">View Goals →</button>
         </div>
       </div>
     </div>

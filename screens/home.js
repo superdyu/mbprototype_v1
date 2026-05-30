@@ -1,3 +1,26 @@
+// ─── Home ─────────────────────────────────────────────────────────────────────
+// TAB: Home | NAV BAR: Visible
+//
+// PURPOSE
+// Default landing screen. Daily task cards surface the user's highest-priority
+// next action across all tabs — this is the primary cross-feature engagement loop.
+//
+// NAVIGATION
+//   Entry: Default screen on launch; Home tab tap from anywhere
+//   Exit:  Task CTAs: lessons via selectLesson(), other screens via taskGo()
+//          Settings button in header → settings screen
+//
+// STATES
+//   Tasks show "Done" badge when task.completed = true, CTA button when false.
+//   Progress counter shows X of Y complete for the day's task list.
+//
+// PRODUCTION NOTES
+//   Tasks are currently static seed data in state.tasks. Production: tasks
+//   generated dynamically from user progress state (incomplete lessons, stale
+//   budget, unreviewed debts, goal check-ins). The task card model is the
+//   primary engagement surface — treat as a first-class feature in production.
+//   Admin panel provides full control over task content and destinations.
+
 function renderHome() {
   const completed = state.tasks.filter(t => t.completed).length;
   return `
@@ -74,8 +97,7 @@ function renderHomeAdmin() {
           <label>Tab</label>
           <select onchange="setTaskTab(${index}, this.value)">
             <option value="learn"       ${task.tab === "learn"       ? "selected" : ""}>Learn (Lesson)</option>
-            <option value="aboutMe"     ${task.tab === "aboutMe"     ? "selected" : ""}>About Me</option>
-            <option value="myMoves"     ${task.tab === "myMoves"     ? "selected" : ""}>My Moves</option>
+            <option value="analysis"    ${task.tab === "analysis"    ? "selected" : ""}>Analysis</option>
             <option value="goals"       ${task.tab === "goals"       ? "selected" : ""}>Goals</option>
             <option value="marketplace" ${task.tab === "marketplace" ? "selected" : ""}>Marketplace</option>
             <option value="settings"    ${task.tab === "settings"    ? "selected" : ""}>Settings</option>
@@ -131,7 +153,7 @@ function setTaskTab(index, tab) {
   } else {
     delete task.lessonId;
     // Set destination based on tab name where it maps to a screen
-    const tabDestMap = { aboutMe: "aboutMe", myMoves: "myMoves", goals: "goals", marketplace: "marketplace", settings: "settings", other: "home" };
+    const tabDestMap = { analysis: "analysis", goals: "goals", marketplace: "marketplace", settings: "settings", other: "home" };
     task.destination = tabDestMap[tab] || destinations[0][0];
   }
   render();

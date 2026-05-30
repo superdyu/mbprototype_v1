@@ -1,11 +1,23 @@
+// ─── Render Engine ────────────────────────────────────────────────────────────
+// Owns the full render cycle. render() is the sole writer to screenRoot and
+// navRoot — no other file should mutate those DOM nodes directly.
+//
+// Three routing functions:
+//   renderScreen()  — maps state.screen → render function
+//   renderAdmin()   — maps state.screen → admin panel content
+//   adminSubtitle() — maps state.screen → admin header subtitle
+//
+// render() rebuilds both the screen and the admin panel on every call.
+// This is intentional — the app is small enough that full re-renders are
+// cheaper than fine-grained diffing and simpler to reason about.
+
 function adminSubtitle() {
   if (state.screen === "home")           return "Edit daily task cards and destinations.";
   if (state.screen === "learn")          return "Adjust XP config, lesson states, badge progress.";
   if (state.screen === "topic")          return "Override lesson statuses for this badge.";
   if (state.screen === "reward-preview") return "Lesson preview — read-only. Edit content in Learn admin.";
   if (state.screen === "lesson")         return "Toggle stage style, seek to sentence for testing.";
-  if (state.screen === "aboutMe")        return "About Me tab — budget dashboard, goals, debt entry.";
-  if (state.screen === "myMoves")        return "My Moves tab — progress, trajectories, marketplace.";
+  if (state.screen === "analysis")       return "Analysis tab — budget dashboard and debt analysis.";
   if (state.screen === "budgetCategory") return "Intentional toggle, target spend, sub-category amounts.";
   if (state.screen === "goals")          return "Adjust sample goal and milestone progress.";
   if (state.screen === "marketplace")    return "Adjust marketplace preferences and offers.";
@@ -17,8 +29,7 @@ function adminSubtitle() {
 
 function renderScreen() {
   if (state.screen === "home")              return renderHome();
-  if (state.screen === "aboutMe")           return renderAboutMe();
-  if (state.screen === "myMoves")           return renderMyMoves();
+  if (state.screen === "analysis")          return renderAnalysis();
   if (state.screen === "babyBudget")        return renderBabyBudget();
   if (state.screen === "goals")             return renderGoals();
   if (state.screen === "learn")             return renderLearn();
@@ -46,8 +57,7 @@ function renderAdmin() {
   if (state.screen === "marketplace")   return renderMarketplaceAdmin();
   if (state.screen === "lesson")        return renderLessonAdmin();
   if (state.screen === "reward")        return renderRewardAdmin();
-  if (state.screen === "aboutMe")       return renderBudgetAdmin();
-  if (state.screen === "myMoves")       return renderMyMovesAdmin();
+  if (state.screen === "analysis")      return renderBudgetAdmin();
   if (state.screen === "babyBudget")    return renderBabyBudgetAdmin();
   if (state.screen === "budgetCategory") return renderBudgetCategoryAdmin();
   if (state.screen === "myDebts")       return renderMyDebtsAdmin();
@@ -60,7 +70,7 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="go(this.value)">
-          ${["home","aboutMe","myMoves","babyBudget","goals","learn","topic","lesson","quiz",
+          ${["home","analysis","babyBudget","goals","learn","topic","lesson","quiz",
              "simulation","marketplace","reward","settings"].map(s => `
             <option value="${s}" ${state.screen === s ? "selected" : ""}>${s}</option>
           `).join("")}

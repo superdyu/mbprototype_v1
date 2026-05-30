@@ -1,11 +1,28 @@
+// ─── Goals & Milestones ───────────────────────────────────────────────────────
+// TAB: Goals | NAV BAR: Visible
+//
+// PURPOSE
+// User-defined financial goals with progress tracking, and measurable savings
+// milestones tied to financial outcomes.
+//
+// NAVIGATION
+//   Entry: Goals tab tap from any screen in NAV_VISIBLE_SCREENS
+//   Exit:  Goals tab → any other tab (top-level tab, no back button)
+//
+// STATES
+//   Static seed data always present — no empty state in prototype.
+//   Goal progress and milestone progress are adjustable via admin panel sliders.
+//
+// PRODUCTION NOTES
+//   "Add Goal" and "Add Milestone" buttons are non-functional stubs.
+//   Production: goal-creation flow with title, target amount, target date.
+//   Milestone progress should link automatically to budget category actuals
+//   (e.g. "Emergency Fund" milestone tracks against savings category balance).
+//   Strategic Goals (top section) are qualitative progression goals;
+//   Financial Milestones (bottom section) are quantitative with a target value.
+
 function renderGoals() {
   return `
-    <div class="card" style="margin-bottom:14px;">
-      <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
-              type="button" onclick="go('aboutMe')">← About Me</button>
-      <h1 class="title" style="margin:0 0 2px;">Goals & Milestones</h1>
-      <p class="subtitle" style="margin:0;">Track your financial goals and savings milestones.</p>
-    </div>
     <div class="row" style="margin-bottom:14px;">
       <button class="button" type="button">Add Goal</button>
       <button class="button secondary" type="button">Add Milestone</button>

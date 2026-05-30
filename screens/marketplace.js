@@ -1,11 +1,27 @@
+// ─── Marketplace ──────────────────────────────────────────────────────────────
+// TAB: Market | NAV BAR: Visible
+//
+// PURPOSE
+// Browse financial products (credit cards, loans, bank accounts, insurance,
+// AI tools) matched to the user's profile and stated preferences.
+//
+// NAVIGATION
+//   Entry: Market tab tap from any screen in NAV_VISIBLE_SCREENS
+//   Exit:  Market tab → any other tab; "View Details" on an offer → marketplace-detail
+//
+// STATES
+//   Static offer list from state.offers. Search input, sort select, and category
+//   pills are UI-only stubs — no filtering logic wired yet.
+//
+// PRODUCTION NOTES
+//   Offer "match" text is currently hardcoded per-offer in seed data. Production:
+//   scoring engine against user profile (income, ZIP, debt load, risk preference).
+//   Category filter and search to be wired. Offer CTAs are affiliate/referral
+//   links — "View Details" stays in-app; "Visit Site" on the detail screen exits.
+//   Preferences chips drive display only — no backend preference storage yet.
+
 function renderMarketplace() {
   return `
-    <div class="card" style="margin-bottom:14px;">
-      <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
-              type="button" onclick="go('myMoves')">← My Moves</button>
-      <h1 class="title" style="margin:0 0 2px;">Marketplace</h1>
-      <p class="subtitle" style="margin:0;">Financial products matched to your profile.</p>
-    </div>
     <div class="card">
       <div class="section-title">My Preferences</div>
       <p class="helper">Preferences apply across financial instrument categories.</p>

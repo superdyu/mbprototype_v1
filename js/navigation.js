@@ -256,14 +256,18 @@ function completeLesson() {
 // assignment bypasses history tracking and the nav log.
 //
 // Tab → screens mapping (activeTabFor() in utils.js):
-//   home     → home
-//   aboutMe  → aboutMe, babyBudget, budgetCategory, myDebts, goals
-//   myMoves  → myMoves, debtAnalyzer, marketplace, marketplaceDetail
-//   learn    → learn, topic, reward-preview, lesson, quiz, simulation
+//   home        → home
+//   analysis    → analysis, babyBudget, budgetCategory, myDebts, debtAnalyzer
+//   goals       → goals
+//   learn       → learn, topic, reward-preview, lesson, quiz, simulation
+//   marketplace → marketplace, marketplaceDetail
 //
-// Screens with no nav bar (excluded from NAV_VISIBLE_SCREENS in nav.js):
-//   babyBudget (full-height iframe), lesson (full-height player),
-//   reward (celebration overlay)
+// Screens with no nav bar (intentionally excluded from NAV_VISIBLE_SCREENS):
+//   babyBudget    — full-height iframe overrides layout; nav would conflict visually
+//   lesson        — full-height audiobook player; same CSS constraint as babyBudget
+//   quiz          — full-screen question flow; no tab context needed mid-quiz
+//   reward-preview — pre-lesson interstitial; no nav keeps focus on the preview
+//   reward        — post-quiz celebration overlay; nav bar would break the moment
 //
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 // navigation.js loads last in the script order (after render.js), so render()
@@ -291,9 +295,9 @@ window.addEventListener("message", function(e) {
     if (e.data.inputs) state.budget.wizardInputs = e.data.inputs;
     state.budget.status = "complete";
     state.budget.profile.lastUpdated = new Date().toISOString().slice(0, 10);
-    go("aboutMe");
+    go("analysis");
   }
   if (e.data.type === "bb-back") {
-    go("aboutMe");
+    go("analysis");
   }
 });

@@ -8,6 +8,32 @@ function decodeBabyBudgetSource() {
   return new TextDecoder().decode(bytes);
 }
 
+// ─── Baby Budget Wizard ───────────────────────────────────────────────────────
+// TAB: Analysis | NAV BAR: Hidden — full-height iframe overrides all layout
+//
+// PURPOSE
+// 7-step onboarding wizard that collects income type, earners, fixed bills,
+// lifestyle spending, and debts. On completion, populates state.budget.profile,
+// state.budget.categories, and state.budget.debts.
+//
+// NAVIGATION
+//   Entry: "Set Up Your Budget" CTA on Analysis empty state
+//   Exit:  Wizard completion (bb-complete postMessage) → Analysis (status → "complete")
+//          Wizard back button (bb-back postMessage) → Analysis
+//
+// STATES
+//   7-step wizard: income type → earner details → variable income → bills →
+//   lifestyle → adjust buckets → review & confirm
+//
+// PRODUCTION NOTES
+//   Embedded as a base64-encoded srcdoc iframe. The wizard is fully self-contained
+//   HTML/CSS/JS in bb_template.html. Build process: edit bb_template.html then run
+//   `python3 build_bb.py` to regenerate the base64 payload in this file.
+//   Production path: migrate wizard to native app screens (screens/wizard-*.js)
+//   so it shares the app's design system, state, and routing. The iframe approach
+//   was chosen for prototype speed but adds a build step on every wizard change.
+//   Communicates with the parent app via postMessage (bb-complete, bb-back).
+
 function renderBabyBudget() {
   return `
     <iframe

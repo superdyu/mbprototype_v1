@@ -1,8 +1,23 @@
-// ─── My Debts Screen ──────────────────────────────────────────────────────────
-// All cashflow debt instruments in one place.
-// Excludes mortgage — that lives in the Housing budget category.
-// Accessible from the "Your Debt" card on the Budget dashboard.
-// Debt Analyzer launched from here via the button at top.
+// ─── My Debts ─────────────────────────────────────────────────────────────────
+// TAB: Analysis (sub-screen) | NAV BAR: Visible — Analysis tab highlighted
+//
+// PURPOSE
+// All cashflow debt instruments in one place — view, add, edit, and remove
+// individual debts. Excludes mortgage (that lives in the Housing budget category).
+//
+// NAVIGATION
+//   Entry: "Your Debt" card on the Analysis budget dashboard
+//   Exit:  ← Analysis back button; "Open Debt Analyzer" button → debt-analyzer
+//
+// STATES
+//   Empty: prompt to add first debt instrument
+//   Populated: list of debt cards with balance, APR, min payment, edit controls
+//
+// PRODUCTION NOTES
+//   Debt data lives in state.budget.debts[]. Each debt has: id, name, balance,
+//   apr, minPayment, type. Edits are inline — no separate edit screen.
+//   The Debt Analyzer reads from the same debts array; changes here reflect
+//   immediately in any open Debt Analyzer session.
 
 const DEBT_TYPE_META = {
   creditCard:   { label: "Credit Card",         icon: "💳" },
@@ -398,7 +413,7 @@ function renderMyDebts() {
     <!-- Header -->
     <div class="card" style="margin-bottom:14px;">
       <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
-              type="button" onclick="go('aboutMe')">← About Me</button>
+              type="button" onclick="go('analysis')">← Analysis</button>
       <div class="row" style="align-items:flex-start;">
         <div>
           <h1 class="title" style="margin:0;font-size:20px;">My Debts</h1>

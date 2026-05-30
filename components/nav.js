@@ -1,8 +1,12 @@
-// Screens that display the bottom navigation bar.
-// lesson and babyBudget are excluded — their CSS mode classes (lesson-mode,
-// baby-budget-mode) already extend screenRoot to bottom:0, and the nav
-// would visually conflict with their full-height layouts.
-const NAV_VISIBLE_SCREENS = ["home", "aboutMe", "myMoves", "budgetCategory", "goals", "learn",
+// ─── Bottom Navigation Bar ────────────────────────────────────────────────────
+// Renders the 5-tab persistent nav: Home | Analysis | Goals | Learn | Market.
+// Only visible on screens in NAV_VISIBLE_SCREENS. Excluded screens:
+//   babyBudget    — full-height iframe; nav conflicts with the layout
+//   lesson        — full-height audiobook player; same constraint as babyBudget
+//   quiz          — full-screen question flow; no tab context needed mid-quiz
+//   reward-preview — pre-lesson interstitial; nav would distract from the preview
+//   reward        — post-quiz celebration; nav bar would break the reward moment
+const NAV_VISIBLE_SCREENS = ["home", "analysis", "budgetCategory", "goals", "learn",
   "topic", "simulation", "marketplace", "marketplaceDetail",
   "settings", "myDebts", "debtAnalyzer"];
 
@@ -12,10 +16,11 @@ function renderNav() {
   const active = activeTabFor(state.screen);
   return `
     <nav class="bottom-tabs" aria-label="Primary navigation">
-      <button class="tab ${active === "home"     ? "active" : ""}" onclick="go('home')">Home</button>
-      <button class="tab ${active === "aboutMe"  ? "active" : ""}" onclick="go('aboutMe')">About Me</button>
-      <button class="tab ${active === "myMoves"  ? "active" : ""}" onclick="go('myMoves')">My Moves</button>
-      <button class="tab ${active === "learn"    ? "active" : ""}" onclick="go('learn')">Learn</button>
+      <button class="tab ${active === "home"        ? "active" : ""}" onclick="go('home')">Home</button>
+      <button class="tab ${active === "analysis"    ? "active" : ""}" onclick="go('analysis')">Analysis</button>
+      <button class="tab ${active === "goals"       ? "active" : ""}" onclick="go('goals')">Goals</button>
+      <button class="tab ${active === "learn"       ? "active" : ""}" onclick="go('learn')">Learn</button>
+      <button class="tab ${active === "marketplace" ? "active" : ""}" onclick="go('marketplace')">Market</button>
     </nav>
   `;
 }
