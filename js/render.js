@@ -124,9 +124,11 @@ function render() {
 
   scrollTop();
 
-  // Update admin footer — nav log and last error
-  const navLogEl = document.getElementById('adminNavLog');
-  if (navLogEl) navLogEl.textContent = 'Nav: ' + (window.__navLog.length ? window.__navLog.join(' ← ') : 'none');
-  const errEl = document.getElementById('adminErrorLog');
-  if (errEl && !window.__lastError) errEl.textContent = 'Last error: none';
+  // Update admin footer — nav log and last error (skip when admin is collapsed)
+  if (!state.adminCollapsed) {
+    const navLogEl = document.getElementById('adminNavLog');
+    if (navLogEl) navLogEl.textContent = 'Nav: ' + (window.__navLog.length ? window.__navLog.join(' ← ') : 'none');
+    const errEl = document.getElementById('adminErrorLog');
+    if (errEl && !window.__lastError) errEl.textContent = 'Last error: none';
+  }
 }

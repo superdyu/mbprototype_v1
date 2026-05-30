@@ -734,10 +734,6 @@ const state = {
   }
 };
 
-function debtTotalBalance() {
-  return state.budget.debts.reduce((s, d) => s + d.balance, 0);
-}
-
 // Wipes user-entered profile data and re-renders. Called from admin panel.
 function resetUserData() {
   state.userProfile = { name: "", monthlyIncome: "", housingCost: "", notes: "" };

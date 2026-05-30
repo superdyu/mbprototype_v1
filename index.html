@@ -30,7 +30,7 @@
       <p class="admin-subtitle" id="adminSubtitle">Manual controls for the active screen.</p>
       <button class="button secondary" style="margin-top:10px;width:100%;font-size:11px;" onclick="resetUserData()">Reset User Data</button>
       <button class="button secondary" id="colorModeBtn" style="margin-top:6px;width:100%;font-size:11px;" onclick="state.settings.colorMode=state.settings.colorMode==='dark'?'light':'dark';render();">Dark Mode</button>
-      <button class="button secondary" style="margin-top:6px;width:100%;font-size:11px;" onclick="(function(){var s={screen:state.screen,budget:{status:state.budget.status,wizardInputs:state.budget.wizardInputs,debts:state.budget.debts},selectedBadge:state.selectedBadge,selectedDebt:state.selectedDebt,selectedOffer:state.selectedOffer};navigator.clipboard.writeText(JSON.stringify(s,null,2)).then(function(){alert('State copied to clipboard')})})()">Copy State</button>
+      <button class="button secondary" style="margin-top:6px;width:100%;font-size:11px;" onclick="(function(){var s={screen:state.screen,budget:{status:state.budget.status,wizardInputs:state.budget.wizardInputs,debts:state.budget.debts},selectedBadge:state.selectedBadge,selectedDebt:state.selectedDebt,selectedOffer:state.selectedOffer};navigator.clipboard.writeText(JSON.stringify(s,null,2)).then(function(){alert('State copied to clipboard')}).catch(function(){prompt('Copy this state (Ctrl+A, Ctrl+C):',JSON.stringify(s,null,2))})})()">Copy State</button>
     </div>
     <div id="adminRoot" class="admin-scroll"></div>
     <div id="adminFooter" style="padding:10px 14px;border-top:1px solid var(--line);font-size:10px;color:var(--muted);flex-shrink:0;">

@@ -17,14 +17,15 @@ with open('bb_template.html') as f:
     new_html = f.read()
 
 # ── Escape sanity check ───────────────────────────────────────────────────────
-# Catch the Python-escape-eating bug: \' in a Python string becomes ',
-# producing adjacent JS string literals ('') with no + between them.
-import re as _re
-bad = _re.findall(r"'[^']*''[^']*'", new_html)
-if bad:
-    print("WARNING: possible adjacent JS string literals (missing \\' escape?):")
-    for b in bad[:5]:
-        print("  ", repr(b))
+# Catch the Python-escape-eating bug: \\' in a Python triple-quoted string
+# becomes just ', producing '' + var + '' (adjacent string literals) instead
+# of the correct \'' + var + \''. The pattern (?<!\\)'' \+ matches '' +
+# only when NOT preceded by a backslash (correct version always has \'' +).
+bad_lines = [l.strip() for l in new_html.split('\n')
+             if re.search(r"(?<!\\)'' \+|\+ (?<!\\)''", l)]
+if bad_lines:
+    sys.exit("ERROR: broken JS string escaping in bb_template.html — use \\\\' not \\' in Python source:\n"
+             + "\n".join("  " + l for l in bad_lines[:5]))
 
 # ── Encode and write ──────────────────────────────────────────────────────────
 encoded = base64.b64encode(new_html.encode('utf-8')).decode('ascii')

@@ -109,6 +109,10 @@ function budgetDelta(spend, peer) {
 }
 
 // ─── Debt totals ──────────────────────────────────────────────────────────────
+function debtTotalBalance() {
+  return state.budget.debts.reduce((s, d) => s + d.balance, 0);
+}
+
 function debtTotalMinPayment() {
   return state.budget.debts.reduce((s, d) => s + (d.minPayment || 0), 0);
 }
