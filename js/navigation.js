@@ -38,9 +38,12 @@ function restoreNavSnapshot(snap) {
   state.rewardLessonTitle       = snap.rewardLessonTitle      || '';
 }
 
+window.__navLog = [];
+
 function go(screen) {
   if (state.screen === screen) { render(); return; }
   state.screen = screen;
+  window.__navLog = [screen, ...window.__navLog].slice(0, 10);
   try { history.pushState(getNavSnapshot(), ''); } catch(e) {}
   render();
 }

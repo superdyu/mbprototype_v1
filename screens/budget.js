@@ -1,130 +1,41 @@
 // ─── Budget Dashboard ─────────────────────────────────────────────────────────
-// Main Budget tab. Renders one of five states driven by state.budget.status:
-//   empty       → ghosted promise view + CTA to start Baby Budget
-//   in-progress → partial view + banner to finish setup
-//   complete    → full dashboard (category tiles, peer comparison, reconciliation)
-//   refresh     → complete view + stale-data banner (future full implementation)
-//   checkup     → complete view + check-in banner (future full implementation)
-//
-// Peer averages are computed at render time from profile + hardcoded BLS baselines.
-// No sliders — category amounts edited via tap-to-edit + ± steppers on detail screen.
+// Renders the Analysis/About Me tab in one of five states driven by
+// state.budget.status. Utility functions (budgetFmt, budgetPeerAvg, etc.)
+// live in budget-utils.js which must load first.
 
-// ─── Peer data constants ─────────────────────────────────────────────────────
-// Base peer averages: national median at $75K household income, 2-person household.
-// Source: BLS Consumer Expenditure Survey (prototype approximation).
-const BUDGET_PEER_BASE = {
-  housing:   1800,
-  food:       650,
-  transport:  820,
-  lifestyle:  480,
-  savings:    600
-};
-
-// Per-additional-person multiplier (above the 1-person baseline)
-// e.g. householdSize=2 → food peerAvg *= 1 + (1 * 0.75) = 1.75
-const BUDGET_HOUSEHOLD_MULT = {
-  housing:   0.20,
-  food:      0.75,
-  transport: 0.50,
-  lifestyle: 0.60,
-  savings:   0.80
-};
-
-// ZIP cost-of-living index. Fallback = 1.0 (national average).
-const BUDGET_ZIP_INDEX = {
-  "95126": 1.45, "95014": 1.70, "95054": 1.55,
-  "10001": 1.65, "10002": 1.65, "90210": 1.80,
-  "77001": 0.95, "60601": 1.20, "30301": 0.90
-};
-
-// ─── Helper functions ─────────────────────────────────────────────────────────
-function budgetMonthlyIncome() {
-  const p = state.budget.profile;
-  if (p.incomeType === "variable") {
-    const months = p.variableIncomeMonths;
-    return Math.round(months.reduce((a, b) => a + b, 0) / months.length);
-  }
-  if (p.incomeType === "mixed") {
-    const salaryTotal = p.earners.filter(e => e.type === "salary").reduce((s, e) => s + e.monthlyNet, 0);
-    const months = p.variableIncomeMonths;
-    const varAvg = Math.round(months.reduce((a, b) => a + b, 0) / months.length);
-    return salaryTotal + varAvg;
-  }
-  // salary
-  return p.earners.reduce((s, e) => s + e.monthlyNet, 0);
+// ─── Analysis tab entry point ─────────────────────────────────────────────────
+// Dispatches to the correct budget state, then appends the Debt Analysis card.
+function renderAnalysis() {
+  const s = state.budget.status;
+  if (s === "empty")       return renderBudgetEmpty();
+  if (s === "in-progress") return renderBudgetInProgress();
+  return renderAnalysisComplete(s);
 }
 
-function budgetMonthlyNetSpend() {
-  const b = state.budget;
-  const income = budgetMonthlyIncome();
-  return Math.round((b.balanceStart - b.balanceEnd + income * 3 - b.debtRepaid + b.assetsSold) / 3);
-}
-
-function budgetCategoryTotal(cat) {
-  return cat.subcategories.reduce((s, sc) => s + sc.amount, 0);
-}
-
-function budgetFixedOverheadTotal() {
-  return state.budget.fixedOverhead.reduce((s, f) => s + f.amount, 0);
-}
-
-function budgetPlanTotal() {
-  return state.budget.categories.reduce((s, c) => s + budgetCategoryTotal(c), 0)
-    + budgetFixedOverheadTotal();
-}
-
-function budgetPeerAvg(catKey) {
-  const p = state.budget.profile;
-  const income = budgetMonthlyIncome();
-  const base   = BUDGET_PEER_BASE[catKey] || 0;
-  const hmult  = BUDGET_HOUSEHOLD_MULT[catKey] || 0.5;
-  const hhSize = Math.max(1, p.householdSize || 1);
-  const hFactor = 1 + (hhSize - 1) * hmult;
-  const zipIdx  = BUDGET_ZIP_INDEX[p.zip] || 1.0;
-  const incomeRatio = income / 75000;
-  return Math.round(base * incomeRatio * hFactor * zipIdx);
-}
-
-// Signal logic for a category tile
-// Returns: { label, cssClass }
-function budgetSignal(cat) {
-  const spend   = budgetCategoryTotal(cat);
-  const peer    = budgetPeerAvg(cat.key);
-  const isSavings = cat.key === "savings";
-
-  // Savings: signal when BELOW peer avg (want to save MORE, not less)
-  if (isSavings) {
-    if (spend >= peer)         return { label: "On track",  css: "on-track" };
-    if (cat.intentional)       return { label: "Intentional ✓", css: "intentional" };
-    return { label: "Consider more", css: "worth-a-look" };
-  }
-
-  // Fixed categories: no actionable signal, just context
-  if (cat.fixed) return null;
-
-  // Discretionary
-  if (spend <= peer)            return { label: "On track",       css: "on-track" };
-  if (cat.intentional)          return { label: "Intentional ✓",  css: "intentional" };
-  if (spend > peer * 1.5)       return { label: "Worth a look ↑", css: "worth-a-look strong" };
-  return { label: "Worth a look", css: "worth-a-look" };
-}
-
-function budgetFmt(n) {
-  return "$" + Math.abs(Math.round(n)).toLocaleString();
-}
-
-function budgetDelta(spend, peer) {
-  const d = spend - peer;
-  return (d >= 0 ? "+" : "−") + "$" + Math.abs(Math.round(d)).toLocaleString();
-}
-
-// ─── Renderer ─────────────────────────────────────────────────────────────────
-function renderBudget() {
-  const status = state.budget.status;
-
-  if (status === "empty")       return renderBudgetEmpty();
-  if (status === "in-progress") return renderBudgetInProgress();
-  return renderBudgetComplete(status); // complete, refresh, checkup
+// Depends on renderBudgetComplete() defined below in this file.
+function renderAnalysisComplete(status) {
+  const hasDebts = state.budget.debts && state.budget.debts.length > 0;
+  return `
+    ${renderBudgetComplete(status)}
+    <div style="padding:0 16px 28px">
+      <div class="card">
+        <div class="card-title">Debt Analysis</div>
+        <div class="helper" style="line-height:1.45">
+          Your full debt picture, payoff timelines, and optimization scenarios.
+          ${hasDebts
+            ? "You have " + state.budget.debts.length + " debt instrument" + (state.budget.debts.length > 1 ? "s" : "") + " tracked."
+            : "Add debt instruments through the budget wizard to unlock this section."
+          }
+        </div>
+        <div style="margin-top:12px">
+          <button class="${hasDebts ? "primary" : "secondary"}" onclick="${hasDebts ? "goDebtAnalyzer()" : ""}"
+            style="${hasDebts ? "" : "opacity:.45;cursor:default"}" ${hasDebts ? "" : "disabled"}>
+            Open Debt Analyzer
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 // ── Empty state ───────────────────────────────────────────────────────────────

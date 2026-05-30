@@ -32,6 +32,7 @@ function renderScreen() {
   if (state.screen === "settings")          return renderSettings();
   if (state.screen === "myDebts")           return renderMyDebts();
   if (state.screen === "debtAnalyzer")      return renderDebtAnalyzer();
+  console.warn("[MoneyBuddy] renderScreen: unknown screen →", state.screen);
   return renderHome();
 }
 
@@ -122,4 +123,10 @@ function render() {
   }
 
   scrollTop();
+
+  // Update admin footer — nav log and last error
+  const navLogEl = document.getElementById('adminNavLog');
+  if (navLogEl) navLogEl.textContent = 'Nav: ' + (window.__navLog.length ? window.__navLog.join(' ← ') : 'none');
+  const errEl = document.getElementById('adminErrorLog');
+  if (errEl && !window.__lastError) errEl.textContent = 'Last error: none';
 }

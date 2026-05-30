@@ -30,8 +30,13 @@
       <p class="admin-subtitle" id="adminSubtitle">Manual controls for the active screen.</p>
       <button class="button secondary" style="margin-top:10px;width:100%;font-size:11px;" onclick="resetUserData()">Reset User Data</button>
       <button class="button secondary" id="colorModeBtn" style="margin-top:6px;width:100%;font-size:11px;" onclick="state.settings.colorMode=state.settings.colorMode==='dark'?'light':'dark';render();">Dark Mode</button>
+      <button class="button secondary" style="margin-top:6px;width:100%;font-size:11px;" onclick="(function(){var s={screen:state.screen,budget:{status:state.budget.status,wizardInputs:state.budget.wizardInputs,debts:state.budget.debts},selectedBadge:state.selectedBadge,selectedDebt:state.selectedDebt,selectedOffer:state.selectedOffer};navigator.clipboard.writeText(JSON.stringify(s,null,2)).then(function(){alert('State copied to clipboard')})})()">Copy State</button>
     </div>
     <div id="adminRoot" class="admin-scroll"></div>
+    <div id="adminFooter" style="padding:10px 14px;border-top:1px solid var(--line);font-size:10px;color:var(--muted);flex-shrink:0;">
+      <div id="adminNavLog" style="margin-bottom:4px;"></div>
+      <div id="adminErrorLog"></div>
+    </div>
   </aside>
 
 </div>
@@ -39,14 +44,30 @@
 <!-- Admin expand tab — visible only when admin is collapsed -->
 <button id="adminExpandTab" class="admin-expand-tab" type="button" onclick="state.adminCollapsed=false;render()" title="Expand admin">›</button>
 
+<!-- 0. Developer tooling: error catcher + nav log updater -->
+<script>
+window.__lastError = null;
+window.__navLog = [];
+window.onerror = function(msg, src, line, col) {
+  window.__lastError = { msg: String(msg), src: String(src).split('/').pop(), line: line, col: col, screen: (typeof state !== 'undefined') ? state.screen : '?' };
+  var el = document.getElementById('adminErrorLog');
+  if (el) el.innerHTML = '<span style="color:var(--danger)">⚠ ' + window.__lastError.screen + ' · ' + window.__lastError.src + ':' + line + ' · ' + String(msg).slice(0,80) + '</span>';
+};
+window.onunhandledrejection = function(e) {
+  window.__lastError = { msg: String(e.reason), screen: (typeof state !== 'undefined') ? state.screen : '?' };
+  var el = document.getElementById('adminErrorLog');
+  if (el) el.innerHTML = '<span style="color:var(--danger)">⚠ unhandled · ' + window.__lastError.screen + ' · ' + String(e.reason).slice(0,80) + '</span>';
+};
+</script>
+
 <!-- 1. Data -->
 <script src="js/state.js"></script>
 <script src="js/utils.js"></script>
 
 <!-- 2. Screen renderers -->
 <script src="screens/home.js"></script>
+<script src="screens/budget-utils.js"></script>
 <script src="screens/budget.js"></script>
-<script src="screens/analysis.js"></script>
 <script src="screens/budget-category.js"></script>
 <script src="screens/baby-budget.js"></script>
 <script src="screens/goals.js"></script>

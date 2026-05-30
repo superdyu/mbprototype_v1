@@ -738,23 +738,18 @@ function debtTotalBalance() {
   return state.budget.debts.reduce((s, d) => s + d.balance, 0);
 }
 
-function debtTotalMinPayment() {
-  return state.budget.debts.reduce((s, d) => s + (d.minPayment || 0), 0);
-}
-
 // Wipes user-entered profile data and re-renders. Called from admin panel.
 function resetUserData() {
-  state.userProfile = {
-    name: "",
-    monthlyIncome: "",
-    housingCost: "",
-    notes: ""
-  };
-  state.budget.status = "empty";
-  state.budget.wizardInputs = null;
+  state.userProfile = { name: "", monthlyIncome: "", housingCost: "", notes: "" };
+  state.budget.status        = "empty";
+  state.budget.wizardInputs  = null;
   state.budget.profile.lastUpdated = null;
-  state.budget.debts = [];
-  state.selectedDebt = null;
+  state.budget.debts         = [];
+  state.selectedDebt         = null;
   state.debtAnalyzerIncluded = {};
+  state.selectedOffer        = null;
+  state.rewardBadgeGains     = null;
+  state.rewardXp             = 0;
+  state.rewardLessonTitle    = "";
   render();
 }

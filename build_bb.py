@@ -16,6 +16,16 @@ if not m:
 with open('bb_template.html') as f:
     new_html = f.read()
 
+# ── Escape sanity check ───────────────────────────────────────────────────────
+# Catch the Python-escape-eating bug: \' in a Python string becomes ',
+# producing adjacent JS string literals ('') with no + between them.
+import re as _re
+bad = _re.findall(r"'[^']*''[^']*'", new_html)
+if bad:
+    print("WARNING: possible adjacent JS string literals (missing \\' escape?):")
+    for b in bad[:5]:
+        print("  ", repr(b))
+
 # ── Encode and write ──────────────────────────────────────────────────────────
 encoded = base64.b64encode(new_html.encode('utf-8')).decode('ascii')
 after_b64 = orig_js[orig_js.index(m.group(0)) + len(m.group(0)):]
