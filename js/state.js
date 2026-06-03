@@ -97,9 +97,13 @@ const state = {
   ],
 
   goals: [
-    { title: "Understand Home Buying", description: "Build confidence around the home buying process.", progress: 42 },
-    { title: "Reduce Money Anxiety",   description: "Use repeated learning and budgeting practice to feel more grounded.", progress: 66 }
+    { id: "g_seed_1", title: "Understand Home Buying", description: "Build confidence around the home buying process.", progress: 42, priority: 2 },
+    { id: "g_seed_2", title: "Reduce Money Anxiety",   description: "Use repeated learning and budgeting practice to feel more grounded.", progress: 66, priority: 1 }
   ],
+
+  // Tracks which goal is being edited in the goals screen
+  // null = none; "new" = add form shown; else = goal.id being edited
+  editingGoalId: null,
 
   milestones: [
     { title: "Emergency Fund",    current: "$1,240",          target: "$5,000",              progress: 25 },
@@ -801,5 +805,6 @@ function resetUserData() {
   state.accountBalances      = [];
   state.commitments          = [];
   state.flowOrigin           = null;
+  state.editingGoalId        = null;
   render();
 }

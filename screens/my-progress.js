@@ -124,8 +124,8 @@ function renderMPBudgetResults(hasBudget) {
 
       ${state.budget.categories.map(cat => `
         <div class="row" style="margin-bottom:6px;">
-          <span class="helper">${h(cat.icon || "")} ${h(cat.label)}</span>
-          <span style="font-weight:700;font-size:13px;">${budgetFmt(cat.amount)}</span>
+          <span class="helper">${h(cat.icon || "")} ${h(cat.name)}</span>
+          <span style="font-weight:700;font-size:13px;">${budgetFmt(budgetCategoryTotal(cat))}</span>
         </div>
       `).join("")}
 
@@ -204,16 +204,22 @@ function renderMPComparisons(hasBudget) {
   return `
     <div class="card" style="margin-bottom:12px;">
       <div class="section-title" style="margin-bottom:12px;">Comparisons</div>
+      <p class="helper" style="margin-bottom:12px;">How your spending compares to similar households.</p>
       ${cats.map(cat => {
-        const peer  = budgetPeerAvg(cat);
-        const delta = budgetDelta(cat.amount, peer);
-        const sign  = delta >= 0 ? "+" : "";
+        const spend   = budgetCategoryTotal(cat);
+        const peer    = budgetPeerAvg(cat.key);
+        const pct     = peer > 0 ? Math.round((spend - peer) / peer * 100) : 0;
+        const sign    = pct >= 0 ? "+" : "";
+        const color   = pct > 20  ? "var(--warn)"
+                      : pct < -20 ? "var(--accent)"
+                      : "var(--muted)";
         return `
           <div class="row" style="margin-bottom:8px;">
-            <span class="helper">${h(cat.icon || "")} ${h(cat.label)}</span>
-            <span style="font-size:12px;font-weight:700;color:${delta > 15 ? "var(--warn)" : delta < -15 ? "var(--accent)" : "var(--muted)"};">
-              ${sign}${delta}% vs peers
-            </span>
+            <span class="helper">${h(cat.icon || "")} ${h(cat.name)}</span>
+            <div style="text-align:right;">
+              <div style="font-size:12px;font-weight:700;color:${color};">${sign}${pct}% vs peers</div>
+              <div style="font-size:10px;color:var(--muted);">You ${budgetFmt(spend)} · Peers ${budgetFmt(peer)}</div>
+            </div>
           </div>
         `;
       }).join("")}

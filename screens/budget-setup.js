@@ -22,14 +22,16 @@
 //   the Baby Budget sliders for a full budget refresh.
 
 function renderBudgetSetup() {
-  const status   = state.budget.status;
-  const profile  = state.budget.profile;
-  const isEmpty  = status === "empty";
+  const status    = state.budget.status;
+  const profile   = state.budget.profile;
+  const isEmpty   = status === "empty";
   const hasBudget = !isEmpty;
 
-  const monthlyIncome = hasBudget ? budgetMonthlyIncome() : 0;
-  const housingCat    = hasBudget ? state.budget.categories.find(c => c.key === "housing") : null;
-  const housingAmt    = housingCat ? housingCat.amount : 0;
+  const monthlyIncome  = hasBudget ? budgetMonthlyIncome() : 0;
+  const housingCat     = hasBudget ? state.budget.categories.find(c => c.key === "housing") : null;
+  const housingAmt     = housingCat ? budgetCategoryTotal(housingCat) : 0;
+  const fixedOverhead  = hasBudget ? state.budget.fixedOverhead : [];
+  const fixedTotal     = hasBudget ? budgetFixedOverheadTotal() : 0;
 
   return `
     <div class="card" style="margin-bottom:14px;">
@@ -54,11 +56,16 @@ function renderBudgetSetup() {
             <span class="helper">Housing</span>
             <span style="font-weight:700;">${budgetFmt(housingAmt)}</span>
           </div>
+          ${fixedTotal > 0 ? `
+          <div class="row" style="margin-bottom:6px;">
+            <span class="helper">Required costs</span>
+            <span style="font-weight:700;">${budgetFmt(fixedTotal)}</span>
+          </div>` : ""}
           ${profile.zip ? `<div class="row" style="margin-bottom:6px;">
             <span class="helper">ZIP code</span>
             <span style="font-weight:700;">${h(profile.zip)}</span>
           </div>` : ""}
-          ${profile.householdSize ? `<div class="row">
+          ${profile.householdSize ? `<div class="row" style="margin-bottom:0;">
             <span class="helper">Household</span>
             <span style="font-weight:700;">${h(profile.householdSize)} ${profile.householdSize === 1 ? "person" : "people"}</span>
           </div>` : ""}
@@ -88,18 +95,30 @@ function renderBudgetSetup() {
     </div>
 
     ${hasBudget ? `
-    <!-- Budget category drill-downs -->
+    <!-- Spending categories drill-down -->
     <div class="section-title" style="margin:20px 0 8px;">Spending Categories</div>
     <p class="helper" style="margin-bottom:10px;">Tap a category to see and adjust its breakdown.</p>
     ${state.budget.categories.map(cat => `
       <div class="item-card" onclick="selectBudgetCategory('${h(cat.key)}')" style="cursor:pointer;">
         <div>
-          <div class="task-title">${h(cat.icon || "")} ${h(cat.label)}</div>
-          <p class="task-desc">${budgetFmt(cat.amount)}/mo</p>
+          <div class="task-title">${h(cat.icon || "")} ${h(cat.name)}</div>
+          <p class="task-desc">${budgetFmt(budgetCategoryTotal(cat))}/mo</p>
         </div>
         <div class="helper" style="font-size:18px;">›</div>
       </div>
     `).join("")}
+
+    ${fixedOverhead.length > 0 ? `
+    <!-- Required costs breakdown -->
+    <div class="section-title" style="margin:20px 0 8px;">Required Costs</div>
+    <p class="helper" style="margin-bottom:10px;">Fixed monthly obligations before discretionary spending.</p>
+    ${fixedOverhead.map(f => `
+      <div class="item-card" style="margin-bottom:8px;">
+        <span class="helper">${h(f.name)}</span>
+        <span style="font-weight:700;">${budgetFmt(f.amount)}/mo</span>
+      </div>
+    `).join("")}
+    ` : ""}
     ` : ""}
   `;
 }
