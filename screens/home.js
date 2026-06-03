@@ -152,7 +152,9 @@ function setTaskTab(index, tab) {
     delete task.destination;
   } else {
     delete task.lessonId;
-    // Set destination based on tab name where it maps to a screen
+    // Map tab to a default destination; "aboutMe" and "myProgress" are hub screens
+    // so they're the correct default. Sub-screen destinations (e.g. babyBudget) must
+    // be set manually via the Destination dropdown after choosing a tab.
     const tabDestMap = { aboutMe: "aboutMe", myProgress: "myProgress", marketplace: "marketplace", settings: "settings", other: "home" };
     task.destination = tabDestMap[tab] || destinations[0][0];
   }

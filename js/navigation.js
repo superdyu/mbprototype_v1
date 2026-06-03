@@ -268,10 +268,18 @@ function completeLesson() {
 // Tab → screens mapping (activeTabFor() in utils.js):
 //   home        → home
 //   aboutMe     → aboutMe, budgetSetup, babyBudget, budgetCategory, myDebts, debtAnalyzer,
-//                 lifestyle, lifestyleChain, accountBalances, debtBalances
+//                 lifestyle, lifestyleChain, accountBalances, debtBalances, goals
 //   myProgress  → myProgress
 //   learn       → learn, topic, reward-preview, lesson, quiz, simulation
 //   marketplace → marketplace, marketplaceDetail
+//
+// Post-result flow (no tab active, no nav bar):
+//   Baby Budget complete / lifestyle save / monthly update complete
+//     → postResult → nextAction → commit → finish → myProgress
+//   "Adjust it" path: nextAction → budgetSetup (mid-loop exit)
+//   "Compare more" path: nextAction → myProgress (mid-loop exit)
+//   "Make a goal" path: nextAction → commitment → finish → myProgress
+//   "Accept" / "Review later": nextAction → finish → myProgress (or flowOrigin)
 //
 // Screens with no nav bar (intentionally excluded from NAV_VISIBLE_SCREENS):
 //   babyBudget    — full-height iframe overrides layout; nav would conflict visually
@@ -283,6 +291,7 @@ function completeLesson() {
 //   postResult     — post-input reaction prompt; keep focus on the prompt
 //   nextAction     — next action selection; keep focus on the choice
 //   commitment     — commitment creation; keep focus on the input
+//   finish         — completion moment; keep focus on the confirmation
 //
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 // navigation.js loads last in the script order (after render.js), so render()

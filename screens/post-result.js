@@ -66,14 +66,9 @@ function renderPostResult() {
 }
 
 function lifestyleThemeLabel(themeKey) {
-  const labels = {
-    food:          "Food & Dining",
-    entertainment: "Entertainment",
-    travel:        "Travel",
-    shopping:      "Shopping & Purchases",
-    other:         "Other"
-  };
-  return labels[themeKey] || "Lifestyle";
+  // LIFESTYLE_THEMES is defined in lifestyle.js (loads before post-result.js)
+  const theme = (LIFESTYLE_THEMES || []).find(function(t) { return t.key === themeKey; });
+  return theme ? theme.label : "Lifestyle";
 }
 
 function selectReaction(value) {
@@ -82,6 +77,10 @@ function selectReaction(value) {
 }
 
 function skipPostResult() {
+  // Clear all flow state before leaving — same as clearFlowState() in next-action.js
+  state.flowOrigin         = null;
+  state.postResultContext  = null;
+  state.postResultTheme    = null;
   state.postResultReaction = null;
   state.nextAction         = null;
   go("myProgress");

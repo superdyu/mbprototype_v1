@@ -24,8 +24,10 @@ function renderFinish() {
   const lastGoal  = goals.length > 0 ? goals[0] : null;
 
   let detail = "Your changes have been saved.";
-  if (action === "make-goal" && lastGoal) {
+  if ((action === "make-goal" || context === "goal") && lastGoal) {
     detail = `Goal added: "${lastGoal.title}"`;
+  } else if (context === "goal") {
+    detail = "Your goal has been saved to My Progress.";
   } else if (context === "budget" && action === "accept") {
     detail = "Budget accepted. Your results are updated.";
   } else if (context === "budget") {
@@ -60,13 +62,6 @@ function renderFinish() {
       ` : ""}
     </div>
   `;
-}
-
-// Returns the My Progress section most relevant to the just-completed action.
-// All contexts land on myProgress for V1 (single scrollable page);
-// future versions can add anchor/scroll targeting.
-function impactLandingScreen() {
-  return "myProgress";
 }
 
 function goToImpactLanding() {

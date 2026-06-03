@@ -59,7 +59,7 @@ const state = {
       title: "Build your starter budget",
       description: "Create a rough first budget without connecting accounts.",
       cta: "Start",
-      tab: "other",
+      tab: "aboutMe",
       destination: "babyBudget",
       completed: false
     },

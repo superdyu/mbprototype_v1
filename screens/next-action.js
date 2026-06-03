@@ -50,12 +50,26 @@ function selectNextAction(value) {
   if (value === "accept" || value === "review-later") {
     go("finish");
   } else if (value === "adjust") {
+    // Mid-loop exit: preserve flowOrigin so the user can still return; clear context
+    state.postResultContext  = null;
+    state.postResultTheme    = null;
+    state.postResultReaction = null;
     go("budgetSetup");
   } else if (value === "compare") {
+    // Mid-loop exit: clear all flow state — user is done with this flow
+    clearFlowState();
     go("myProgress");
   } else if (value === "make-goal") {
     go("commitment");
   } else {
     go("finish");
   }
+}
+
+function clearFlowState() {
+  state.flowOrigin         = null;
+  state.postResultContext  = null;
+  state.postResultTheme    = null;
+  state.postResultReaction = null;
+  state.nextAction         = null;
 }

@@ -263,7 +263,7 @@ function renderLifestyleChain() {
     <!-- Staging image box -->
     <div class="lifestyle-img-box" style="margin-bottom:16px;">
       <div class="lifestyle-img-section">${h(themeInfo.label)}</div>
-      <div class="lifestyle-img-coords">${lifestyleProgressDisplay(answers, questions.length, step, selected)}</div>
+      <div class="lifestyle-img-coords">${lifestyleProgressDisplay(answers, questions.length)}</div>
       <div class="lifestyle-img-subprog">${step + 1} / ${questions.length}</div>
     </div>
 
@@ -391,9 +391,8 @@ function renderLifestyleChainReview(theme) {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function lifestyleProgressDisplay(answers, total, currentStep, currentSel) {
-  const answered = Object.keys(answers).length + (currentSel != null ? 0 : 0);
-  const icons    = ["○", "○", "○", "○"];
+function lifestyleProgressDisplay(answers, total) {
+  const icons = ["○", "○", "○", "○"];
   for (let i = 0; i < total; i++) {
     if (answers[i] != null) icons[i] = "●";
   }
