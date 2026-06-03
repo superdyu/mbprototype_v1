@@ -20,18 +20,21 @@
 
 function renderSimulation() {
   return `
-    <div class="card">
-      <h1 class="title">Simulation</h1>
-      <p class="subtitle">Applied finance practice placeholder.</p>
+    <div class="home-header">
+      <div>
+        <h1 class="title">Simulation</h1>
+        <p class="subtitle">Applied scenario practice.</p>
+      </div>
+      <button class="button secondary" type="button" onclick="go('learn')">← Learn</button>
     </div>
 
-    <div class="card">
-      <div class="section-title">Loan Tradeoff Practice</div>
-      <p class="helper">Estimate which loan creates less long-term pressure.</p>
-      <div class="item-card"><strong>Option A</strong><br><span class="helper">Lower monthly payment, higher APR.</span></div>
-      <div class="item-card"><strong>Option B</strong><br><span class="helper">Higher monthly payment, lower APR.</span></div>
+    <div class="card" style="text-align:center;padding:32px 20px;">
+      <div style="font-size:32px;margin-bottom:12px;">🧪</div>
+      <div class="section-title" style="margin-bottom:8px;">Coming Soon</div>
+      <p class="helper">
+        Interactive scenario practice — apply lesson concepts to real financial decisions
+        before returning to your topic. Coming in a future update.
+      </p>
     </div>
-
-    <button class="button full" type="button" onclick="go('topic')">Done</button>
   `;
 }

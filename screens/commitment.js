@@ -30,7 +30,11 @@ function renderCommitment() {
         <div class="section-title" style="margin-bottom:8px;">Goal <span class="helper" style="font-weight:400;">(required)</span></div>
         <div class="input-group" style="margin-bottom:0;">
           <label>What's the goal?</label>
-          <input id="newGoalTitle" type="text" placeholder="e.g. Become debt free">
+          <input id="newGoalTitle" type="text" placeholder="e.g. Become debt free"
+                 oninput="document.getElementById('newGoalTitleError').style.display='none';this.style.borderColor='';">
+          <div id="newGoalTitleError" class="caption" style="color:var(--danger);display:none;margin-top:4px;">
+            Please enter a goal name.
+          </div>
         </div>
         <div class="input-group" style="margin-top:8px;margin-bottom:0;">
           <label>Describe it (optional)</label>
@@ -79,6 +83,8 @@ function saveCommitment() {
   const title = titleEl && titleEl.value.trim();
   if (!title) {
     if (titleEl) titleEl.style.borderColor = "var(--danger)";
+    const errEl = document.getElementById("newGoalTitleError");
+    if (errEl) errEl.style.display = "block";
     return;
   }
 

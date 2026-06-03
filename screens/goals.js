@@ -109,7 +109,11 @@ function renderGoalForm(goal) {
       <div class="input-group" style="margin-bottom:10px;">
         <label>What's the goal? <span style="color:var(--danger);">*</span></label>
         <input id="goalTitleInput" type="text" value="${h(title)}"
-               placeholder="e.g. Become debt free">
+               placeholder="e.g. Become debt free"
+               oninput="document.getElementById('goalTitleError').style.display='none';this.style.borderColor='';">
+        <div id="goalTitleError" class="caption" style="color:var(--danger);display:none;margin-top:4px;">
+          Goal title can't be empty.
+        </div>
       </div>
 
       <div class="input-group" style="margin-bottom:14px;">
@@ -165,6 +169,8 @@ function saveGoal(goalId) {
   const title = titleEl ? titleEl.value.trim() : "";
   if (!title) {
     if (titleEl) titleEl.style.borderColor = "var(--danger)";
+    const errEl = document.getElementById("goalTitleError");
+    if (errEl) errEl.style.display = "block";
     return;
   }
   const description = descEl ? descEl.value.trim() : "";

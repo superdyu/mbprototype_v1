@@ -58,8 +58,13 @@ function renderQuiz() {
     <div class="card">
       <div class="row" style="margin-bottom:8px;">
         <h1 class="title" style="font-size:18px;">Quiz</h1>
-        <!-- Progress indicator: question N of total required -->
-        <span class="helper">Question ${state.activeQuizIndex + 1} of ${questions.length}</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <!-- Progress indicator: question N of total required -->
+          <span class="helper">Question ${state.activeQuizIndex + 1} of ${questions.length}</span>
+          <!-- Exit path — prevents trapped-in-quiz dead end -->
+          <button class="button secondary small" type="button"
+                  onclick="go('topic')" title="Exit quiz">✕ Exit</button>
+        </div>
       </div>
       <p class="subtitle">${h(lesson.title)}</p>
       <!-- Thin progress bar shows position in quiz session -->

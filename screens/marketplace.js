@@ -32,13 +32,15 @@ function renderMarketplace() {
 
     <div class="card">
       <div class="grid-two">
-        <input placeholder="Search" style="padding:11px;border:1px solid var(--line);border-radius:13px;">
-        <select style="padding:11px;border:1px solid var(--line);border-radius:13px;">
+        <input placeholder="Search" disabled
+               style="padding:11px;border:1px solid var(--line);border-radius:13px;opacity:.5;cursor:not-allowed;">
+        <select disabled style="padding:11px;border:1px solid var(--line);border-radius:13px;opacity:.5;cursor:not-allowed;">
           <option>Sort: Match</option>
           <option>Sort: Fees</option>
           <option>Sort: APR</option>
         </select>
       </div>
+      <p class="caption" style="margin-top:8px;">Filter and search coming soon.</p>
     </div>
 
     <div class="card">

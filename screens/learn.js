@@ -3,8 +3,16 @@
 // finance topic mastery objects. Search and suggested lessons provide quick
 // entry. Daily tasks remain the primary guided flow.
 
+// Debounce timer for search — prevents render thrashing on fast typing
+let _searchDebounce = null;
+function onSearchInput(val) {
+  state.searchQuery = val;
+  clearTimeout(_searchDebounce);
+  _searchDebounce = setTimeout(renderSearch, 200);
+}
+
 // Updates only the #searchResults element — does NOT call render() so the
-// input keeps focus and cursor position. Called on every keystroke via oninput.
+// input keeps focus and cursor position. Called via onSearchInput (debounced).
 function renderSearch() {
   const q    = state.searchQuery.toLowerCase().trim();
   const el   = document.getElementById("searchResults");
@@ -92,7 +100,7 @@ function renderLearn() {
       <input id="learnSearch"
              value="${h(state.searchQuery)}"
              placeholder="Search topics or lessons…"
-             oninput="state.searchQuery=this.value;renderSearch();"
+             oninput="onSearchInput(this.value)"
              style="width:100%;padding:12px;border-radius:14px;border:1px solid var(--line);font-size:13px;outline:none;box-sizing:border-box;">
       <div id="searchResults" style="margin-top:${hasSearch ? "10px" : "0"};">
         <!-- Populated by renderSearch() — no full render, no focus loss -->

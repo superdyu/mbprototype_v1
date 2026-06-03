@@ -112,7 +112,11 @@ function cancelDebtEdit() {
 function saveDebt() {
   const typeEl   = document.getElementById("debtFormType");
   const nameEl   = document.getElementById("debtFormName");
-  if (!typeEl || !nameEl) return;
+  if (!typeEl || !nameEl) {
+    const errEl = document.getElementById("debtFormError");
+    if (errEl) errEl.style.display = "block";
+    return;
+  }
 
   const type = typeEl.value;
   const getVal = id => { const el = document.getElementById(id); return el ? el.value : ""; };
@@ -327,7 +331,11 @@ function renderDebtForm(existing) {
         </div>
       </div>
 
-      <div class="row" style="margin-top:14px;gap:8px;">
+      <div id="debtFormError" class="caption" style="color:var(--danger);display:none;margin-top:10px;">
+        Please fill in the debt type and name before saving.
+      </div>
+
+      <div class="row" style="margin-top:10px;gap:8px;">
         <button class="button secondary" style="flex:1;" type="button" onclick="cancelDebtEdit()">Cancel</button>
         <button class="button full" style="flex:2;" type="button" onclick="saveDebt()">Save</button>
       </div>
