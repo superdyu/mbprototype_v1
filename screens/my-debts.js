@@ -435,7 +435,7 @@ function renderMyDebts() {
     <!-- Header -->
     <div class="card" style="margin-bottom:14px;">
       <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
-              type="button" onclick="go('aboutMe')">← About Me</button>
+              type="button" onclick="go('budgetSetup')">← Budget</button>
       <div class="row" style="align-items:flex-start;">
         <div>
           <h1 class="title" style="margin:0;font-size:20px;">My Debts</h1>

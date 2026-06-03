@@ -768,11 +768,7 @@ const state = {
   // Food drives Food & Daily bucket; entertainment+shopping+other drive Lifestyle bucket;
   // travel drives Getting Around bucket.
   lifestyleSubSliders: {
-    food:          { "Groceries": 0, "Dining Out": 0, "Coffee & Drinks": 0, "Delivery": 0, "Household Supplies": 0 },
-    entertainment: { "Entertainment": 0, "Streaming & Subs": 0, "Hobbies & Travel": 0, "Personal Care": 0 },
-    travel:        { "Gas & Charging": 0, "Rideshare & Parking": 0, "Bus & Train": 0, "Car Insurance (flexible)": 0 },
-    shopping:      { "Clothing & Shoes": 0, "Gifts & Giving": 0 },
-    other:         { "Personal Care": 0, "Pets & Misc": 0 }
+    food: {}, entertainment: {}, travel: {}, shopping: {}, other: {}
   },
 
   // ── Point-in-time balance snapshots (for monthly tracking) ────────────────
@@ -808,12 +804,15 @@ function resetUserData() {
   state.rewardXp             = 0;
   state.rewardLessonTitle    = "";
   state.lifestyleAnswers     = { food: { answers: {}, lastUpdated: null }, entertainment: { answers: {}, lastUpdated: null }, travel: { answers: {}, lastUpdated: null }, shopping: { answers: {}, lastUpdated: null }, other: { answers: {}, lastUpdated: null } };
-  state.lifestyleSubSliders  = { food: { "Groceries": 0, "Dining Out": 0, "Coffee & Drinks": 0, "Delivery": 0, "Household Supplies": 0 }, entertainment: { "Entertainment": 0, "Streaming & Subs": 0, "Hobbies & Travel": 0, "Personal Care": 0 }, travel: { "Gas & Charging": 0, "Rideshare & Parking": 0, "Bus & Train": 0, "Car Insurance (flexible)": 0 }, shopping: { "Clothing & Shoes": 0, "Gifts & Giving": 0 }, other: { "Personal Care": 0, "Pets & Misc": 0 } };
+  state.lifestyleSubSliders  = { food: {}, entertainment: {}, travel: {}, shopping: {}, other: {} };
   state.accountBalances      = [];
   state.commitments          = [];
   state.flowOrigin           = null;
   state.postResultContext    = null;
   state.postResultTheme      = null;
+  state.postResultReaction   = null;
+  state.nextAction           = null;
+  state.monthlyUpdateGap     = null;
   state.editingGoalId        = null;
   render();
 }

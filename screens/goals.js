@@ -29,7 +29,7 @@ function renderGoals() {
   return `
     <div class="card" style="margin-bottom:14px;">
       <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
-              type="button" onclick="goBackFromGoals()">← About Me</button>
+              type="button" onclick="goBackFromGoals()">← ${state.flowOrigin === 'myProgress' ? 'My Progress' : 'About Me'}</button>
       <h1 class="title" style="margin:0;font-size:20px;">Goals</h1>
       <p class="subtitle" style="margin:4px 0 0;">Choose what Money Buddy should help with next.</p>
     </div>

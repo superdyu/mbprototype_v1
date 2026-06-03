@@ -77,11 +77,6 @@ function selectReaction(value) {
 }
 
 function skipPostResult() {
-  // Clear all flow state before leaving — same as clearFlowState() in next-action.js
-  state.flowOrigin         = null;
-  state.postResultContext  = null;
-  state.postResultTheme    = null;
-  state.postResultReaction = null;
-  state.nextAction         = null;
+  clearFlowState();
   go("myProgress");
 }

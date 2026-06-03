@@ -195,13 +195,7 @@ function renderMPGapBanner() {
 }
 
 function renderMPAssumptions() {
-  const themes = [
-    { key: "food",          label: "Food & Dining" },
-    { key: "entertainment", label: "Entertainment" },
-    { key: "travel",        label: "Travel" },
-    { key: "shopping",      label: "Shopping" },
-    { key: "other",         label: "Other" }
-  ];
+  const themes = LIFESTYLE_THEMES || [];
 
   const answeredThemes = themes.filter(t => {
     const la = state.lifestyleAnswers && state.lifestyleAnswers[t.key];

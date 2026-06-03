@@ -118,5 +118,6 @@ function saveCommitment() {
 }
 
 function skipCommitment() {
+  state.nextAction = null;
   go("finish");
 }

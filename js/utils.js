@@ -33,6 +33,10 @@ function debouncedRender() {
 }
 
 // Map a screen name to its active bottom-tab identifier
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function activeTabFor(screen) {
   // About Me sub-screens
   if (screen === "goals")             return "aboutMe";  // goals input editor lives in About Me

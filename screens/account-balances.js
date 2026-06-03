@@ -129,6 +129,3 @@ function skipToDebtBalances() {
   go("debtBalances");
 }
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}

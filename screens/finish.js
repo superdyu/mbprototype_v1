@@ -65,20 +65,12 @@ function renderFinish() {
 }
 
 function goToImpactLanding() {
-  state.flowOrigin       = null;
-  state.postResultContext = null;
-  state.postResultTheme   = null;
-  state.postResultReaction = null;
-  state.nextAction        = null;
+  clearFlowState();
   go("myProgress");
 }
 
 function finishAndReturn() {
   const origin = state.flowOrigin || "aboutMe";
-  state.flowOrigin        = null;
-  state.postResultContext  = null;
-  state.postResultTheme    = null;
-  state.postResultReaction = null;
-  state.nextAction         = null;
+  clearFlowState();
   go(origin);
 }

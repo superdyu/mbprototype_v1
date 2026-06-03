@@ -31,7 +31,7 @@ function restoreNavSnapshot(snap) {
   state.debtAnalyzerIncluded    = snap.debtAnalyzerIncluded   || {};
   state.currentLesson           = snap.currentLesson          || null;
   state.activeQuizIndex         = snap.activeQuizIndex        || 0;
-  state.activeQuizChoice        = snap.activeQuizChoice       || null;
+  state.activeQuizChoice        = snap.activeQuizChoice       ?? null;
   state.activeQuizWrongChoices  = snap.activeQuizWrongChoices || [];
   state.rewardBadgeGains        = snap.rewardBadgeGains       || null;
   state.rewardXp                = snap.rewardXp               || 0;
