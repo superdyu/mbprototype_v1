@@ -7,6 +7,9 @@
 //   activeTabFor(screen) — single source of truth for which bottom tab highlights
 //                          on a given screen; used by renderNav() in nav.js
 
+// Get an element by ID (global helper used in screen event handlers)
+const $ = id => document.getElementById(id);
+
 // HTML-escape a value for safe injection into template strings
 function h(value) {
   return String(value ?? "")

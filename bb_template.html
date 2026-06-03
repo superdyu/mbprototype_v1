@@ -161,17 +161,6 @@
         </div>
 
         <!-- Income vs average thermometer -->
-        <div id="incomeThermo" style="display:none;margin:14px 0 2px">
-          <div class="thermo-wrap">
-            <div class="thermo-track"></div>
-            <div class="thermo-fill" id="incomeThermoFill"></div>
-            <div class="thermo-marker" id="incomeNatl" style="background:var(--muted)"></div>
-            <div class="thermo-marker" id="incomeYou" style="background:var(--accent)"></div>
-            <div class="thermo-lbl" id="incomeNatlLabel" style="color:var(--muted)">Avg</div>
-            <div class="thermo-lbl" id="incomeYouLabel" style="color:var(--accent)">You</div>
-          </div>
-          <div id="incomeSentence" class="helper" style="margin-top:4px;font-size:11px;line-height:1.45"></div>
-        </div>
       </div>
     </section>
 
@@ -263,21 +252,21 @@
 
     <!-- Step 4: Adjust -->
     <section class="step hidden" data-step="4">
-      <!-- Sticky header: metrics + wizard button stay locked -->
-      <div class="sticky-hdr">
-        <div class="summary-grid">
-          <div class="metric">
-            <div class="metric-label">Flexible budget</div>
-            <div class="metric-value" id="finalRemainder">$0</div>
-            <div class="metric-note">After housing + bills</div>
-          </div>
-          <div class="metric">
-            <div class="metric-label">Unallocated</div>
-            <div class="metric-value" id="unallocated">$0</div>
-            <div class="metric-note" id="unallocatedNote">Remaining</div>
-          </div>
+      <!-- Metrics: static at top, below step progress -->
+      <div class="summary-grid" style="margin:0 0 16px;">
+        <div class="metric">
+          <div class="metric-label">Flexible budget</div>
+          <div class="metric-value" id="finalRemainder">$0</div>
+          <div class="metric-note">After housing + bills</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Unallocated</div>
+          <div class="metric-value" id="unallocated">$0</div>
+          <div class="metric-note" id="unallocatedNote">Remaining</div>
         </div>
       </div>
+      <!-- Sticky header: empty scroll anchor -->
+      <div class="sticky-hdr"></div>
       <!-- Warning banner (shown on advance attempt if >5% off) -->
       <div id="adjustWarning" class="warn-card" style="display:none"></div>
       <!-- Scrollable bucket cards -->
@@ -492,64 +481,32 @@ function updateThermometer(zi, hasValidZip) {
   if (!hasValidZip) { tDiv.style.display = "none"; return; }
   tDiv.style.display = "";
 
-  var range = THERMO_MAX - THERMO_MIN;
-  var nPct  = ((100 - THERMO_MIN) / range * 100).toFixed(1); // ~26%
-  var zPct  = Math.max(2, Math.min(98, (zi - THERMO_MIN) / range * 100)).toFixed(1);
+  var barMax = Math.max(zi, 100);
+  var peerPct = (100 / barMax * 100).toFixed(1);
+  var userPct = Math.max(2, Math.min(98, (zi / barMax * 100))).toFixed(1);
 
   var nEl = $("thermoNatl"), zEl = $("thermoZip");
   var fEl = $("thermoFill"), nLbl = $("thermoNatlLabel"), zLbl = $("thermoZipLabel");
 
-  if (nEl)  nEl.style.left = nPct + "%";
-  if (zEl)  zEl.style.left = zPct + "%";
+  if (nEl)  nEl.style.left = peerPct + "%";
+  if (zEl)  zEl.style.left = userPct + "%";
 
-  var fLeft  = Math.min(+nPct, +zPct);
-  var fWidth = Math.abs(+zPct - +nPct);
+  var fLeft  = Math.min(+peerPct, +userPct);
+  var fWidth = Math.abs(+userPct - +peerPct);
   if (fEl) {
     fEl.style.left  = fLeft + "%";
     fEl.style.width = fWidth + "%";
     fEl.style.background = zi >= 100 ? "var(--accent)" : "var(--warn)";
   }
-  if (nLbl) nLbl.style.left = nPct + "%";
+  if (nLbl) nLbl.style.left = peerPct + "%";
   if (zLbl) {
-    zLbl.style.left = zPct + "%";
+    zLbl.style.left = userPct + "%";
     var diff = Math.round(zi - 100);
     zLbl.textContent = diff > 0 ? "+" + diff + "% vs avg" : (diff < 0 ? diff + "% vs avg" : "at avg");
     zLbl.style.color = zi > 100 ? "var(--accent)" : (zi < 100 ? "var(--warn)" : "var(--muted)");
   }
 }
 
-function updateIncomeThermometer(inc) {
-  var tDiv = $("incomeThermo");
-  if (!tDiv) return;
-
-  if (inc <= 0) { tDiv.style.display = "none"; return; }
-  tDiv.style.display = "";
-
-  var range = INC_MAX - INC_MIN;
-  var nPct  = ((AVG_INC - INC_MIN) / range * 100).toFixed(1);
-  var iPct  = Math.max(2, Math.min(98, (inc - INC_MIN) / range * 100)).toFixed(1);
-
-  var nEl = $("incomeNatl"), iEl = $("incomeYou");
-  var fEl = $("incomeThermoFill"), nLbl = $("incomeNatlLabel"), iLbl = $("incomeYouLabel");
-
-  if (nEl)  nEl.style.left = nPct + "%";
-  if (iEl)  iEl.style.left = iPct + "%";
-
-  var fLeft  = Math.min(+nPct, +iPct);
-  var fWidth = Math.abs(+iPct - +nPct);
-  if (fEl) {
-    fEl.style.left  = fLeft + "%";
-    fEl.style.width = fWidth + "%";
-    fEl.style.background = inc >= AVG_INC ? "var(--accent)" : "var(--warn)";
-  }
-  if (nLbl) nLbl.style.left = nPct + "%";
-  if (iLbl) {
-    iLbl.style.left = iPct + "%";
-    var diff = Math.round(inc - AVG_INC);
-    iLbl.textContent = diff > 0 ? "+" + Math.round(diff / AVG_INC * 100) + "%" : (diff < 0 ? Math.round(diff / AVG_INC * 100) + "%" : "at avg");
-    iLbl.style.color = inc > AVG_INC ? "var(--accent)" : (inc < AVG_INC ? "var(--warn)" : "var(--muted)");
-  }
-}
 
 // ── Summary / comparisons ──────────────────────────────────────────────────
 function updateComparisons() {
@@ -559,9 +516,6 @@ function updateComparisons() {
     : "No supported ZIP entered \u2014 using national average cost baseline.";
   if ($("zipSentence")) $("zipSentence").textContent = zipText;
   updateThermometer(zi, !!z);
-
-  var inc = monthlyIncome();
-  updateIncomeThermometer(inc);
 }
 
 function renderSummary() {
@@ -634,14 +588,16 @@ function renderAdjustBuckets() {
   var totalSliders = BUCKETS.reduce(function(s, b) { return s + (adjustVals[b.key] || 0); }, 0);
   var leftOver = rem - totalSliders;
 
-  // Update sticky header
+  // Update metrics
   if ($("finalRemainder")) $("finalRemainder").textContent = money(rem);
   if ($("unallocated")) {
     $("unallocated").textContent = money(Math.abs(leftOver));
-    $("unallocated").style.color = leftOver < -1 ? "var(--danger)" : (leftOver > 1 ? "var(--warn)" : "");
+    var isNear = leftOver >= 0 && leftOver <= rem * 0.05;
+    $("unallocated").style.color = leftOver < -1 ? "var(--danger)" : (isNear ? "#22c55e" : (leftOver > rem * 0.05 ? "var(--warn)" : ""));
   }
   if ($("unallocatedNote")) {
-    $("unallocatedNote").textContent = leftOver < -1 ? "Over budget" : (Math.abs(leftOver) <= 1 ? "Fully allocated" : "Remaining");
+    var isNear = leftOver >= 0 && leftOver <= rem * 0.05;
+    $("unallocatedNote").textContent = leftOver < -1 ? "Over budget" : (isNear ? "Fully allocated!" : "Remaining");
   }
 
   var html = "";
@@ -679,9 +635,9 @@ function renderAdjustBuckets() {
               'style="width:72px">' +
           '</div>' +
         '</div>' +
-        '<input type="range" min="' + minAmt + '" max="' + maxAmt + '" step="10" value="' + sliderVal + '" ' +
+        '<input type="range" id="adj-slider-' + b.key + '" min="' + minAmt + '" max="' + maxAmt + '" step="1" value="' + sliderVal + '" ' +
           'style="width:100%;margin:10px 0 4px" ' +
-          'oninput="adjustVals[\'' + b.key + '\']=+this.value;renderAdjustBuckets()">' +
+          'oninput="adjustVals[\'' + b.key + '\']=+this.value;syncAdjustInput(\'' + b.key + '\');updateAdjustBucket(\'' + b.key + '\')">' +
         '<div class="slider-labels" style="font-size:11px;color:var(--muted)">' +
           '<span>' + money(minAmt) + '</span>' +
           '<span>avg ' + money(avgAmt) + '</span>' +
@@ -693,7 +649,7 @@ function renderAdjustBuckets() {
             (expanded ? "\u25B2 Close" : "\u25BC Things to include") +
           '</button>' +
         '</div>' +
-        '<div style="text-align:right;margin-top:8px;font-size:11px;color:var(--muted)">' +
+        '<div id="adj-pct-' + b.key + '" style="text-align:right;margin-top:8px;font-size:11px;color:var(--muted)">' +
           Math.round((curAmt / (rem || 1)) * 100) + '% of flexible budget' +
         '</div>' +
         subItemsHtml +
@@ -708,6 +664,33 @@ function adjustAmtBlur(el, key) {
   adjustVals[key] = Math.round(v / 10) * 10;
   el.value = v > 0 ? v.toLocaleString() : "0";
   renderAdjustBuckets();
+}
+
+function syncAdjustInput(key) {
+  var inputEl = document.querySelector('input[type="text"][value*="' + adjustVals[key] + '"]');
+  if (inputEl) inputEl.value = adjustVals[key].toLocaleString();
+}
+
+function updateAdjustBucket(key) {
+  var rem = flexiblePool();
+  var pctEl = document.getElementById('adj-pct-' + key);
+  if (pctEl) pctEl.textContent = Math.round((adjustVals[key] || 0) / (rem || 1) * 100) + '% of flexible budget';
+  updateAdjustHeader();
+}
+
+function updateAdjustHeader() {
+  var rem = flexiblePool();
+  var allocated = Object.keys(adjustVals).reduce(function(s, k) { return s + (adjustVals[k] || 0); }, 0);
+  var leftOver = rem - allocated;
+  var unaEl = $("unallocated");
+  var noteEl = $("unallocatedNote");
+  var isNear = leftOver >= 0 && leftOver <= rem * 0.05;
+  if ($("finalRemainder")) $("finalRemainder").textContent = money(rem);
+  if (unaEl) {
+    unaEl.textContent = money(Math.abs(leftOver));
+    unaEl.style.color = leftOver < -1 ? "var(--danger)" : (isNear ? "#22c55e" : (leftOver > rem * 0.05 ? "var(--warn)" : ""));
+  }
+  if (noteEl) noteEl.textContent = leftOver < -1 ? "Over budget" : (isNear ? "Fully allocated!" : "Remaining");
 }
 
 // ── Adjust: warning + auto-allocate ───────────────────────────────────────
@@ -858,8 +841,9 @@ function next() {
 }
 
 function back() {
-  if (step === 0) { window.parent.postMessage({ type: "bb-back" }, "*"); return; }
-  if (step > 0 && step < 6) { step--; renderStep(); }
+  if (step <= 1) { window.parent.postMessage({ type: "bb-back" }, "*"); return; }
+  step--;
+  renderStep();
 }
 
 function restart() {

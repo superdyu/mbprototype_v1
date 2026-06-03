@@ -77,9 +77,10 @@ function renderMPProfile() {
                 type="button" onclick="editInAboutMe('aboutMe')">Edit</button>
       </div>
       ${name ? `<p class="helper" style="margin-bottom:4px;">${h(name)}</p>` : ""}
-      ${zip  ? `<p class="helper" style="margin-bottom:4px;">ZIP ${h(zip)}${size ? " · " + size + " " + (size === 1 ? "person" : "people") : ""}</p>` : ""}
-      ${income > 0 ? `<p class="helper" style="margin-bottom:4px;">${budgetFmt(income)}/mo income</p>` : ""}
-      ${updated ? `<p class="helper" style="margin-bottom:8px;">Last updated ${h(updated)}</p>` : ""}
+      <div style="font-weight:700;font-size:15px;margin-bottom:4px;">
+        ${zip ? h(zip) : ""}${zip && size ? " – " : ""}${size ? size + " Person" + (size !== 1 ? "s" : "") : ""}${(zip || size) && income > 0 ? " – " : ""}${income > 0 ? budgetFmt(income) + "/mo" : ""}
+      </div>
+      ${updated ? `<p class="helper" style="margin:0 0 8px;">Last updated ${h(updated)}</p>` : ""}
       ${!zip && !income ? `<p class="helper">No profile data yet. <button class="button secondary small" style="margin-left:6px;" type="button" onclick="go('budgetSetup')">Build Budget</button></p>` : ""}
 
       <details style="margin-top:8px;">
@@ -209,14 +210,11 @@ function renderMPBudgetResults(hasBudget) {
       </div>
 
       <!-- Savings thermometer -->
-      <div style="position:relative;height:40px;margin:10px 0 4px;">
-        <div class="thermo-track" style="position:absolute;top:18px;left:0;right:0;height:4px;background:var(--bar);border-radius:2px;"></div>
-        <div class="thermo-fill" style="position:absolute;top:18px;left:0;height:4px;width:${Math.min(100, Math.max(0, peerSavingsPct))}%;background:var(--muted);border-radius:2px;"></div>
-        <div class="thermo-fill" style="position:absolute;top:18px;left:${Math.min(100, Math.max(0, peerSavingsPct))}%;height:4px;width:${Math.abs(savingsPct - peerSavingsPct)}%;background:${savingsPct >= peerSavingsPct ? "var(--accent)" : "var(--warn)"};border-radius:2px;"></div>
-        <div style="position:absolute;top:0;left:${Math.max(2, Math.min(98, peerSavingsPct))}%;font-size:9px;font-weight:700;color:var(--muted);transform:translateX(-50%);white-space:nowrap;">Peers</div>
-        <div style="position:absolute;top:0;left:${Math.max(2, Math.min(98, savingsPct))}%;font-size:9px;font-weight:700;color:${savingsPct >= peerSavingsPct ? "var(--accent)" : "var(--warn)"};transform:translateX(-50%);white-space:nowrap;">You</div>
-      </div>
-      <div class="helper" style="text-align:right;margin-top:4px;font-size:10px;">You save ${savingsPct}% · Peers save ${peerSavingsPct}%</div>
+      ${renderThermometer(Math.max(0, savings), peerSavings, {
+        higherIsBetter: true,
+        userLabel: "You " + savingsPct + "%",
+        peerLabel: "Peers " + peerSavingsPct + "%"
+      })}
 
       <div class="row" style="margin-top:12px;gap:8px;">
         <button class="button secondary small" style="border:1.5px solid var(--accent);color:var(--accent);font-weight:700;"

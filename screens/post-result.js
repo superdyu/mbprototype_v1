@@ -56,13 +56,49 @@ function renderPostResult() {
 
       <h1 class="title" style="font-size:18px;margin-bottom:8px;">How does this feel?</h1>
 
+      <style>
+        #feelingSlider {
+          -webkit-appearance: none;
+          appearance: none;
+          background: transparent;
+          height: 22px;
+          width: 100%;
+        }
+        #feelingSlider::-webkit-slider-runnable-track {
+          background: var(--bar);
+          height: 5px;
+          border-radius: 3px;
+        }
+        #feelingSlider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background: var(--accent);
+          margin-top: -8px;
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        }
+        #feelingSlider::-moz-range-track {
+          background: var(--bar);
+          height: 5px;
+          border-radius: 3px;
+        }
+        #feelingSlider::-moz-range-thumb {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background: var(--accent);
+          border: none;
+        }
+      </style>
+
       <div style="margin-bottom:16px;">
         <input type="range" min="1" max="4" step="1" value="2" id="feelingSlider"
-               style="width:100%;accent-color:var(--accent);cursor:pointer;margin:12px 0 8px"
+               style="width:100%;cursor:pointer;margin:12px 0 8px"
                oninput="updateFeelingDescription()">
         <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:var(--muted);margin-bottom:12px;">
           <span>Worried</span>
-          <span>OK</span>
+          <span>Okay</span>
           <span>Good</span>
           <span>Excited</span>
         </div>
@@ -72,14 +108,15 @@ function renderPostResult() {
         <p class="helper" id="feelingDesc" style="margin:0;font-size:13px;color:var(--text);">It's workable but leaves little breathing room. Some small adjustments could help.</p>
       </div>
 
-      <button class="button primary full" type="button" style="margin-bottom:8px;"
-              onclick="selectReaction(+$('feelingSlider').value)">
-        That's how I feel →
-      </button>
-
-      <div style="text-align:center;">
-        <button class="button secondary full" style="font-size:12px;" type="button"
-                onclick="skipPostResult()">Skip for now</button>
+      <div style="position:sticky;bottom:0;background:var(--screen);padding:12px 0 4px;margin-top:8px;">
+        <button class="button primary full" type="button" style="margin-bottom:8px;"
+                onclick="selectReaction(+$('feelingSlider').value)">
+          That's how I feel →
+        </button>
+        <div style="text-align:center;margin-top:8px;">
+          <button class="button secondary full" style="font-size:12px;" type="button"
+                  onclick="skipPostResult()">Skip for now</button>
+        </div>
       </div>
     </div>
   `;

@@ -40,12 +40,6 @@ function restoreNavSnapshot(snap) {
 
 function go(screen) {
   if (state.screen === screen) { render(); return; }
-  // Auto-redirect to Baby Budget if About Me tapped with empty budget
-  if (screen === "aboutMe" && state.budget.status === "empty") {
-    state.flowOrigin = "aboutMe";
-    state.postResultContext = "budget";
-    screen = "babyBudget";
-  }
   state.screen = screen;
   window.__navLog = [screen, ...window.__navLog].slice(0, 10);
   try { history.pushState(getNavSnapshot(), ''); } catch(e) {}
