@@ -71,11 +71,11 @@ function renderBudgetSetup() {
           </div>` : ""}
         </div>
         <div class="row" style="gap:10px;">
-          <button class="button primary" type="button" onclick="go('babyBudget')">Edit Budget</button>
+          <button class="button primary" type="button" onclick="launchBabyBudget()">Edit Budget</button>
           <button class="button secondary" type="button" onclick="go('myProgress')">See Results</button>
         </div>
       ` : `
-        <button class="button primary full" type="button" onclick="go('babyBudget')">Build Your Budget</button>
+        <button class="button primary full" type="button" onclick="launchBabyBudget()">Build Your Budget</button>
       `}
     </div>
 
@@ -123,9 +123,16 @@ function renderBudgetSetup() {
   `;
 }
 
+function launchBabyBudget() {
+  state.flowOrigin        = state.flowOrigin || "aboutMe";
+  state.postResultContext = "budget";
+  go("babyBudget");
+}
+
 function startMonthlyUpdate() {
   if (state.budget.status === "empty") return;
-  state.flowOrigin = state.flowOrigin || "aboutMe";
+  state.flowOrigin        = state.flowOrigin || "aboutMe";
+  state.postResultContext = "monthlyUpdate";
   go("accountBalances");
 }
 

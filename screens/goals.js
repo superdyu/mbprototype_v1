@@ -149,7 +149,13 @@ function cancelGoalEdit() {
 
 function goBackFromGoals() {
   state.editingGoalId = null;
-  go("aboutMe");
+  const origin = state.flowOrigin;
+  if (origin && origin !== "aboutMe") {
+    state.flowOrigin = null;
+    go(origin);
+  } else {
+    go("aboutMe");
+  }
 }
 
 function saveGoal(goalId) {

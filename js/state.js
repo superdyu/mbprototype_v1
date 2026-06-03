@@ -783,6 +783,13 @@ const state = {
   // Cleared when the flow completes (finish screen returns user here).
   flowOrigin: null,
 
+  // ── Post-result loop context ──────────────────────────────────────────────
+  // Describes what was just completed. Drives the context headline on post-result
+  // screen and the impact-landing destination on the finish screen.
+  // "budget" | "lifestyle" | "monthlyUpdate" | "goal" | null
+  postResultContext: null,
+  postResultTheme: null,   // lifestyle theme key when context === "lifestyle"
+
   // ── Commitments from post-result loop ────────────────────────────────────
   commitments: []  // [{id, text, createdAt, goalId}]
 };
@@ -805,6 +812,8 @@ function resetUserData() {
   state.accountBalances      = [];
   state.commitments          = [];
   state.flowOrigin           = null;
+  state.postResultContext    = null;
+  state.postResultTheme      = null;
   state.editingGoalId        = null;
   render();
 }

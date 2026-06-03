@@ -46,7 +46,17 @@ function go(screen) {
   render();
 }
 
+// Flow entry points that should return to Home when complete.
+// Set flowOrigin so the finish screen knows where to send the user back.
+const FLOW_ENTRY_SCREENS = ["babyBudget", "budgetSetup", "lifestyle", "lifestyleChain", "accountBalances", "debtBalances"];
+
 function taskGo(destination) {
+  if (FLOW_ENTRY_SCREENS.includes(destination)) {
+    state.flowOrigin = "home";
+    if (["babyBudget", "budgetSetup"].includes(destination)) {
+      state.postResultContext = "budget";
+    }
+  }
   go(destination);
 }
 
@@ -300,7 +310,9 @@ window.addEventListener("message", function(e) {
     if (e.data.inputs) state.budget.wizardInputs = e.data.inputs;
     state.budget.status = "complete";
     state.budget.profile.lastUpdated = new Date().toISOString().slice(0, 10);
-    go("myProgress");
+    if (!state.flowOrigin) state.flowOrigin = "aboutMe";
+    state.postResultContext = "budget";
+    go("postResult");
   }
   if (e.data.type === "bb-back") {
     go("budgetSetup");

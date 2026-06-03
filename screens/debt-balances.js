@@ -158,9 +158,10 @@ function checkMonthlyUpdateGap() {
     ? Math.abs((actualMonthlySpend - planMonthlySpend) / planMonthlySpend)
     : 0;
 
+  const totalAcct = acctEntries.reduce(function(s, e) { return s + e.amount; }, 0);
+  const totalDebt = debtEntries.reduce(function(s, e) { return s + e.amount; }, 0);
+
   if (gap > 0.10 && planMonthlySpend > 0) {
-    const totalAcct = acctEntries.reduce(function(s, e) { return s + e.amount; }, 0);
-    const totalDebt = debtEntries.reduce(function(s, e) { return s + e.amount; }, 0);
     state.monthlyUpdateGap = {
       actualMonthlySpend,
       planMonthlySpend,
@@ -173,5 +174,7 @@ function checkMonthlyUpdateGap() {
     state.monthlyUpdateGap = null;
   }
 
-  go("myProgress");
+  if (!state.flowOrigin) state.flowOrigin = "aboutMe";
+  state.postResultContext = "monthlyUpdate";
+  go("postResult");
 }

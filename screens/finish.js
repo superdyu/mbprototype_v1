@@ -2,20 +2,23 @@
 // TAB: None | NAV BAR: Hidden — completion moment
 //
 // PURPOSE
-// Endpoint for any completed About Me input flow. Confirms the action and
-// returns the user to their origin screen (Home, About Me, or My Progress).
+// Endpoint for any completed About Me input flow. Confirms the action, then
+// offers two exits: "See My Progress" (impact landing) and "Back to [origin]".
 //
 // NAVIGATION
-//   Entry: Post-result loop completion; monthly update completion; lifestyle chain save
-//   Exit:  Primary button → state.flowOrigin (or About Me if unknown)
+//   Entry: Post-result loop (accept, review-later, make-goal paths)
+//   Exit:  Primary → My Progress (impact landing per context)
+//          Secondary → state.flowOrigin (Home / About Me / My Progress)
 //
 // PRODUCTION NOTES
-//   state.flowOrigin is cleared after use so the next flow starts fresh.
-//   Outcome detail is derived from what was last completed (budget, lifestyle, goal, update).
+//   Impact landing: budget/monthlyUpdate → My Progress (Budget Results at top).
+//   lifestyle → My Progress (Assumptions Used is section 3, user scrolls).
+//   goal → My Progress (Goals section).
+//   state.flowOrigin and state.postResultContext cleared after use.
 
 function renderFinish() {
   const action    = state.nextAction || null;
-  const reaction  = state.postResultReaction || null;
+  const context   = state.postResultContext || null;
   const origin    = state.flowOrigin || "aboutMe";
   const goals     = state.goals || [];
   const lastGoal  = goals.length > 0 ? goals[0] : null;
@@ -23,12 +26,16 @@ function renderFinish() {
   let detail = "Your changes have been saved.";
   if (action === "make-goal" && lastGoal) {
     detail = `Goal added: "${lastGoal.title}"`;
-  } else if (action === "accept") {
-    detail = "Budget accepted. Keep an eye on your progress.";
+  } else if (context === "budget" && action === "accept") {
+    detail = "Budget accepted. Your results are updated.";
+  } else if (context === "budget") {
+    detail = "Budget saved. Review your results in My Progress.";
+  } else if (context === "lifestyle") {
+    detail = "Lifestyle answers saved. Your assumptions have been updated.";
+  } else if (context === "monthlyUpdate") {
+    detail = "Monthly check-in complete. Results are in My Progress.";
   } else if (action === "review-later") {
     detail = "Noted. Come back whenever you're ready.";
-  } else if (action === "adjust") {
-    detail = "Budget updated. Your results are in My Progress.";
   }
 
   const originLabel = origin === "home"       ? "Home"
@@ -42,19 +49,41 @@ function renderFinish() {
       <p class="subtitle" style="margin-bottom:8px;">Your plan was updated.</p>
       <p class="helper" style="margin-bottom:32px;">${h(detail)}</p>
 
-      <button class="button primary full" type="button" onclick="finishAndReturn()">
-        Back to ${h(originLabel)}
+      <button class="button primary full" type="button" onclick="goToImpactLanding()">
+        See My Progress
       </button>
-      <button class="button secondary full" style="margin-top:10px;" type="button"
-              onclick="go('myProgress')">View My Progress</button>
+      ${origin !== "myProgress" ? `
+        <button class="button secondary full" style="margin-top:10px;" type="button"
+                onclick="finishAndReturn()">
+          Back to ${h(originLabel)}
+        </button>
+      ` : ""}
     </div>
   `;
 }
 
+// Returns the My Progress section most relevant to the just-completed action.
+// All contexts land on myProgress for V1 (single scrollable page);
+// future versions can add anchor/scroll targeting.
+function impactLandingScreen() {
+  return "myProgress";
+}
+
+function goToImpactLanding() {
+  state.flowOrigin       = null;
+  state.postResultContext = null;
+  state.postResultTheme   = null;
+  state.postResultReaction = null;
+  state.nextAction        = null;
+  go("myProgress");
+}
+
 function finishAndReturn() {
   const origin = state.flowOrigin || "aboutMe";
-  state.flowOrigin          = null;
-  state.postResultReaction  = null;
-  state.nextAction          = null;
+  state.flowOrigin        = null;
+  state.postResultContext  = null;
+  state.postResultTheme    = null;
+  state.postResultReaction = null;
+  state.nextAction         = null;
   go(origin);
 }

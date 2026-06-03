@@ -536,7 +536,10 @@ function saveLifestyleChain() {
   state.lifestyleAnswers[theme].lastUpdated = todayISO();
 
   state.lifestyleChainStep = 0;
-  go("myProgress");
+  state.postResultContext   = "lifestyle";
+  state.postResultTheme     = theme;
+  if (!state.flowOrigin) state.flowOrigin = "aboutMe";
+  go("postResult");
 }
 
 // Distribute a new total proportionally across a category's subcategories

@@ -113,6 +113,7 @@ function saveCommitment() {
     });
   }
 
+  state.postResultContext = "goal";
   go("finish");
 }
 
