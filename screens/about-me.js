@@ -33,21 +33,10 @@ function renderAboutMe() {
 
   const goalsCount = (state.goals || []).length;
 
-  const acctLast = state.accountBalances && state.accountBalances.length > 0
-    ? state.accountBalances[state.accountBalances.length - 1].date
-    : null;
-
-  const debtLast = (() => {
-    const debts = (state.budget && state.budget.debts) || [];
-    const entries = (state.accountBalances || []).filter(e => e.type === "debt");
-    return entries.length > 0 ? entries[entries.length - 1].date : null;
-  })();
-
-  function lifestyleStatus(theme) {
-    const la = state.lifestyleAnswers && state.lifestyleAnswers[theme];
-    if (!la || !la.lastUpdated) return "Not started";
-    return "Updated " + la.lastUpdated;
-  }
+  const acctEntries = (state.accountBalances || []).filter(function(e) { return e.type === "account"; });
+  const debtEntries = (state.accountBalances || []).filter(function(e) { return e.type === "debt"; });
+  const acctLast = acctEntries.length > 0 ? acctEntries[acctEntries.length - 1].date : null;
+  const debtLast = debtEntries.length > 0 ? debtEntries[debtEntries.length - 1].date : null;
 
   return `
     <div class="home-header">

@@ -79,6 +79,7 @@ function renderAdmin() {
   if (state.screen === "lesson")        return renderLessonAdmin();
   if (state.screen === "reward")        return renderRewardAdmin();
   if (state.screen === "aboutMe")       return renderAboutMeAdmin();
+  if (state.screen === "analysis")      return renderAboutMeAdmin();   // legacy history redirect
   if (state.screen === "budgetSetup")   return renderBudgetAdmin();
   if (state.screen === "babyBudget")    return renderBabyBudgetAdmin();
   if (state.screen === "budgetCategory") return renderBudgetCategoryAdmin();

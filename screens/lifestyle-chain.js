@@ -314,11 +314,23 @@ function renderLifestyleChainReview(theme) {
   const themeInfo = (LIFESTYLE_THEMES || []).find(t => t.key === theme) || { icon: "✦", label: theme };
   const bucketKey = LIFESTYLE_PARENT_BUCKET[theme];
   const cat       = bucketKey && state.budget.categories
-    ? state.budget.categories.find(c => c.key === bucketKey)
+    ? state.budget.categories.find(function(c) { return c.key === bucketKey; })
     : null;
-  const originalTotal = cat ? cat.amount : 0;
-  const newTotal      = derived.total;
-  const diff          = newTotal - originalTotal;
+
+  // Seed sub-sliders from derived values on first entry.
+  // Use Object.keys length to detect a freshly-created (not yet seeded) object —
+  // avoids re-seeding when all derived amounts legitimately happen to be 0.
+  if (!state.lifestyleSubSliders) state.lifestyleSubSliders = {};
+  if (!state.lifestyleSubSliders[theme] || Object.keys(state.lifestyleSubSliders[theme]).length === 0) {
+    state.lifestyleSubSliders[theme] = {};
+    subItems.forEach(function(item, i) { state.lifestyleSubSliders[theme][item] = derived.amounts[i] || 0; });
+  }
+  const currentSubs = state.lifestyleSubSliders[theme];
+
+  const currentAmounts = subItems.map(function(item) { return currentSubs[item] || 0; });
+  const currentTotal   = currentAmounts.reduce(function(a, b) { return a + b; }, 0);
+  const originalTotal  = cat ? budgetCategoryTotal(cat) : 0;
+  const diff           = currentTotal - originalTotal;
 
   return `
     <div class="card" style="margin-bottom:14px;">
@@ -347,16 +359,16 @@ function renderLifestyleChainReview(theme) {
       <div class="section-title" style="margin-bottom:10px;">Sub-category breakdown</div>
       <p class="helper" style="margin-bottom:12px;">Adjust these if they don't feel right.</p>
 
-      ${subItems.map((item, i) => {
-        const currentVal = derived.amounts[i] || 0;
+      ${subItems.map(function(item, i) {
+        const val = currentAmounts[i] || 0;
         return `
           <div style="margin-bottom:12px;">
             <div class="row" style="margin-bottom:4px;">
               <span class="helper" style="font-weight:700;">${h(item)}</span>
-              <span style="font-weight:700;">${budgetFmt(currentVal)}</span>
+              <span style="font-weight:700;">${budgetFmt(val)}</span>
             </div>
-            <input type="range" min="0" max="${Math.max(500, newTotal)}" step="10"
-                   value="${currentVal}"
+            <input type="range" min="0" max="${Math.max(500, currentTotal)}" step="10"
+                   value="${val}"
                    oninput="updateSubSlider('${h(theme)}', ${i}, parseInt(this.value))"
                    style="width:100%;">
           </div>
@@ -365,7 +377,7 @@ function renderLifestyleChainReview(theme) {
 
       <div class="row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line);">
         <span style="font-weight:850;">Total</span>
-        <span id="subSliderTotal" style="font-weight:850;">${budgetFmt(newTotal)}</span>
+        <span id="subSliderTotal" style="font-weight:850;">${budgetFmt(currentTotal)}</span>
       </div>
     </div>
 
@@ -396,7 +408,7 @@ function deriveSubSliders(theme) {
   const cat       = bucketKey && state.budget.categories
     ? state.budget.categories.find(c => c.key === bucketKey)
     : null;
-  const parentAmount = cat ? cat.amount : 200;
+  const parentAmount = cat ? budgetCategoryTotal(cat) : 200;
 
   let totalBiasSum   = 0;
   let totalBiasCount = 0;
@@ -488,33 +500,33 @@ function cancelLifestyleChain() {
 
 function saveLifestyleChain() {
   const theme    = state.selectedLifestyleTheme || "food";
-  const derived  = deriveSubSliders(theme);
   const subItems = LIFESTYLE_SUB_ITEMS[theme] || [];
 
-  // Write sub-slider amounts
+  // Sub-sliders already seeded + adjusted on review screen — read current values
   if (!state.lifestyleSubSliders) state.lifestyleSubSliders = {};
   if (!state.lifestyleSubSliders[theme]) state.lifestyleSubSliders[theme] = {};
-  subItems.forEach(function(item, i) {
-    state.lifestyleSubSliders[theme][item] = derived.amounts[i] || 0;
-  });
+  const currentSubs = state.lifestyleSubSliders[theme];
+  const newTotal = subItems.reduce(function(s, item) { return s + (currentSubs[item] || 0); }, 0);
 
-  // Update parent budget category total
-  const bucketKey    = LIFESTYLE_PARENT_BUCKET[theme];
-  const cat          = bucketKey && state.budget.categories
-    ? state.budget.categories.find(function(c) { return c.key === bucketKey; })
-    : null;
+  // Only update budget if it has been built
+  if (state.budget.status !== "empty" && newTotal > 0) {
+    const bucketKey = LIFESTYLE_PARENT_BUCKET[theme];
+    const cat       = bucketKey && state.budget.categories
+      ? state.budget.categories.find(function(c) { return c.key === bucketKey; })
+      : null;
 
-  if (cat) {
-    // For lifestyle bucket, sum ALL lifestyle themes' sub-sliders
-    if (bucketKey === "lifestyle") {
-      const lifestyleThemes = ["entertainment", "shopping", "other"];
-      const total = lifestyleThemes.reduce(function(sum, t) {
-        const subs = state.lifestyleSubSliders[t] || {};
-        return sum + Object.values(subs).reduce(function(a, b) { return a + b; }, 0);
-      }, 0);
-      cat.amount = total || cat.amount;
-    } else {
-      cat.amount = derived.total;
+    if (cat) {
+      let targetTotal = newTotal;
+      // For lifestyle bucket, combine all three lifestyle themes' sub-slider totals
+      if (bucketKey === "lifestyle") {
+        const lifestyleThemes = ["entertainment", "shopping", "other"];
+        targetTotal = lifestyleThemes.reduce(function(sum, t) {
+          const subs = state.lifestyleSubSliders[t] || {};
+          return sum + Object.values(subs).reduce(function(a, b) { return a + b; }, 0);
+        }, 0) || newTotal;
+      }
+      // Distribute targetTotal proportionally across existing subcategories
+      distributeToSubcategories(cat, targetTotal);
     }
   }
 
@@ -525,4 +537,25 @@ function saveLifestyleChain() {
 
   state.lifestyleChainStep = 0;
   go("myProgress");
+}
+
+// Distribute a new total proportionally across a category's subcategories
+function distributeToSubcategories(cat, newTotal) {
+  if (!cat || !cat.subcategories || newTotal <= 0) return;
+  const currentTotal = budgetCategoryTotal(cat);
+  if (currentTotal <= 0) {
+    // Equal split if no existing distribution
+    const even = Math.round(newTotal / cat.subcategories.length / 10) * 10;
+    cat.subcategories.forEach(function(sc) { sc.amount = even; });
+    return;
+  }
+  let allocated = 0;
+  cat.subcategories.forEach(function(sc, i) {
+    if (i < cat.subcategories.length - 1) {
+      sc.amount = Math.max(0, Math.round(newTotal * (sc.amount / currentTotal) / 10) * 10);
+      allocated += sc.amount;
+    } else {
+      sc.amount = Math.max(0, newTotal - allocated);
+    }
+  });
 }

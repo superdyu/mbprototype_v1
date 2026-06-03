@@ -142,30 +142,32 @@ function skipMonthlyUpdate() {
 }
 
 function checkMonthlyUpdateGap() {
-  const acctEntries = (state.accountBalances || []).filter(e => e.type === "account");
-  const debtEntries = (state.accountBalances || []).filter(e => e.type === "debt");
+  const acctEntries = (state.accountBalances || []).filter(function(e) { return e.type === "account"; });
+  const debtEntries = (state.accountBalances || []).filter(function(e) { return e.type === "debt"; });
   if (acctEntries.length === 0 && debtEntries.length === 0) {
     skipMonthlyUpdate();
     return;
   }
 
-  const totalAcct = acctEntries.reduce((s, e) => s + e.amount, 0);
-  const totalDebt = debtEntries.reduce((s, e) => s + e.amount, 0);
-  const netActual = totalAcct - totalDebt;
+  // Compare actual monthly spend (from 3-month balance trend) against plan total.
+  // Both are monthly figures — comparable units. Budget signal uses the same logic.
+  const actualMonthlySpend = budgetMonthlyNetSpend();
+  const planMonthlySpend   = budgetPlanTotal();
 
-  // Estimate expected net from budget (3-month checking balance trend or income - plan)
-  const income    = budgetMonthlyIncome();
-  const planTotal = budgetPlanTotal();
-  const netExpected = income > 0 ? income - planTotal : 0;
+  const gap = planMonthlySpend > 0
+    ? Math.abs((actualMonthlySpend - planMonthlySpend) / planMonthlySpend)
+    : 0;
 
-  const gap = netExpected > 0 ? Math.abs((netActual - netExpected) / netExpected) : 0;
-
-  if (gap > 0.10 && netExpected > 0) {
+  if (gap > 0.10 && planMonthlySpend > 0) {
+    const totalAcct = acctEntries.reduce(function(s, e) { return s + e.amount; }, 0);
+    const totalDebt = debtEntries.reduce(function(s, e) { return s + e.amount; }, 0);
     state.monthlyUpdateGap = {
-      netActual,
-      netExpected,
-      gapPct: Math.round(gap * 100),
-      direction: netActual < netExpected ? "below" : "above"
+      actualMonthlySpend,
+      planMonthlySpend,
+      gapPct:    Math.round(gap * 100),
+      direction: actualMonthlySpend > planMonthlySpend ? "over" : "under",
+      loggedAcct: totalAcct,
+      loggedDebt: totalDebt
     };
   } else {
     state.monthlyUpdateGap = null;

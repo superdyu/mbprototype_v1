@@ -97,7 +97,6 @@ function renderMPBudgetResults(hasBudget) {
   const income    = budgetMonthlyIncome();
   const planTotal = budgetPlanTotal();
   const remaining = income - planTotal;
-  const signal    = budgetSignal();
 
   return `
     <div class="card" style="margin-bottom:12px;">
