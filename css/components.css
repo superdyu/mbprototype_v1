@@ -341,11 +341,12 @@
 }
 
 .admin-card {
-  background: #fff;
+  background: var(--card);
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 14px;
   margin-bottom: 14px;
+  color: var(--text);
 }
 
 .admin-card-title {
@@ -360,6 +361,12 @@
   border-radius: 18px;
   padding: 14px;
   margin-bottom: 10px;
+}
+
+.item-card:hover,
+.task-card:hover {
+  background: var(--soft);
+  cursor: pointer;
 }
 
 .stage-card {
@@ -394,6 +401,11 @@
   margin: 0 0 10px;
 }
 
+/* Semantic typography helpers — use instead of inline font-size/weight styles */
+.label    { font-size: 10px; font-weight: 850; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.stat-val { font-size: 13px; font-weight: 700; }
+.caption  { font-size: 11px; color: var(--muted); }
+
 .helper {
   font-size: 12px;
   color: var(--muted);
@@ -427,15 +439,32 @@
   white-space: nowrap;
 }
 
+/* .primary is an alias for the default button style — explicit intent marker */
+.button.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
 .button.secondary {
   border-color: var(--line);
   background: var(--card);
   color: var(--text);
 }
 
+/* Compact button variant for inline actions inside cards */
+.button.small {
+  font-size: 11px;
+  padding: 5px 10px;
+}
+
 .button.full {
   width: 100%;
 }
+
+.button:not(:disabled):hover        { filter: brightness(1.06); }
+.button.secondary:not(:disabled):hover { filter: none; background: var(--soft); }
+.button:not(:disabled):active       { opacity: .86; }
 
 .button:disabled {
   opacity: .55;

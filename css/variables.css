@@ -30,6 +30,16 @@
   --tier-copper: #b87333;
 }
 
+/* ─── Spacing scale ──────────────────────────────────────────────────────────
+   Use these tokens in new code. Existing inline styles are migrated gradually. */
+:root {
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+}
+
 .dark-mode {
   --bg: #111318;
   --screen: #1e2128;

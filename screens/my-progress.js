@@ -71,14 +71,14 @@ function renderMPProfile() {
     <div class="card" style="margin-bottom:12px;">
       <div class="row" style="margin-bottom:8px;">
         <div class="section-title" style="margin:0;">Your Money Profile</div>
-        <button class="button secondary" style="font-size:11px;padding:5px 10px;"
+        <button class="button secondary small"
                 type="button" onclick="editInAboutMe('aboutMe')">Edit in About Me</button>
       </div>
       ${name ? `<p class="helper" style="margin-bottom:4px;">${h(name)}</p>` : ""}
       ${zip  ? `<p class="helper" style="margin-bottom:4px;">ZIP ${h(zip)}${size ? " · " + size + " " + (size === 1 ? "person" : "people") : ""}</p>` : ""}
       ${income > 0 ? `<p class="helper" style="margin-bottom:4px;">${budgetFmt(income)}/mo income</p>` : ""}
       ${updated ? `<p class="helper" style="margin-bottom:0;">Last updated ${h(updated)}</p>` : ""}
-      ${!zip && !income ? `<p class="helper">No profile data yet. <button class="button secondary" style="font-size:11px;padding:4px 10px;margin-left:6px;" type="button" onclick="go('budgetSetup')">Build Budget</button></p>` : ""}
+      ${!zip && !income ? `<p class="helper">No profile data yet. <button class="button secondary small" style="margin-left:6px;" type="button" onclick="go('budgetSetup')">Build Budget</button></p>` : ""}
     </div>
   `;
 }
@@ -90,7 +90,7 @@ function renderMPBudgetResults(hasBudget) {
         <div class="row" style="margin-bottom:8px;">
           <div class="section-title" style="margin:0;">Budget Results</div>
         </div>
-        <p class="helper">No budget yet. <button class="button secondary" style="font-size:11px;padding:4px 10px;margin-left:6px;" type="button" onclick="go('budgetSetup')">Build Budget</button></p>
+        <p class="helper">No budget yet. <button class="button secondary small" style="margin-left:6px;" type="button" onclick="go('budgetSetup')">Build Budget</button></p>
       </div>
     `;
   }
@@ -103,21 +103,21 @@ function renderMPBudgetResults(hasBudget) {
     <div class="card" style="margin-bottom:12px;">
       <div class="row" style="margin-bottom:12px;">
         <div class="section-title" style="margin:0;">Budget Results</div>
-        <button class="button secondary" style="font-size:11px;padding:5px 10px;"
+        <button class="button secondary small"
                 type="button" onclick="editInAboutMe('budgetSetup')">Update Budget</button>
       </div>
 
-      <div class="summary-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div class="summary-grid" style="margin-bottom:14px;">
         <div>
-          <div class="helper" style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;">Income</div>
+          <div class="label" style="margin-bottom:2px;">Income</div>
           <div style="font-size:18px;font-weight:850;">${budgetFmt(income)}</div>
         </div>
         <div>
-          <div class="helper" style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;">Plan</div>
+          <div class="label" style="margin-bottom:2px;">Plan</div>
           <div style="font-size:18px;font-weight:850;">${budgetFmt(planTotal)}</div>
         </div>
         <div>
-          <div class="helper" style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;">Left</div>
+          <div class="label" style="margin-bottom:2px;">Left</div>
           <div style="font-size:18px;font-weight:850;color:${remaining >= 0 ? "var(--accent)" : "var(--danger)"};">${budgetFmt(remaining)}</div>
         </div>
       </div>
@@ -148,9 +148,9 @@ function renderMPBudgetResults(hasBudget) {
       ` : ""}
 
       <div class="row" style="margin-top:12px;">
-        <button class="button secondary" style="font-size:11px;padding:5px 10px;"
+        <button class="button secondary small"
                 type="button" onclick="goDebtAnalyzer()">Debt Analysis</button>
-        <button class="button secondary" style="font-size:11px;padding:5px 10px;"
+        <button class="button secondary small"
                 type="button" onclick="goMyDebts(null)">Manage Debts</button>
       </div>
     </div>
@@ -209,7 +209,7 @@ function renderMPAssumptions() {
     <div class="card" style="margin-bottom:12px;">
       <div class="row" style="margin-bottom:8px;">
         <div class="section-title" style="margin:0;">Assumptions Used</div>
-        <button class="button secondary" style="font-size:11px;padding:5px 10px;"
+        <button class="button secondary small"
                 type="button" onclick="editInAboutMe('lifestyle')">Update Lifestyle</button>
       </div>
 
@@ -231,7 +231,7 @@ function renderMPAssumptions() {
         `).join("")}
       ` : `
         <p class="helper">No lifestyle data yet.
-          <button class="button secondary" style="font-size:11px;padding:4px 10px;margin-left:6px;"
+          <button class="button secondary small" style="margin-left:6px;"
                   type="button" onclick="editInAboutMe('lifestyle')">Add Lifestyle</button>
         </p>
       `}
@@ -284,12 +284,12 @@ function renderMPGoals() {
     <div class="card" style="margin-bottom:12px;">
       <div class="row" style="margin-bottom:8px;">
         <div class="section-title" style="margin:0;">Goals</div>
-        <button class="button secondary" style="font-size:11px;padding:5px 10px;"
+        <button class="button secondary small"
                 type="button" onclick="editInAboutMe('goals')">Edit Goals</button>
       </div>
 
       ${goals.length === 0 ? `
-        <p class="helper">No goals yet. <button class="button secondary" style="font-size:11px;padding:4px 10px;margin-left:6px;" type="button" onclick="editInAboutMe('goals')">Add Goal</button></p>
+        <p class="helper">No goals yet. <button class="button secondary small" style="margin-left:6px;" type="button" onclick="editInAboutMe('goals')">Add Goal</button></p>
       ` : goals.map(g => `
         <div style="margin-bottom:12px;">
           <div class="task-title" style="font-size:13px;">${h(g.title)}</div>

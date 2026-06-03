@@ -113,7 +113,8 @@ body {
 .admin-header {
   padding: 16px 18px;
   border-bottom: 1px solid var(--line);
-  background: #fff;
+  background: var(--card);
+  color: var(--text);
 }
 
 .admin-title {
@@ -204,5 +205,19 @@ body {
   }
   #adminExpandTab {
     display: none !important;
+  }
+}
+
+/* ─── Responsive grid utility ────────────────────────────────────────────────
+   .summary-grid: 3-col by default, collapses to 2-col on very narrow screens */
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 400px) {
+  .summary-grid {
+    grid-template-columns: 1fr 1fr;
   }
 }
