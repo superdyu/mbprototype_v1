@@ -17,9 +17,18 @@ function adminSubtitle() {
   if (state.screen === "topic")          return "Override lesson statuses for this badge.";
   if (state.screen === "reward-preview") return "Lesson preview — read-only. Edit content in Learn admin.";
   if (state.screen === "lesson")         return "Toggle stage style, seek to sentence for testing.";
-  if (state.screen === "analysis")       return "Analysis tab — budget dashboard and debt analysis.";
+  if (state.screen === "aboutMe")        return "About Me tab — input hub for budget, lifestyle, goals, balances.";
+  if (state.screen === "goals")          return "Goals editor — create, edit, delete goals.";
+  if (state.screen === "budgetSetup")    return "Budget setup — income, housing, ZIP, major bills.";
   if (state.screen === "budgetCategory") return "Intentional toggle, target spend, sub-category amounts.";
-  if (state.screen === "goals")          return "Adjust sample goal and milestone progress.";
+  if (state.screen === "myProgress")     return "My Progress tab — output hub for profile, results, comparisons, goals.";
+  if (state.screen === "lifestyle")      return "Lifestyle theme selection — 5 themes.";
+  if (state.screen === "lifestyleChain") return "Lifestyle question chain — answers drive budget sub-sliders.";
+  if (state.screen === "accountBalances") return "Account balance snapshots — point-in-time entries.";
+  if (state.screen === "debtBalances")   return "Debt balance snapshots — point-in-time entries.";
+  if (state.screen === "postResult")     return "Post-result reaction prompt.";
+  if (state.screen === "nextAction")     return "Next action selection.";
+  if (state.screen === "commitment")     return "Commitment creation.";
   if (state.screen === "marketplace")    return "Adjust marketplace preferences and offers.";
   if (state.screen === "reward")         return "Last reward output (read-only).";
   if (state.screen === "myDebts")        return "Manage debt instruments, add or remove entries.";
@@ -29,9 +38,20 @@ function adminSubtitle() {
 
 function renderScreen() {
   if (state.screen === "home")              return renderHome();
-  if (state.screen === "analysis")          return renderAnalysis();
+  if (state.screen === "aboutMe")           return renderAboutMe();
+  if (state.screen === "budgetSetup")       return renderBudgetSetup();
   if (state.screen === "babyBudget")        return renderBabyBudget();
-  if (state.screen === "goals")             return renderGoals();
+  if (state.screen === "myProgress")        return renderMyProgress();
+  if (state.screen === "lifestyle")         return renderLifestyle();
+  if (state.screen === "lifestyleChain")    return renderLifestyleChain();
+  if (state.screen === "accountBalances")   return renderAccountBalances();
+  if (state.screen === "debtBalances")      return renderDebtBalances();
+  if (state.screen === "postResult")        return renderPostResult();
+  if (state.screen === "nextAction")        return renderNextAction();
+  if (state.screen === "commitment")        return renderCommitment();
+  if (state.screen === "finish")            return renderFinish();
+  if (state.screen === "goals")             return renderGoals();      // About Me → Goals (input/edit)
+  if (state.screen === "analysis")          return renderAboutMe();    // legacy redirect
   if (state.screen === "learn")             return renderLearn();
   if (state.screen === "topic")             return renderTopic();
   if (state.screen === "reward-preview")    return renderRewardPreview();
@@ -51,13 +71,15 @@ function renderScreen() {
 
 function renderAdmin() {
   if (state.screen === "home")          return renderHomeAdmin();
+  if (state.screen === "goals")         return renderGoalsAdmin();
   if (state.screen === "learn")         return renderLearnAdmin();
   if (state.screen === "topic")         return renderTopicAdmin();
-  if (state.screen === "goals")         return renderGoalsAdmin();
+  if (state.screen === "myProgress")    return renderMyProgressAdmin();
   if (state.screen === "marketplace")   return renderMarketplaceAdmin();
   if (state.screen === "lesson")        return renderLessonAdmin();
   if (state.screen === "reward")        return renderRewardAdmin();
-  if (state.screen === "analysis")      return renderBudgetAdmin();
+  if (state.screen === "aboutMe")       return renderAboutMeAdmin();
+  if (state.screen === "budgetSetup")   return renderBudgetAdmin();
   if (state.screen === "babyBudget")    return renderBabyBudgetAdmin();
   if (state.screen === "budgetCategory") return renderBudgetCategoryAdmin();
   if (state.screen === "myDebts")       return renderMyDebtsAdmin();
@@ -70,8 +92,8 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="go(this.value)">
-          ${["home","analysis","babyBudget","goals","learn","topic","lesson","quiz",
-             "simulation","marketplace","reward","settings"].map(s => `
+          ${["home","aboutMe","budgetSetup","babyBudget","myProgress","lifestyle",
+             "learn","topic","lesson","quiz","simulation","marketplace","reward","settings"].map(s => `
             <option value="${s}" ${state.screen === s ? "selected" : ""}>${s}</option>
           `).join("")}
         </select>

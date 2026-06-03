@@ -34,11 +34,20 @@ function debouncedRender() {
 
 // Map a screen name to its active bottom-tab identifier
 function activeTabFor(screen) {
-  if (screen === "babyBudget")        return "analysis";
-  if (screen === "budgetCategory")    return "analysis";
-  if (screen === "myDebts")           return "analysis";
-  if (screen === "debtAnalyzer")      return "analysis";
+  // About Me sub-screens
+  if (screen === "goals")             return "aboutMe";  // goals input editor lives in About Me
+  if (screen === "babyBudget")        return "aboutMe";
+  if (screen === "budgetSetup")       return "aboutMe";
+  if (screen === "budgetCategory")    return "aboutMe";
+  if (screen === "myDebts")           return "aboutMe";
+  if (screen === "debtAnalyzer")      return "aboutMe";
+  if (screen === "lifestyle")         return "aboutMe";
+  if (screen === "lifestyleChain")    return "aboutMe";
+  if (screen === "accountBalances")   return "aboutMe";
+  if (screen === "debtBalances")      return "aboutMe";
+  // Marketplace sub-screen
   if (screen === "marketplaceDetail") return "marketplace";
+  // Learn sub-screens
   if (["topic", "reward-preview", "lesson", "quiz", "simulation"].includes(screen)) return "learn";
   return screen;
 }

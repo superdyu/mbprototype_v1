@@ -16,9 +16,11 @@
 // the per-task destination picker in the home admin panel.
 
 const destinations = [
-  ["analysis",       "Analysis"],
+  ["aboutMe",        "About Me"],
+  ["budgetSetup",    "Budget Setup"],
   ["babyBudget",     "Baby Budget"],
-  ["goals",          "Goals"],
+  ["myProgress",     "My Progress"],
+  ["lifestyle",      "Lifestyle"],
   ["learn",          "Learn"],
   ["topic",          "Topic Page"],
   ["reward-preview", "Reward Preview"],
@@ -74,7 +76,7 @@ const state = {
       description: "Track how close you are to your first savings milestone.",
       cta: "Review",
       tab: "other",
-      destination: "goals",
+      destination: "myProgress",
       completed: true
     }
   ],
@@ -745,7 +747,40 @@ const state = {
         expanded: false
       }
     ]
-  }
+  },
+
+  // ── Lifestyle answers and derived sub-sliders ─────────────────────────────
+  // answers: per theme, keyed by questionIndex → answerIndex (0–3)
+  // lastUpdated: ISO date string or null
+  lifestyleAnswers: {
+    food:          { answers: {}, lastUpdated: null },
+    entertainment: { answers: {}, lastUpdated: null },
+    travel:        { answers: {}, lastUpdated: null },
+    shopping:      { answers: {}, lastUpdated: null },
+    other:         { answers: {}, lastUpdated: null }
+  },
+
+  // Sub-slider amounts per theme, derived from lifestyle answers + user-adjustable.
+  // Food drives Food & Daily bucket; entertainment+shopping+other drive Lifestyle bucket;
+  // travel drives Getting Around bucket.
+  lifestyleSubSliders: {
+    food:          { "Groceries": 0, "Dining Out": 0, "Coffee & Drinks": 0, "Delivery": 0, "Household Supplies": 0 },
+    entertainment: { "Entertainment": 0, "Streaming & Subs": 0, "Hobbies & Travel": 0, "Personal Care": 0 },
+    travel:        { "Gas & Charging": 0, "Rideshare & Parking": 0, "Bus & Train": 0, "Car Insurance (flexible)": 0 },
+    shopping:      { "Clothing & Shoes": 0, "Gifts & Giving": 0 },
+    other:         { "Personal Care": 0, "Pets & Misc": 0 }
+  },
+
+  // ── Point-in-time balance snapshots (for monthly tracking) ────────────────
+  accountBalances: [],  // [{id, account, amount, date}]
+
+  // ── Flow origin tracking (for post-flow return navigation) ────────────────
+  // Set to the screen key where a multi-step input flow began.
+  // Cleared when the flow completes (finish screen returns user here).
+  flowOrigin: null,
+
+  // ── Commitments from post-result loop ────────────────────────────────────
+  commitments: []  // [{id, text, createdAt, goalId}]
 };
 
 // Wipes user-entered profile data and re-renders. Called from admin panel.
@@ -761,5 +796,10 @@ function resetUserData() {
   state.rewardBadgeGains     = null;
   state.rewardXp             = 0;
   state.rewardLessonTitle    = "";
+  state.lifestyleAnswers     = { food: { answers: {}, lastUpdated: null }, entertainment: { answers: {}, lastUpdated: null }, travel: { answers: {}, lastUpdated: null }, shopping: { answers: {}, lastUpdated: null }, other: { answers: {}, lastUpdated: null } };
+  state.lifestyleSubSliders  = { food: { "Groceries": 0, "Dining Out": 0, "Coffee & Drinks": 0, "Delivery": 0, "Household Supplies": 0 }, entertainment: { "Entertainment": 0, "Streaming & Subs": 0, "Hobbies & Travel": 0, "Personal Care": 0 }, travel: { "Gas & Charging": 0, "Rideshare & Parking": 0, "Bus & Train": 0, "Car Insurance (flexible)": 0 }, shopping: { "Clothing & Shoes": 0, "Gifts & Giving": 0 }, other: { "Personal Care": 0, "Pets & Misc": 0 } };
+  state.accountBalances      = [];
+  state.commitments          = [];
+  state.flowOrigin           = null;
   render();
 }

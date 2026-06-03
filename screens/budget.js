@@ -308,7 +308,7 @@ function renderBudgetGoalsMini() {
   return `
     <div class="budget-goals-mini">
       ${milestones.map(m => `
-        <div class="budget-goals-row" onclick="event.stopPropagation();go('goals')">
+        <div class="budget-goals-row" onclick="event.stopPropagation();go('myProgress')">
           <span>${h(m.title)}</span>
           <span style="font-weight:850;">${m.progress}%</span>
         </div>

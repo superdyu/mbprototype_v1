@@ -934,3 +934,74 @@
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/* ─── Lifestyle question chain ────────────────────────────────────────────────
+   Ported from bb_template.html. Used by lifestyle-chain.js.
+*/
+.lifestyle-img-box {
+  width: 100%;
+  height: 120px;
+  background: var(--progress-bg, var(--soft));
+  border-radius: 16px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lifestyle-img-section {
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  font-size: 11px;
+  font-weight: 850;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.lifestyle-img-coords {
+  font-size: 22px;
+  font-weight: 850;
+  color: var(--accent);
+  letter-spacing: .2em;
+}
+.lifestyle-img-subprog {
+  position: absolute;
+  bottom: 10px;
+  right: 14px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.tier-pill-row {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 10px;
+  flex-wrap: wrap;
+}
+.tier-pill {
+  flex: 1;
+  min-width: 60px;
+  text-align: center;
+  padding: 9px 6px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--card);
+  -webkit-user-select: none;
+  user-select: none;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.tier-pill.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.tier-selected-desc {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.45;
+  padding: 9px 11px;
+  background: var(--soft);
+  border-radius: 10px;
+}

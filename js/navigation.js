@@ -257,8 +257,9 @@ function completeLesson() {
 //
 // Tab → screens mapping (activeTabFor() in utils.js):
 //   home        → home
-//   analysis    → analysis, babyBudget, budgetCategory, myDebts, debtAnalyzer
-//   goals       → goals
+//   aboutMe     → aboutMe, budgetSetup, babyBudget, budgetCategory, myDebts, debtAnalyzer,
+//                 lifestyle, lifestyleChain, accountBalances, debtBalances
+//   myProgress  → myProgress
 //   learn       → learn, topic, reward-preview, lesson, quiz, simulation
 //   marketplace → marketplace, marketplaceDetail
 //
@@ -268,6 +269,10 @@ function completeLesson() {
 //   quiz          — full-screen question flow; no tab context needed mid-quiz
 //   reward-preview — pre-lesson interstitial; no nav keeps focus on the preview
 //   reward        — post-quiz celebration overlay; nav bar would break the moment
+//   lifestyleChain — full-screen question flow; no tab context needed mid-chain
+//   postResult     — post-input reaction prompt; keep focus on the prompt
+//   nextAction     — next action selection; keep focus on the choice
+//   commitment     — commitment creation; keep focus on the input
 //
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 // navigation.js loads last in the script order (after render.js), so render()
@@ -295,9 +300,9 @@ window.addEventListener("message", function(e) {
     if (e.data.inputs) state.budget.wizardInputs = e.data.inputs;
     state.budget.status = "complete";
     state.budget.profile.lastUpdated = new Date().toISOString().slice(0, 10);
-    go("analysis");
+    go("myProgress");
   }
   if (e.data.type === "bb-back") {
-    go("analysis");
+    go("budgetSetup");
   }
 });
