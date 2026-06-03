@@ -112,7 +112,7 @@ function render() {
   // Clear lesson player timer before destroying the DOM it references.
   // Capture play state first so lpMountHook can resume if a re-render interrupted mid-play.
   const lpWasPlaying = _lpPlaying;
-  if (_lpTimer) { clearInterval(_lpTimer); _lpTimer = null; _lpPlaying = false; }
+  lpStopPlayback();
 
   screenRoot.classList.toggle("baby-budget-mode", state.screen === "babyBudget");
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");

@@ -427,6 +427,7 @@ function deriveSubSliders(theme) {
   });
 
   if (totalBiasCount === 0) {
+    if (subItems.length === 0) return { total: parentAmount, amounts: [] };
     const even = Math.round(parentAmount / subItems.length / 10) * 10;
     return { total: parentAmount, amounts: subItems.map(() => even) };
   }

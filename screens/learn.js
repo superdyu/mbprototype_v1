@@ -58,7 +58,7 @@ function renderSearch() {
               <div class="task-title">
                 <span class="lesson-icon">${l.type === "refresher" ? "↺" : "▶"}</span>${h(l.title)}
               </div>
-              <div class="task-desc" style="margin-top:2px;">${h(l.badges.join(" · "))}</div>
+              <div class="task-desc" style="margin-top:2px;">${h((l.badges || []).join(" · "))}</div>
             </div>
             <button class="button ${l.status === "completed" ? "secondary" : ""}"
                     type="button" onclick="selectLesson('${h(l.id)}')">
@@ -78,7 +78,7 @@ function renderLearn() {
   const suggestedBadge = state.badges.find(b => badgeHasBonus(b.name));
 
   // Previous: first in recentlyActive that is NOT the suggested badge (avoid duplicate)
-  const previousBadge = state.recentlyActive
+  const previousBadge = (state.recentlyActive || [])
     .map(name => state.badges.find(b => b.name === name))
     .filter(b => b && (!suggestedBadge || b.name !== suggestedBadge.name))
     .find(Boolean);

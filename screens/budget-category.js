@@ -13,8 +13,8 @@ const BUDGET_SUB_SPLIT = {
 };
 
 function budgetCatCurrentCat() {
-  return state.budget.categories.find(c => c.key === state.selectedBudgetCategory)
-    || state.budget.categories[0];
+  const cats = (state.budget && state.budget.categories) || [];
+  return cats.find(c => c.key === state.selectedBudgetCategory) || cats[0];
 }
 
 function budgetSubPeerAvg(catKey, subKey) {

@@ -241,6 +241,13 @@ function lpPause() {
   lpUpdatePlayBtn();
 }
 
+// Stops playback and clears the interval. Called by render.js before destroying
+// the lesson DOM so the timer doesn't fire against stale element references.
+function lpStopPlayback() {
+  _lpPlaying = false;
+  if (_lpTimer) { clearInterval(_lpTimer); _lpTimer = null; }
+}
+
 function lpTogglePlay() {
   if (_lpPlaying) lpPause(); else lpPlay();
 }

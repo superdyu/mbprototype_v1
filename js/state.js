@@ -783,8 +783,15 @@ const state = {
   // Describes what was just completed. Drives the context headline on post-result
   // screen and the impact-landing destination on the finish screen.
   // "budget" | "lifestyle" | "monthlyUpdate" | "goal" | null
-  postResultContext: null,
-  postResultTheme: null,   // lifestyle theme key when context === "lifestyle"
+  postResultContext:  null,
+  postResultTheme:    null,   // lifestyle theme key when context === "lifestyle"
+  postResultReaction: null,   // reaction selected on post-result screen
+  nextAction:         null,   // action chosen on next-action screen
+  monthlyUpdateGap:   null,   // detected gap from monthly update flow
+
+  // ── Lifestyle chain step tracking ────────────────────────────────────────
+  selectedLifestyleTheme: null,  // theme key active in lifestyle-chain screen
+  lifestyleChainStep:     0,     // 0-based index of current question in chain
 
   // ── Commitments from post-result loop ────────────────────────────────────
   commitments: []  // [{id, text, createdAt, goalId}]
