@@ -13,7 +13,8 @@
 //
 // STATES
 //   Sections render with placeholder/seed data when no real data is present.
-//   Budget Results section: mirrors budget.js output content.
+//   Budget Results: mirrors category totals + fixed overhead from budget state.
+//   monthlyUpdateGap: when non-null, Budget Results shows a check-in banner prompting refresh.
 //   Assumptions Used: shows lifestyle answers + budget profile inputs.
 //   Goals: shows progress bars for state.goals[].
 //   Active Commitments: shows state.commitments[].
@@ -121,6 +122,8 @@ function renderMPBudgetResults(hasBudget) {
         </div>
       </div>
 
+      ${renderMPGapBanner()}
+
       ${state.budget.categories.map(cat => `
         <div class="row" style="margin-bottom:6px;">
           <span class="helper">${h(cat.icon || "")} ${h(cat.name)}</span>
@@ -128,12 +131,65 @@ function renderMPBudgetResults(hasBudget) {
         </div>
       `).join("")}
 
+      ${state.budget.fixedOverhead.length > 0 ? `
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line);">
+          <div class="helper" style="font-weight:700;margin-bottom:6px;">Required Costs</div>
+          ${state.budget.fixedOverhead.map(f => `
+            <div class="row" style="margin-bottom:4px;">
+              <span class="helper">${h(f.name)}</span>
+              <span style="font-size:12px;font-weight:700;">${budgetFmt(f.amount)}</span>
+            </div>
+          `).join("")}
+          <div class="row" style="margin-top:4px;">
+            <span class="helper" style="font-weight:700;">Total Required</span>
+            <span style="font-size:12px;font-weight:850;">${budgetFmt(budgetFixedOverheadTotal())}</span>
+          </div>
+        </div>
+      ` : ""}
+
       <div class="row" style="margin-top:12px;">
         <button class="button secondary" style="font-size:11px;padding:5px 10px;"
                 type="button" onclick="goDebtAnalyzer()">Debt Analysis</button>
         <button class="button secondary" style="font-size:11px;padding:5px 10px;"
                 type="button" onclick="goMyDebts(null)">Manage Debts</button>
       </div>
+    </div>
+  `;
+}
+
+function renderMPGapBanner() {
+  const gap = state.monthlyUpdateGap;
+  if (!gap) return "";
+  if (gap.direction === "over") {
+    return `
+      <div class="card" style="margin-bottom:12px;background:var(--warn-soft, var(--soft));">
+        <div class="row" style="margin-bottom:4px;">
+          <span style="font-weight:700;">Monthly check-in ⚠️</span>
+          <span class="helper">+${h(gap.gapPct)}% over plan</span>
+        </div>
+        <p class="helper" style="margin-bottom:8px;">
+          Actual spend: ${budgetFmt(gap.actualMonthlySpend)}/mo · Plan: ${budgetFmt(gap.planMonthlySpend)}/mo
+        </p>
+        <p class="helper" style="margin-bottom:10px;">Your budget may need a refresh — major life changes often drive this gap.</p>
+        <button class="button primary" style="font-size:12px;" type="button"
+                onclick="editInAboutMe('budgetSetup')">Update Budget</button>
+        <button class="button secondary" style="font-size:12px;margin-left:8px;" type="button"
+                onclick="state.monthlyUpdateGap=null;render()">Looks right</button>
+      </div>
+    `;
+  }
+  return `
+    <div class="card" style="margin-bottom:12px;background:var(--accent-soft);">
+      <div class="row" style="margin-bottom:4px;">
+        <span style="font-weight:700;">Monthly check-in ✓</span>
+        <span class="helper">−${h(gap.gapPct)}% under plan</span>
+      </div>
+      <p class="helper" style="margin-bottom:8px;">
+        Actual spend: ${budgetFmt(gap.actualMonthlySpend)}/mo · Plan: ${budgetFmt(gap.planMonthlySpend)}/mo
+      </p>
+      <p class="helper" style="margin-bottom:10px;">You're spending less than planned.</p>
+      <button class="button secondary" style="font-size:12px;" type="button"
+              onclick="state.monthlyUpdateGap=null;render()">Dismiss</button>
     </div>
   `;
 }
@@ -299,10 +355,24 @@ function editInAboutMe(screen) {
 }
 
 function renderMyProgressAdmin() {
+  const gap = state.monthlyUpdateGap;
   return `
     <div class="admin-card">
       <p class="admin-card-title">My Progress</p>
-      <p class="helper">Output hub. Adjust data via individual About Me screens.</p>
+      <p class="helper">Output hub — data flows from About Me inputs.</p>
+      <p class="admin-card-title" style="margin-top:10px;">Monthly Gap Simulator</p>
+      <button class="button secondary full" style="margin-top:6px;" type="button"
+              onclick="state.monthlyUpdateGap={actualMonthlySpend:3800,planMonthlySpend:3200,gapPct:19,direction:'over',loggedAcct:12000,loggedDebt:8000};render()">
+        Simulate gap (over plan)
+      </button>
+      <button class="button secondary full" style="margin-top:6px;" type="button"
+              onclick="state.monthlyUpdateGap={actualMonthlySpend:2900,planMonthlySpend:3200,gapPct:9,direction:'under',loggedAcct:15000,loggedDebt:8000};render()">
+        Simulate gap (under plan)
+      </button>
+      ${gap ? `
+        <button class="button secondary full" style="margin-top:6px;" type="button"
+                onclick="state.monthlyUpdateGap=null;render()">Clear gap banner</button>
+      ` : ""}
     </div>
   `;
 }

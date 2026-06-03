@@ -93,8 +93,10 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="go(this.value)">
-          ${["home","aboutMe","budgetSetup","babyBudget","myProgress","lifestyle",
-             "learn","topic","lesson","quiz","simulation","marketplace","reward","settings"].map(s => `
+          ${["home","aboutMe","budgetSetup","babyBudget","myProgress","lifestyle","lifestyleChain",
+             "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
+             "goals","learn","topic","lesson","quiz","simulation","marketplace",
+             "marketplaceDetail","reward","settings","myDebts","debtAnalyzer"].map(s => `
             <option value="${s}" ${state.screen === s ? "selected" : ""}>${s}</option>
           `).join("")}
         </select>
