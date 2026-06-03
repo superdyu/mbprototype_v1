@@ -112,7 +112,7 @@ function saveAccountBalance() {
   if (amount <= 0) return;
 
   state.accountBalances = state.accountBalances || [];
-  state.accountBalances.push({ id: "ab_" + Date.now(), account, amount, date, type: "account" });
+  state.accountBalances.push({ id: generateId("ab"), account, amount, date, type: "account" });
   render();
 }
 

@@ -32,7 +32,7 @@ function addSampleDebt(type) {
     studentLoan:  { type:"studentLoan",  name:"Student Loan",  balance:15000, apr:4.5,   minPayment:160, remainingMonths:96, repaymentType:"standard",   pslfPaymentsMade:0, contactName:"", customSubtype:"", revolving:false, expanded:false },
     personalLoan: { type:"personalLoan", name:"Personal Loan", balance:5000,  apr:11.5,  minPayment:120, remainingMonths:48, repaymentType:"standard",   pslfPaymentsMade:0, contactName:"", customSubtype:"", revolving:false, expanded:false }
   };
-  state.budget.debts.push(Object.assign({ id: "d_" + Date.now() }, templates[type]));
+  state.budget.debts.push(Object.assign({ id: generateId("d") }, templates[type]));
   render();
 }
 
@@ -128,7 +128,7 @@ function saveDebt() {
   const instrument = {
     id:               state.selectedDebt && state.selectedDebt !== "new"
                         ? state.selectedDebt
-                        : "d_" + Date.now(),
+                        : generateId("d"),
     type:             type,
     name:             getVal("debtFormName") || "Unnamed Debt",
     balance:          getNum("debtFormBalance"),

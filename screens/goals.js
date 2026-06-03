@@ -178,7 +178,7 @@ function saveGoal(goalId) {
   if (!goalId) {
     // Adding new goal
     const newGoal = {
-      id:          "g_" + Date.now(),
+      id:          generateId("g"),
       title,
       description,
       progress:    0,

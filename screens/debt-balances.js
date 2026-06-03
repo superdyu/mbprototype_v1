@@ -122,7 +122,7 @@ function saveDebtBalance() {
   if (amount <= 0) return;
 
   state.accountBalances = state.accountBalances || [];
-  state.accountBalances.push({ id: "db_" + Date.now(), account, amount, date, type: "debt" });
+  state.accountBalances.push({ id: generateId("db"), account, amount, date, type: "debt" });
   render();
 }
 

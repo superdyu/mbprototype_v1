@@ -31,6 +31,7 @@ const BUDGET_ZIP_INDEX = {
 };
 
 // ─── Income & spending calculations ──────────────────────────────────────────
+/** @returns {number} Gross monthly income in dollars (rounded integer) */
 function budgetMonthlyIncome() {
   const p = state.budget.profile;
   if (p.incomeType === "variable") {
@@ -65,6 +66,7 @@ function budgetPlanTotal() {
     + budgetFixedOverheadTotal();
 }
 
+/** @param {string} catKey - must match a key in state.budget.categories (e.g. "food", "housing") */
 function budgetPeerAvg(catKey) {
   const p = state.budget.profile;
   const income = budgetMonthlyIncome();
@@ -77,8 +79,7 @@ function budgetPeerAvg(catKey) {
   return Math.round(base * incomeRatio * hFactor * zipIdx);
 }
 
-// Returns an actionable signal object { label, css } for a category tile,
-// or null for fixed categories that have no discretionary signal.
+/** @param {object} cat - budget category object; @returns {{label:string, css:string}|null} */
 function budgetSignal(cat) {
   const spend   = budgetCategoryTotal(cat);
   const peer    = budgetPeerAvg(cat.key);
@@ -99,6 +100,7 @@ function budgetSignal(cat) {
 }
 
 // ─── Formatting ───────────────────────────────────────────────────────────────
+/** @param {number} n @returns {string} e.g. "$1,234" (absolute value, rounded) */
 function budgetFmt(n) {
   return "$" + Math.abs(Math.round(n)).toLocaleString();
 }

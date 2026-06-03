@@ -33,8 +33,31 @@ function debouncedRender() {
 }
 
 // Map a screen name to its active bottom-tab identifier
+/** @returns {string} Today's date as YYYY-MM-DD */
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
+}
+
+// Copies a diagnostic state snapshot to the clipboard for sharing/debugging.
+// Called from the admin panel "Copy State" button.
+function copyAppState() {
+  var s = {
+    screen: state.screen,
+    budget: { status: state.budget.status, wizardInputs: state.budget.wizardInputs, debts: state.budget.debts },
+    selectedBadge: state.selectedBadge, selectedDebt: state.selectedDebt, selectedOffer: state.selectedOffer
+  };
+  navigator.clipboard.writeText(JSON.stringify(s, null, 2))
+    .then(function() { alert('State copied to clipboard'); })
+    .catch(function() { prompt('Copy this state (Ctrl+A, Ctrl+C):', JSON.stringify(s, null, 2)); });
+}
+
+/**
+ * Generates a collision-resistant ID with a named prefix.
+ * @param {string} prefix - e.g. "g", "c", "ab", "d"
+ * @returns {string} e.g. "g_1719000000000_x4k2r"
+ */
+function generateId(prefix) {
+  return prefix + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
 }
 
 function activeTabFor(screen) {

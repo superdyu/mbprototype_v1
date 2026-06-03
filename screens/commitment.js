@@ -88,7 +88,7 @@ function saveCommitment() {
     return;
   }
 
-  const goalId = "g_" + Date.now();
+  const goalId = generateId("g");
 
   const newGoal = {
     id: goalId,
@@ -112,7 +112,7 @@ function saveCommitment() {
   if (commitmentText) {
     state.commitments = state.commitments || [];
     state.commitments.push({
-      id:        "c_" + Date.now(),
+      id:        generateId("c"),
       text:      commitmentText,
       createdAt: todayISO(),
       goalId

@@ -177,7 +177,7 @@ function renderInterestBarChart(analyses) {
     var barW   = Math.max(2, Math.round(val / maxVal * chartW));
     var y      = i * (barH + gap);
     var meta   = STRATEGY_META[k];
-    var label  = val > 0 ? "$" + Math.round(val).toLocaleString() : "$0";
+    var label  = val > 0 ? budgetFmt(val) : "$0";
     return `
       <text x="0" y="${y + barH - 3}" font-size="11" style="fill:var(--muted)" font-family="Arial,sans-serif"
             font-weight="bold">${h(meta.name)}</text>

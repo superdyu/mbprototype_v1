@@ -48,12 +48,19 @@ function renderHome() {
           </div>
           ${task.completed
             ? `<div class="done-state">Done</div>`
-            : `<button class="button" type="button" onclick="${task.lessonId ? `selectLesson('${h(task.lessonId)}')` : `taskGo('${h(task.destination)}')`}">${h(task.cta)}</button>`
+            : `<button class="button" type="button" onclick="handleTaskCTA(${index})">${h(task.cta)}</button>`
           }
         </div>
       `).join("")}
     </div>
   `;
+}
+
+function handleTaskCTA(index) {
+  const task = state.tasks[index];
+  if (!task) return;
+  if (task.lessonId) selectLesson(task.lessonId);
+  else taskGo(task.destination);
 }
 
 function buildLessonOptgroups(selectedLessonId) {
