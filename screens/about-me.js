@@ -46,13 +46,13 @@ function renderAboutMe() {
       </div>
     </div>
 
-    <!-- Budget component -->
-    <div class="section-title" style="margin:16px 0 8px;">Budget</div>
-    <p class="helper" style="margin-bottom:10px;">Build it once. Update it when life changes.</p>
-    <div class="item-card" onclick="go('budgetSetup')" style="cursor:pointer;">
+    <!-- Debt Balances component (first when budget complete) -->
+    <div class="section-title" style="margin:16px 0 8px;">Debt Balances</div>
+    <p class="helper" style="margin-bottom:10px;">Log current balances on your debts.</p>
+    <div class="item-card" onclick="go('debtBalances')" style="cursor:pointer;">
       <div>
-        <div class="task-title">Budget</div>
-        <p class="task-desc">${h(budgetLabel)}</p>
+        <div class="task-title">Debt Balances</div>
+        <p class="task-desc">${debtLast ? "Last updated " + h(debtLast) : "No entries yet"}</p>
       </div>
       <div class="helper" style="font-size:18px;">›</div>
     </div>
@@ -90,13 +90,13 @@ function renderAboutMe() {
       <div class="helper" style="font-size:18px;">›</div>
     </div>
 
-    <!-- Debt Balances component -->
-    <div class="section-title" style="margin:20px 0 8px;">Debt Balances</div>
-    <p class="helper" style="margin-bottom:10px;">Log current balances on your debts.</p>
-    <div class="item-card" onclick="go('debtBalances')" style="cursor:pointer;">
+    <!-- Budget component (last when complete) -->
+    <div class="section-title" style="margin:20px 0 8px;">Budget</div>
+    <p class="helper" style="margin-bottom:10px;">Build it once. Update it when life changes.</p>
+    <div class="item-card" onclick="go('budgetSetup')" style="cursor:pointer;">
       <div>
-        <div class="task-title">Debt Balances</div>
-        <p class="task-desc">${debtLast ? "Last updated " + h(debtLast) : "No entries yet"}</p>
+        <div class="task-title">Budget</div>
+        <p class="task-desc">${h(budgetLabel)}</p>
       </div>
       <div class="helper" style="font-size:18px;">›</div>
     </div>

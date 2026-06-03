@@ -4,30 +4,55 @@
 // and debt-analyzer.js.
 
 // ─── Peer data constants ──────────────────────────────────────────────────────
-// Base peer averages: national median at $75K household income, 2-person household.
+// Base peer averages: national median at $6,250/mo net (= $75K / 12 annual), 1-person.
 // Source: BLS Consumer Expenditure Survey (prototype approximation).
+const PEER_INCOME_BASE = 6250; // monthly equivalent of $75K annual
+
 const BUDGET_PEER_BASE = {
-  housing:   1800,
-  food:       650,
-  transport:  820,
-  lifestyle:  480,
-  savings:    600
+  housing:   1550,  // ~25% of $6,250/mo
+  food:       490,  // ~8%
+  transport:  590,  // ~9.5%
+  lifestyle:  370,  // ~6%
+  savings:    620   // ~10%
 };
 
 // Per-additional-person multiplier (above the 1-person baseline)
 const BUDGET_HOUSEHOLD_MULT = {
-  housing:   0.20,
-  food:      0.75,
-  transport: 0.50,
-  lifestyle: 0.60,
-  savings:   0.80
+  housing:   0.22,  // +22% per additional person
+  food:      0.50,  // +50%
+  transport: 0.22,  // +22% (shared car)
+  lifestyle: 0.40,  // +40%
+  savings:   0.55   // +55%
 };
 
-// ZIP cost-of-living index. Fallback = 1.0 (national average).
-const BUDGET_ZIP_INDEX = {
+// ZIP cost-of-living indices — exact-match table (national 100 = 1.0)
+const ZIP_DIRECT = {
   "95126": 1.45, "95014": 1.70, "95054": 1.55,
   "10001": 1.65, "10002": 1.65, "90210": 1.80,
-  "77001": 0.95, "60601": 1.20, "30301": 0.90
+  "77001": 0.95, "60601": 1.20, "30301": 0.90,
+  "72712": 0.88, "72716": 0.88, "72718": 0.88,
+  "72756": 0.88, "72758": 0.88, "72759": 0.88
+};
+
+// MSA-level cost-of-living by ZIP prefix (first 3 digits)
+const ZIP_PREFIX = {
+  "100": 1.65, "101": 1.65, "102": 1.65,  // NYC Manhattan
+  "111": 1.50, "112": 1.48,                // Brooklyn/Queens
+  "900": 1.35, "901": 1.35, "902": 1.30,   // LA metro
+  "906": 1.55,                             // Santa Monica/Malibu
+  "950": 1.45, "951": 1.48, "952": 1.35,   // San Jose/Santa Clara
+  "953": 1.55, "954": 1.50,                // Palo Alto/Peninsula
+  "606": 1.20, "607": 1.15,                // Chicago
+  "770": 0.95, "773": 0.95,                // Houston
+  "303": 0.90, "306": 0.90,                // Atlanta
+  "981": 1.35, "980": 1.30,                // Seattle/Bellevue
+  "787": 1.10, "786": 1.05,                // Austin
+  "750": 0.95, "751": 0.95, "752": 0.95,   // Dallas/Fort Worth
+  "852": 1.00, "853": 1.00,                // Phoenix
+  "321": 1.05, "322": 1.05,                // Orlando
+  "441": 1.05, "442": 1.05,                // Cleveland
+  "481": 1.05, "482": 1.05,                // Detroit
+  "727": 0.88, "728": 0.88                 // NW Arkansas (Bentonville/Rogers)
 };
 
 // ─── Income & spending calculations ──────────────────────────────────────────
@@ -66,6 +91,13 @@ function budgetPlanTotal() {
     + budgetFixedOverheadTotal();
 }
 
+function getZipIndex(zip) {
+  const direct = ZIP_DIRECT[zip];
+  if (direct) return direct;
+  const prefix = (zip || "").slice(0, 3);
+  return ZIP_PREFIX[prefix] || 1.0;
+}
+
 /** @param {string} catKey - must match a key in state.budget.categories (e.g. "food", "housing") */
 function budgetPeerAvg(catKey) {
   const p = state.budget.profile;
@@ -74,8 +106,8 @@ function budgetPeerAvg(catKey) {
   const hmult  = BUDGET_HOUSEHOLD_MULT[catKey] || 0.5;
   const hhSize = Math.max(1, p.householdSize || 1);
   const hFactor = 1 + (hhSize - 1) * hmult;
-  const zipIdx  = BUDGET_ZIP_INDEX[p.zip] || 1.0;
-  const incomeRatio = income / 75000;
+  const zipIdx  = getZipIndex(p.zip);
+  const incomeRatio = income / PEER_INCOME_BASE;
   return Math.round(base * incomeRatio * hFactor * zipIdx);
 }
 

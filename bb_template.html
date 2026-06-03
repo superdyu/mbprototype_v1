@@ -112,18 +112,6 @@
 
     <!-- Step 1: Basic Information -->
     <section class="step hidden" data-step="1">
-      <div class="summary-grid">
-        <div class="metric">
-          <div class="metric-label">Monthly income</div>
-          <div class="metric-value" id="baseIncome">&#8212;</div>
-          <div class="metric-note">After tax</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">Income vs avg</div>
-          <div class="metric-value" id="incomeVsAvg">&#8212;</div>
-          <div class="metric-note">Rough baseline</div>
-        </div>
-      </div>
       <div class="card">
         <div class="card-title">Basic information</div>
 
@@ -131,19 +119,6 @@
         <div class="field">
           <label>ZIP code</label>
           <input id="zip" inputmode="numeric" maxlength="5" value="95126" placeholder="Enter ZIP code"/>
-        </div>
-
-        <!-- Cost-of-living thermometer + sentence (shown when ZIP matches) -->
-        <div id="colThermo" style="display:none;margin:2px 0 14px">
-          <div class="thermo-wrap">
-            <div class="thermo-track"></div>
-            <div class="thermo-fill" id="thermoFill"></div>
-            <div class="thermo-marker" id="thermoNatl" style="background:var(--muted)"></div>
-            <div class="thermo-marker" id="thermoZip" style="background:var(--accent)"></div>
-            <div class="thermo-lbl" id="thermoNatlLabel" style="color:var(--muted)">Baseline</div>
-            <div class="thermo-lbl" id="thermoZipLabel" style="color:var(--accent)">Your ZIP</div>
-          </div>
-          <div id="zipSentence" class="helper" style="margin-top:4px;font-size:11px;line-height:1.45"></div>
         </div>
 
         <!-- Income inputs -->
@@ -170,6 +145,32 @@
             <option value="7">7 people</option>
             <option value="8">8+ people</option>
           </select>
+        </div>
+
+        <!-- Cost-of-living thermometer + sentence (shown when ZIP matches) -->
+        <div id="colThermo" style="display:none;margin:14px 0 2px">
+          <div class="thermo-wrap">
+            <div class="thermo-track"></div>
+            <div class="thermo-fill" id="thermoFill"></div>
+            <div class="thermo-marker" id="thermoNatl" style="background:var(--muted)"></div>
+            <div class="thermo-marker" id="thermoZip" style="background:var(--accent)"></div>
+            <div class="thermo-lbl" id="thermoNatlLabel" style="color:var(--muted)">Baseline</div>
+            <div class="thermo-lbl" id="thermoZipLabel" style="color:var(--accent)">Your ZIP</div>
+          </div>
+          <div id="zipSentence" class="helper" style="margin-top:4px;font-size:11px;line-height:1.45"></div>
+        </div>
+
+        <!-- Income vs average thermometer -->
+        <div id="incomeThermo" style="display:none;margin:14px 0 2px">
+          <div class="thermo-wrap">
+            <div class="thermo-track"></div>
+            <div class="thermo-fill" id="incomeThermoFill"></div>
+            <div class="thermo-marker" id="incomeNatl" style="background:var(--muted)"></div>
+            <div class="thermo-marker" id="incomeYou" style="background:var(--accent)"></div>
+            <div class="thermo-lbl" id="incomeNatlLabel" style="color:var(--muted)">Avg</div>
+            <div class="thermo-lbl" id="incomeYouLabel" style="color:var(--accent)">You</div>
+          </div>
+          <div id="incomeSentence" class="helper" style="margin-top:4px;font-size:11px;line-height:1.45"></div>
         </div>
       </div>
     </section>
@@ -276,9 +277,6 @@
             <div class="metric-note" id="unallocatedNote">Remaining</div>
           </div>
         </div>
-        <button type="button" class="lw-btn" onclick="lifestyleWizardPrompt()">
-          Need more precision? &#8594; Lifestyle Wizard
-        </button>
       </div>
       <!-- Warning banner (shown on advance attempt if >5% off) -->
       <div id="adjustWarning" class="warn-card" style="display:none"></div>
@@ -386,6 +384,7 @@ const BUCKETS = [
 var step = 0;
 var adjustVals = {};
 var adjustExpanded = {};
+var adjustWizardShown = false;
 
 // ── Theme bridge + prefill ─────────────────────────────────────────────────
 window.addEventListener("message", function(e) {
@@ -457,6 +456,12 @@ function onPreIncomeInput() {
     $("netIncome").value = net.toLocaleString();
     renderSummary();
   }
+  checkStep1Next();
+}
+
+function checkStep1Next() {
+  if (step !== 1) return;
+  $("nextBtn").disabled = parseFmt($("preIncome").value) <= 0;
 }
 
 function zipEntry()      { return ($("zip") && $("zip").value || "").trim(); }
@@ -475,8 +480,10 @@ function getSegment(net) {
 }
 
 // ── Thermometer ────────────────────────────────────────────────────────────
-// Range: 70–185 → national 100 sits at ~26% of track
+// Cost-of-living: Range 70–185 → national 100 sits at ~26% of track
 var THERMO_MIN = 70, THERMO_MAX = 185;
+// Income vs average: Range $2K–$15K/mo → national $4.5K sits at ~20% of track
+var INC_MIN = 2000, INC_MAX = 15000, AVG_INC = 4500;
 
 function updateThermometer(zi, hasValidZip) {
   var tDiv = $("colThermo");
@@ -511,6 +518,39 @@ function updateThermometer(zi, hasValidZip) {
   }
 }
 
+function updateIncomeThermometer(inc) {
+  var tDiv = $("incomeThermo");
+  if (!tDiv) return;
+
+  if (inc <= 0) { tDiv.style.display = "none"; return; }
+  tDiv.style.display = "";
+
+  var range = INC_MAX - INC_MIN;
+  var nPct  = ((AVG_INC - INC_MIN) / range * 100).toFixed(1);
+  var iPct  = Math.max(2, Math.min(98, (inc - INC_MIN) / range * 100)).toFixed(1);
+
+  var nEl = $("incomeNatl"), iEl = $("incomeYou");
+  var fEl = $("incomeThermoFill"), nLbl = $("incomeNatlLabel"), iLbl = $("incomeYouLabel");
+
+  if (nEl)  nEl.style.left = nPct + "%";
+  if (iEl)  iEl.style.left = iPct + "%";
+
+  var fLeft  = Math.min(+nPct, +iPct);
+  var fWidth = Math.abs(+iPct - +nPct);
+  if (fEl) {
+    fEl.style.left  = fLeft + "%";
+    fEl.style.width = fWidth + "%";
+    fEl.style.background = inc >= AVG_INC ? "var(--accent)" : "var(--warn)";
+  }
+  if (nLbl) nLbl.style.left = nPct + "%";
+  if (iLbl) {
+    iLbl.style.left = iPct + "%";
+    var diff = Math.round(inc - AVG_INC);
+    iLbl.textContent = diff > 0 ? "+" + Math.round(diff / AVG_INC * 100) + "%" : (diff < 0 ? Math.round(diff / AVG_INC * 100) + "%" : "at avg");
+    iLbl.style.color = inc > AVG_INC ? "var(--accent)" : (inc < AVG_INC ? "var(--warn)" : "var(--muted)");
+  }
+}
+
 // ── Summary / comparisons ──────────────────────────────────────────────────
 function updateComparisons() {
   var z = zipObj(), zi = zipIndex(), zPct = pctDiff(zi, 100);
@@ -521,15 +561,7 @@ function updateComparisons() {
   updateThermometer(zi, !!z);
 
   var inc = monthlyIncome();
-  if ($("baseIncome"))  $("baseIncome").textContent  = inc > 0 ? money(inc) : "\u2014";
-  if ($("incomeVsAvg")) {
-    if (inc > 0) {
-      var iPct = pctDiff(inc, AVG_INCOME);
-      $("incomeVsAvg").textContent = (iPct >= 0 ? "+" : "") + iPct + "%";
-    } else {
-      $("incomeVsAvg").textContent = "\u2014";
-    }
-  }
+  updateIncomeThermometer(inc);
 }
 
 function renderSummary() {
@@ -546,6 +578,22 @@ function renderSummary() {
 }
 
 // ── Adjust step ────────────────────────────────────────────────────────────
+function showAdjustWizardPopup() {
+  var bg = document.createElement("div");
+  bg.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:999";
+
+  var card = document.createElement("div");
+  card.style.cssText = "background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,0.24)";
+
+  card.innerHTML =
+    '<div style="font-size:16px;font-weight:850;margin-bottom:12px;color:var(--text)">This is a best estimate</div>' +
+    '<div style="font-size:12px;line-height:1.45;color:var(--text);margin-bottom:16px">The Lifestyle Wizard will help refine your budget as you go — use it to tune each category over time. For now, these sliders give you a solid starting point.</div>' +
+    '<button type="button" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:13px;font-size:14px;font-weight:850;cursor:pointer;border:1px solid var(--accent)" onclick="this.parentNode.parentNode.remove()">Got it</button>';
+
+  bg.appendChild(card);
+  document.body.appendChild(bg);
+}
+
 function initAdjustStep() {
   var net = monthlyIncome();
   var rem = flexiblePool();
@@ -554,22 +602,24 @@ function initAdjustStep() {
   // Only seed from BLS averages if adjustVals is empty (first visit or no prefill).
   // If adjustVals already has values (restored via bb-prefill on re-edit), keep them.
   if (Object.keys(adjustVals).length === 0) {
+    var scaledRem = Math.round(rem * 0.80);
     var totalPct = BUCKETS.reduce(function(s, b) { return s + seg[b.key]; }, 0);
     var allocated = 0;
     for (var i = 0; i < BUCKETS.length; i++) {
       var b = BUCKETS[i];
       if (i < BUCKETS.length - 1) {
-        // Round to nearest $10, proportional to BLS weight
-        adjustVals[b.key] = Math.round(rem * seg[b.key] / totalPct / 10) * 10;
+        // Round to nearest $10, proportional to BLS weight, using 80% of rem
+        adjustVals[b.key] = Math.round(scaledRem * seg[b.key] / totalPct / 10) * 10;
         allocated += adjustVals[b.key];
       } else {
-        // Last bucket absorbs rounding so total == rem
-        adjustVals[b.key] = Math.max(0, rem - allocated);
+        // Last bucket absorbs rounding so total == scaledRem (leaving 20% unallocated)
+        adjustVals[b.key] = Math.max(0, scaledRem - allocated);
       }
     }
   }
   adjustExpanded = {};
   renderAdjustBuckets();
+  if (!adjustWizardShown) { adjustWizardShown = true; showAdjustWizardPopup(); }
 }
 
 function toggleAdjustExpand(key) {
@@ -616,11 +666,11 @@ function renderAdjustBuckets() {
 
     html +=
       '<div class="card" style="margin-bottom:12px">' +
-        '<div class="budget-head">' +
-          '<div style="flex:1;min-width:0">' +
-            '<div class="budget-name">' + b.icon + ' ' + b.label + '</div>' +
+        '<div class="budget-head" style="gap:12px;align-items:center">' +
+          '<div style="flex:1;min-width:0;overflow:hidden">' +
+            '<div class="budget-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + b.icon + ' ' + b.label + '</div>' +
           '</div>' +
-          '<div class="budget-amount-wrap" style="margin-left:10px">' +
+          '<div class="budget-amount-wrap">' +
             '<span class="budget-dollar">$</span>' +
             '<input class="budget-amount-input" type="text" inputmode="decimal" value="' + fmtAmt + '" ' +
               'onfocus="moneyFocus(this)" ' +
@@ -643,6 +693,9 @@ function renderAdjustBuckets() {
             (expanded ? "\u25B2 Close" : "\u25BC Things to include") +
           '</button>' +
         '</div>' +
+        '<div style="text-align:right;margin-top:8px;font-size:11px;color:var(--muted)">' +
+          Math.round((curAmt / (rem || 1)) * 100) + '% of flexible budget' +
+        '</div>' +
         subItemsHtml +
       '</div>';
   });
@@ -663,19 +716,27 @@ function showAdjustWarning(leftOver, rem) {
   if (!w) return;
   var isOver = leftOver < 0;
   var pct    = rem > 0 ? Math.round(Math.abs(leftOver / rem) * 100) : 0;
-  var msg    = isOver
-    ? "<strong>\u26A0\uFE0F Budget is over by " + money(Math.abs(leftOver)) + " (" + pct + "%)</strong><br>" +
-      "Reduce sliders to bring it back in balance before reviewing."
-    : "<strong>\u26A0\uFE0F " + money(leftOver) + " is unallocated (" + pct + "%)</strong><br>" +
-      "Your budget will be incomplete. Assign the rest or add it to Savings & Future.";
-  var actions = isOver ? "" :
-    '<button type="button" class="warn-btn-primary" onclick="autoAllocateToSavings()">Add to Savings & Future</button>';
-  w.innerHTML = msg +
-    '<div class="warn-actions">' + actions +
-    '<button type="button" class="warn-btn-secondary" onclick="$(\"adjustWarning\").style.display=\"none\"">Keep Adjusting</button>' +
-    '</div>';
-  w.style.display = "";
-  w.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  var bg = document.createElement("div");
+  bg.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:999";
+
+  var card = document.createElement("div");
+  card.style.cssText = "background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,0.24)";
+
+  var msg = isOver
+    ? "You're <strong>$" + Math.abs(Math.round(leftOver)).toLocaleString() + " over</strong> budget. Reduce a category before reviewing."
+    : "You still have <strong>$" + Math.round(leftOver).toLocaleString() + " unallocated</strong>. Assign it before moving on \u2014 if it's going toward savings, put it there.";
+
+  card.innerHTML =
+    '<div style="font-size:14px;line-height:1.45;color:var(--text);margin-bottom:16px">' + msg + '</div>' +
+    (isOver ? '' :
+      '<button type="button" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:13px;font-size:13px;font-weight:850;cursor:pointer;margin-bottom:8px" ' +
+        'onclick="autoAllocateToSavings();this.parentNode.parentNode.remove()">Add to Savings & Future</button>'
+    ) +
+    '<button type="button" style="width:100%;padding:12px;background:var(--soft);color:var(--muted);border:1px solid var(--line);border-radius:13px;font-size:13px;font-weight:850;cursor:pointer" ' +
+      'onclick="this.parentNode.parentNode.remove()">Keep Adjusting</button>';
+
+  bg.appendChild(card);
+  document.body.appendChild(bg);
 }
 
 function autoAllocateToSavings() {
@@ -683,7 +744,6 @@ function autoAllocateToSavings() {
   var total = BUCKETS.reduce(function(s, b) { return s + (adjustVals[b.key] || 0); }, 0);
   var left  = rem - total;
   if (left > 0) adjustVals["savings"] = (adjustVals["savings"] || 0) + left;
-  $("adjustWarning").style.display = "none";
   renderAdjustBuckets();
 }
 
@@ -752,7 +812,9 @@ function renderStep() {
     step === 4 ? "Review" :
     step === 5 ? "Save budget" :
     step === 6 ? "Restart" : "Next";
+  $("nextBtn").disabled = false;
   renderProgress();
+  if (step === 1) checkStep1Next();
   if (step === 4) initAdjustStep();
   if (step === 5) renderResults();
   renderSummary();
@@ -762,15 +824,12 @@ function renderStep() {
 function next() {
   if (step === 6) { restart(); return; }
 
-  // Guard: warn if adjust budget is >5% off before allowing Review
+  // Guard: warn if adjust budget is unallocated (>1% rounding tolerance) before allowing Review
   if (step === 4) {
     var rem = flexiblePool();
     var total = BUCKETS.reduce(function(s, b) { return s + (adjustVals[b.key] || 0); }, 0);
     var leftOver = rem - total;
-    var pctOff = rem > 0 ? Math.abs(leftOver / rem) : 0;
-    if (pctOff > 0.05) { showAdjustWarning(leftOver, rem); return; }
-    var wEl = $("adjustWarning");
-    if (wEl) wEl.style.display = "none";
+    if (leftOver > rem * 0.01) { showAdjustWarning(leftOver, rem); return; }
   }
 
   if (step === 5) {

@@ -79,20 +79,14 @@ function renderBudgetSetup() {
       `}
     </div>
 
-    <!-- Update This Month card -->
-    <div class="card" style="margin-bottom:12px;">
-      <div class="section-title" style="margin-bottom:6px;">Update This Month</div>
-      <p class="helper" style="margin-bottom:12px;">
-        Log your current account and debt balances. Money Buddy checks if they match
-        your budget estimate — and flags when it's time for a full refresh.
-      </p>
-      <button class="button ${hasBudget ? "primary" : "secondary"} full" type="button"
-              onclick="startMonthlyUpdate()">
-        ${hasBudget ? "Update Month" : "Set up budget first"}
-      </button>
-      ${hasBudget ? `<button class="button secondary full" style="margin-top:8px;"
-              type="button" onclick="go('myProgress')">View Impact</button>` : ""}
-    </div>
+    ${hasBudget ? `
+    <!-- Update This Month note -->
+    <p class="helper" style="margin:6px 0 16px;font-size:11px;">
+      Tip: Log your balances each month to see if your plan still fits.
+      <button class="button secondary small" style="margin-left:6px;"
+              type="button" onclick="startMonthlyUpdate()">Update now</button>
+    </p>
+    ` : ""}
 
     ${hasBudget ? `
     <!-- Spending categories drill-down -->

@@ -3,16 +3,16 @@
 //
 // PURPOSE
 // First screen of the post-input loop. After completing any major About Me input
-// (Baby Budget, lifestyle chain, monthly update), shows a context summary of what
-// just changed, then asks "How does this feel?" before the user decides next steps.
+// (Baby Budget, lifestyle chain, monthly update), shows a context summary, then asks
+// "How does this feel?" with a 4-notch slider before the user decides next steps.
 //
 // NAVIGATION
 //   Entry: Triggered after completing Baby Budget, lifestyle chain, or monthly update
-//   Exit:  Any reaction → nextAction screen
+//   Exit:  Reaction selected → nextAction screen
 //
 // PRODUCTION NOTES
 //   state.postResultContext: "budget" | "lifestyle" | "monthlyUpdate" | "goal"
-//   state.postResultTheme: lifestyle theme key when context is "lifestyle"
+//   state.postResultReaction: "worried" | "ok" | "good" | "excited" (or null)
 //   state.flowOrigin: set before entering this screen; preserved through finish
 
 function renderPostResult() {
@@ -27,14 +27,12 @@ function renderPostResult() {
   };
   const headline = headlines[context] || { title: "Changes saved", sub: "Your updates have been recorded." };
 
-  const reactions = [
-    { value: "right",       label: "Looks right" },
-    { value: "too-high",    label: "Too high" },
-    { value: "too-low",     label: "Too low" },
-    { value: "stressful",   label: "Stressful" },
-    { value: "motivating",  label: "Motivating" },
-    { value: "not-sure",    label: "Not sure" }
-  ];
+  const descByValue = {
+    1: { label: "Worried", desc: "This budget feels tight and stressful. Let's look for ways to loosen it up before you commit." },
+    2: { label: "OK", desc: "It's workable but leaves little breathing room. Some small adjustments could help." },
+    3: { label: "Good", desc: "You're in a solid place with this plan. Let's keep the momentum going." },
+    4: { label: "Excited", desc: "You're fired up about this plan. Let's make it work even harder for you." }
+  };
 
   return `
     <div style="padding:24px 0 16px;">
@@ -44,35 +42,69 @@ function renderPostResult() {
         <p class="helper" style="margin:0;">${h(headline.sub)}</p>
       </div>
 
-      <h1 class="title" style="font-size:20px;margin-bottom:6px;">How does this feel?</h1>
-      <p class="helper" style="margin-bottom:20px;">Take a second before deciding what to do next.</p>
-
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        ${reactions.map(r => `
-          <button class="button secondary full" type="button"
-                  style="text-align:left;padding:14px 16px;font-size:14px;"
-                  onclick="selectReaction('${h(r.value)}')">
-            ${h(r.label)}
-          </button>
+      ${context === "budget" ? `
+      <div class="card" style="margin-bottom:12px;">
+        <div class="section-title" style="margin-bottom:8px;">Your budget at a glance</div>
+        ${state.budget.categories.map(cat => `
+          <div class="row" style="margin-bottom:4px;">
+            <span class="helper">${h(cat.icon || "")} ${h(cat.name)}</span>
+            <span class="stat-val">${budgetFmt(budgetCategoryTotal(cat))}</span>
+          </div>
         `).join("")}
       </div>
+      ` : ""}
 
-      <div style="text-align:center;margin-top:16px;">
-        <button class="button secondary" style="font-size:12px;padding:8px 14px;" type="button"
+      <h1 class="title" style="font-size:18px;margin-bottom:8px;">How does this feel?</h1>
+
+      <div style="margin-bottom:16px;">
+        <input type="range" min="1" max="4" step="1" value="2" id="feelingSlider"
+               style="width:100%;accent-color:var(--accent);cursor:pointer;margin:12px 0 8px"
+               oninput="updateFeelingDescription()">
+        <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:var(--muted);margin-bottom:12px;">
+          <span>Worried</span>
+          <span>OK</span>
+          <span>Good</span>
+          <span>Excited</span>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;background:var(--soft);border:none;padding:12px;">
+        <p class="helper" id="feelingDesc" style="margin:0;font-size:13px;color:var(--text);">It's workable but leaves little breathing room. Some small adjustments could help.</p>
+      </div>
+
+      <button class="button primary full" type="button" style="margin-bottom:8px;"
+              onclick="selectReaction(+$('feelingSlider').value)">
+        That's how I feel →
+      </button>
+
+      <div style="text-align:center;">
+        <button class="button secondary full" style="font-size:12px;" type="button"
                 onclick="skipPostResult()">Skip for now</button>
       </div>
     </div>
   `;
 }
 
+function updateFeelingDescription() {
+  const val = parseInt($("feelingSlider").value) || 2;
+  const descs = {
+    1: "This budget feels tight and stressful. Let's look for ways to loosen it up before you commit.",
+    2: "It's workable but leaves little breathing room. Some small adjustments could help.",
+    3: "You're in a solid place with this plan. Let's keep the momentum going.",
+    4: "You're fired up about this plan. Let's make it work even harder for you."
+  };
+  const el = $("feelingDesc");
+  if (el) el.textContent = descs[val] || descs[2];
+}
+
 function lifestyleThemeLabel(themeKey) {
-  // LIFESTYLE_THEMES is defined in lifestyle.js (loads before post-result.js)
   const theme = (LIFESTYLE_THEMES || []).find(function(t) { return t.key === themeKey; });
   return theme ? theme.label : "Lifestyle";
 }
 
-function selectReaction(value) {
-  state.postResultReaction = value;
+function selectReaction(sliderValue) {
+  const mapping = { 1: "worried", 2: "ok", 3: "good", 4: "excited" };
+  state.postResultReaction = mapping[sliderValue] || "ok";
   go("nextAction");
 }
 

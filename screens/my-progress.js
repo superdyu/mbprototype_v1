@@ -44,16 +44,13 @@ function renderMyProgress() {
     <!-- 2. Budget Results -->
     ${renderMPBudgetResults(hasBudget)}
 
-    <!-- 3. Assumptions Used -->
-    ${renderMPAssumptions()}
-
-    <!-- 4. Comparisons -->
+    <!-- 3. Comparisons -->
     ${renderMPComparisons(hasBudget)}
 
-    <!-- 5. Goals -->
+    <!-- 4. Goals -->
     ${renderMPGoals()}
 
-    <!-- 6. Active Commitments -->
+    <!-- 5. Active Commitments -->
     ${renderMPCommitments()}
   `;
 }
@@ -66,19 +63,40 @@ function renderMPProfile() {
   const size    = profile && profile.householdSize ? profile.householdSize : null;
   const income  = budgetMonthlyIncome();
   const updated = profile && profile.lastUpdated ? profile.lastUpdated : null;
+  const themes = LIFESTYLE_THEMES || [];
+  const answeredThemes = themes.filter(t => {
+    const la = state.lifestyleAnswers && state.lifestyleAnswers[t.key];
+    return la && la.lastUpdated;
+  });
 
   return `
     <div class="card mb-md">
       <div class="row" style="margin-bottom:8px;">
         <div class="section-title" style="margin:0;">Your Money Profile</div>
-        <button class="button secondary small"
-                type="button" onclick="editInAboutMe('aboutMe')">Edit in About Me</button>
+        <button class="button secondary small" style="border:1.5px solid var(--accent);color:var(--accent);font-weight:700;"
+                type="button" onclick="editInAboutMe('aboutMe')">Edit</button>
       </div>
       ${name ? `<p class="helper" style="margin-bottom:4px;">${h(name)}</p>` : ""}
       ${zip  ? `<p class="helper" style="margin-bottom:4px;">ZIP ${h(zip)}${size ? " · " + size + " " + (size === 1 ? "person" : "people") : ""}</p>` : ""}
       ${income > 0 ? `<p class="helper" style="margin-bottom:4px;">${budgetFmt(income)}/mo income</p>` : ""}
-      ${updated ? `<p class="helper" style="margin-bottom:0;">Last updated ${h(updated)}</p>` : ""}
+      ${updated ? `<p class="helper" style="margin-bottom:8px;">Last updated ${h(updated)}</p>` : ""}
       ${!zip && !income ? `<p class="helper">No profile data yet. <button class="button secondary small" style="margin-left:6px;" type="button" onclick="go('budgetSetup')">Build Budget</button></p>` : ""}
+
+      <details style="margin-top:8px;">
+        <summary class="helper" style="cursor:pointer;font-weight:700;">Assumptions used</summary>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line);">
+          ${zip ? `<p class="helper" style="margin-bottom:6px;">ZIP ${h(zip)} cost-of-living modifier applied</p>` : ""}
+          ${size ? `<p class="helper" style="margin-bottom:6px;">${size}-person household multiplier applied</p>` : ""}
+          ${answeredThemes.length > 0 ? `
+            <p class="helper" style="font-weight:700;margin-bottom:4px;">Lifestyle signals</p>
+            ${answeredThemes.map(t => `<p class="helper" style="margin-bottom:2px;">${h(t.label)} · Updated ${h(state.lifestyleAnswers[t.key].lastUpdated)}</p>`).join("")}
+          ` : `<p class="helper">No lifestyle data yet.</p>`}
+          ${answeredThemes.length === 0 ? `
+            <button class="button secondary small" style="margin-top:6px;border:1.5px solid var(--accent);color:var(--accent);font-weight:700;"
+                    type="button" onclick="editInAboutMe('lifestyle')">Update Lifestyle</button>
+          ` : ""}
+        </div>
+      </details>
     </div>
   `;
 }
@@ -97,15 +115,35 @@ function renderMPBudgetResults(hasBudget) {
 
   const income    = budgetMonthlyIncome();
   const planTotal = budgetPlanTotal();
-  const remaining = income - planTotal;
+  const savings   = income - planTotal;
+
+  // Non-discretionary: housing + fixed overhead
+  const housingCat = state.budget.categories.find(c => c.key === "housing");
+  const housingAmt = housingCat ? budgetCategoryTotal(housingCat) : 0;
+  const fixedTotal = budgetFixedOverheadTotal();
+  const nonDiscAmt = housingAmt + fixedTotal;
+
+  // Discretionary: food, transport, lifestyle
+  const discCats = ["food", "transport", "lifestyle"];
+  const discAmt = discCats.reduce((s, key) => {
+    const cat = state.budget.categories.find(c => c.key === key);
+    return s + (cat ? budgetCategoryTotal(cat) : 0);
+  }, 0);
+
+  // Peer savings
+  const peerSavings = budgetPeerAvg("savings");
+  const savingsPct = income > 0 ? Math.round((Math.max(0, savings) / income) * 100) : 0;
+  const peerSavingsPct = income > 0 ? Math.round((peerSavings / income) * 100) : 0;
 
   return `
     <div class="card mb-md">
       <div class="row" style="margin-bottom:12px;">
         <div class="section-title" style="margin:0;">Budget Results</div>
-        <button class="button secondary small"
+        <button class="button secondary small" style="border:1.5px solid var(--accent);color:var(--accent);font-weight:700;"
                 type="button" onclick="editInAboutMe('budgetSetup')">Update Budget</button>
       </div>
+
+      ${renderMPGapBanner()}
 
       <div class="summary-grid" style="margin-bottom:14px;">
         <div>
@@ -116,41 +154,74 @@ function renderMPBudgetResults(hasBudget) {
           <div class="label" style="margin-bottom:2px;">Plan</div>
           <div style="font-size:18px;font-weight:850;">${budgetFmt(planTotal)}</div>
         </div>
-        <div>
-          <div class="label" style="margin-bottom:2px;">Left</div>
-          <div style="font-size:18px;font-weight:850;color:${remaining >= 0 ? "var(--accent)" : "var(--danger)"};">${budgetFmt(remaining)}</div>
+      </div>
+
+      <!-- P&L layout -->
+      <div style="border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:8px;">
+        <div class="helper" style="font-weight:700;margin-bottom:6px;">Non-Discretionary</div>
+        <div class="row" style="margin-bottom:4px;font-size:13px;">
+          <span class="helper">${housingCat ? (housingCat.icon || "🏠") + " " + housingCat.name : "Housing"}</span>
+          <span style="font-weight:700;">${budgetFmt(housingAmt)}</span>
+        </div>
+        ${state.budget.fixedOverhead.length > 0 ? `
+          <div class="row" style="margin-bottom:4px;font-size:13px;">
+            <span class="helper">Required Costs</span>
+            <span style="font-weight:700;">${budgetFmt(fixedTotal)}</span>
+          </div>
+        ` : ""}
+        <div class="row" style="border-top:1px solid var(--line);padding-top:4px;font-size:12px;font-weight:700;margin-bottom:8px;">
+          <span>Subtotal</span>
+          <span>${budgetFmt(nonDiscAmt)}</span>
         </div>
       </div>
 
-      ${renderMPGapBanner()}
-
-      ${state.budget.categories.map(cat => `
-        <div class="row" style="margin-bottom:6px;">
-          <span class="helper">${h(cat.icon || "")} ${h(cat.name)}</span>
-          <span class="stat-val">${budgetFmt(budgetCategoryTotal(cat))}</span>
-        </div>
-      `).join("")}
-
-      ${state.budget.fixedOverhead.length > 0 ? `
-        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line);">
-          <div class="helper" style="font-weight:700;margin-bottom:6px;">Required Costs</div>
-          ${state.budget.fixedOverhead.map(f => `
-            <div class="row" style="margin-bottom:4px;">
-              <span class="helper">${h(f.name)}</span>
-              <span style="font-size:12px;font-weight:700;">${budgetFmt(f.amount)}</span>
+      <div style="border-bottom:2px solid var(--line);padding-bottom:8px;margin-bottom:8px;">
+        <div class="helper" style="font-weight:700;margin-bottom:6px;">Discretionary</div>
+        ${["food", "transport", "lifestyle"].map(key => {
+          const cat = state.budget.categories.find(c => c.key === key);
+          return cat ? `
+            <div class="row" style="margin-bottom:4px;font-size:13px;">
+              <span class="helper">${h(cat.icon || "")} ${h(cat.name)}</span>
+              <span style="font-weight:700;">${budgetFmt(budgetCategoryTotal(cat))}</span>
             </div>
-          `).join("")}
-          <div class="row" style="margin-top:4px;">
-            <span class="helper" style="font-weight:700;">Total Required</span>
-            <span style="font-size:12px;font-weight:850;">${budgetFmt(budgetFixedOverheadTotal())}</span>
-          </div>
+          ` : "";
+        }).join("")}
+        <div class="row" style="border-top:1px solid var(--line);padding-top:4px;font-size:12px;font-weight:700;margin-bottom:8px;">
+          <span>Subtotal</span>
+          <span>${budgetFmt(discAmt)}</span>
         </div>
-      ` : ""}
+      </div>
 
-      <div class="row" style="margin-top:12px;">
-        <button class="button secondary small"
+      <!-- Summary row -->
+      <div class="row" style="margin-bottom:6px;border-bottom:1px solid var(--line);padding-bottom:6px;">
+        <span class="helper" style="font-weight:700;">Total Spending</span>
+        <span style="font-weight:850;font-size:13px;">${budgetFmt(planTotal)}</span>
+      </div>
+
+      <div class="row" style="margin-bottom:8px;">
+        <span class="helper">Income</span>
+        <span style="font-weight:850;font-size:13px;">${budgetFmt(income)}</span>
+      </div>
+
+      <div class="row" style="margin-bottom:12px;">
+        <span class="helper" style="font-weight:700;">Savings</span>
+        <span style="font-weight:850;font-size:14px;color:${savings >= 0 ? "var(--accent)" : "var(--danger)"};">${budgetFmt(savings)}</span>
+      </div>
+
+      <!-- Savings thermometer -->
+      <div style="position:relative;height:40px;margin:10px 0 4px;">
+        <div class="thermo-track" style="position:absolute;top:18px;left:0;right:0;height:4px;background:var(--bar);border-radius:2px;"></div>
+        <div class="thermo-fill" style="position:absolute;top:18px;left:0;height:4px;width:${Math.min(100, Math.max(0, peerSavingsPct))}%;background:var(--muted);border-radius:2px;"></div>
+        <div class="thermo-fill" style="position:absolute;top:18px;left:${Math.min(100, Math.max(0, peerSavingsPct))}%;height:4px;width:${Math.abs(savingsPct - peerSavingsPct)}%;background:${savingsPct >= peerSavingsPct ? "var(--accent)" : "var(--warn)"};border-radius:2px;"></div>
+        <div style="position:absolute;top:0;left:${Math.max(2, Math.min(98, peerSavingsPct))}%;font-size:9px;font-weight:700;color:var(--muted);transform:translateX(-50%);white-space:nowrap;">Peers</div>
+        <div style="position:absolute;top:0;left:${Math.max(2, Math.min(98, savingsPct))}%;font-size:9px;font-weight:700;color:${savingsPct >= peerSavingsPct ? "var(--accent)" : "var(--warn)"};transform:translateX(-50%);white-space:nowrap;">You</div>
+      </div>
+      <div class="helper" style="text-align:right;margin-top:4px;font-size:10px;">You save ${savingsPct}% · Peers save ${peerSavingsPct}%</div>
+
+      <div class="row" style="margin-top:12px;gap:8px;">
+        <button class="button secondary small" style="border:1.5px solid var(--accent);color:var(--accent);font-weight:700;"
                 type="button" onclick="goDebtAnalyzer()">Debt Analysis</button>
-        <button class="button secondary small"
+        <button class="button secondary small" style="border:1.5px solid var(--accent);color:var(--accent);font-weight:700;"
                 type="button" onclick="goMyDebts(null)">Manage Debts</button>
       </div>
     </div>
@@ -190,51 +261,6 @@ function renderMPGapBanner() {
       <p class="helper" style="margin-bottom:10px;">You're spending less than planned.</p>
       <button class="button secondary" style="font-size:12px;" type="button"
               onclick="state.monthlyUpdateGap=null;render()">Dismiss</button>
-    </div>
-  `;
-}
-
-function renderMPAssumptions() {
-  const themes = LIFESTYLE_THEMES || [];
-
-  const answeredThemes = themes.filter(t => {
-    const la = state.lifestyleAnswers && state.lifestyleAnswers[t.key];
-    return la && la.lastUpdated;
-  });
-
-  const profile = state.budget.profile;
-  const hasProfile = profile && (profile.zip || profile.householdSize);
-
-  return `
-    <div class="card mb-md">
-      <div class="row" style="margin-bottom:8px;">
-        <div class="section-title" style="margin:0;">Assumptions Used</div>
-        <button class="button secondary small"
-                type="button" onclick="editInAboutMe('lifestyle')">Update Lifestyle</button>
-      </div>
-
-      ${hasProfile ? `
-        <div style="margin-bottom:10px;">
-          <p class="helper" style="font-weight:700;margin-bottom:4px;">Budget inputs</p>
-          ${profile.zip ? `<p class="helper" style="margin-bottom:2px;">ZIP ${h(profile.zip)} cost-of-living modifier applied</p>` : ""}
-          ${profile.householdSize ? `<p class="helper" style="margin-bottom:2px;">${profile.householdSize}-person household multiplier applied</p>` : ""}
-        </div>
-      ` : ""}
-
-      ${answeredThemes.length > 0 ? `
-        <p class="helper" style="font-weight:700;margin-bottom:6px;">Lifestyle signals</p>
-        ${answeredThemes.map(t => `
-          <div class="row" style="margin-bottom:4px;">
-            <span class="helper">${h(t.label)}</span>
-            <span class="helper">Updated ${h(state.lifestyleAnswers[t.key].lastUpdated)}</span>
-          </div>
-        `).join("")}
-      ` : `
-        <p class="helper">No lifestyle data yet.
-          <button class="button secondary small" style="margin-left:6px;"
-                  type="button" onclick="editInAboutMe('lifestyle')">Add Lifestyle</button>
-        </p>
-      `}
     </div>
   `;
 }

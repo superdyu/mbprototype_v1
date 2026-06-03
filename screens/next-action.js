@@ -28,6 +28,8 @@ function renderNextAction() {
 
   return `
     <div style="padding:24px 0 16px;">
+      <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:20px;"
+              type="button" onclick="go('postResult')">← Back</button>
       <h1 class="title" style="font-size:22px;margin-bottom:8px;">What do you want to do?</h1>
       <p class="helper" style="margin-bottom:24px;">Choose what makes sense for you right now.</p>
 
