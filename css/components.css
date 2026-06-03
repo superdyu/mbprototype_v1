@@ -412,6 +412,11 @@
   line-height: 1.35;
 }
 
+/* Spacing utility overrides */
+.mb-sm  { margin-bottom: 8px;  }
+.mb-md  { margin-bottom: 12px; }
+.mb-0   { margin-bottom: 0;    }
+
 /* Layout helpers */
 .row {
   display: flex;

@@ -68,7 +68,7 @@ function renderMPProfile() {
   const updated = profile && profile.lastUpdated ? profile.lastUpdated : null;
 
   return `
-    <div class="card" style="margin-bottom:12px;">
+    <div class="card mb-md">
       <div class="row" style="margin-bottom:8px;">
         <div class="section-title" style="margin:0;">Your Money Profile</div>
         <button class="button secondary small"
@@ -86,7 +86,7 @@ function renderMPProfile() {
 function renderMPBudgetResults(hasBudget) {
   if (!hasBudget) {
     return `
-      <div class="card" style="margin-bottom:12px;">
+      <div class="card mb-md">
         <div class="row" style="margin-bottom:8px;">
           <div class="section-title" style="margin:0;">Budget Results</div>
         </div>
@@ -100,7 +100,7 @@ function renderMPBudgetResults(hasBudget) {
   const remaining = income - planTotal;
 
   return `
-    <div class="card" style="margin-bottom:12px;">
+    <div class="card mb-md">
       <div class="row" style="margin-bottom:12px;">
         <div class="section-title" style="margin:0;">Budget Results</div>
         <button class="button secondary small"
@@ -127,7 +127,7 @@ function renderMPBudgetResults(hasBudget) {
       ${state.budget.categories.map(cat => `
         <div class="row" style="margin-bottom:6px;">
           <span class="helper">${h(cat.icon || "")} ${h(cat.name)}</span>
-          <span style="font-weight:700;font-size:13px;">${budgetFmt(budgetCategoryTotal(cat))}</span>
+          <span class="stat-val">${budgetFmt(budgetCategoryTotal(cat))}</span>
         </div>
       `).join("")}
 
@@ -206,7 +206,7 @@ function renderMPAssumptions() {
   const hasProfile = profile && (profile.zip || profile.householdSize);
 
   return `
-    <div class="card" style="margin-bottom:12px;">
+    <div class="card mb-md">
       <div class="row" style="margin-bottom:8px;">
         <div class="section-title" style="margin:0;">Assumptions Used</div>
         <button class="button secondary small"
@@ -242,7 +242,7 @@ function renderMPAssumptions() {
 function renderMPComparisons(hasBudget) {
   if (!hasBudget) {
     return `
-      <div class="card" style="margin-bottom:12px;">
+      <div class="card mb-md">
         <div class="section-title" style="margin-bottom:8px;">Comparisons</div>
         <p class="helper">Build your budget to see how you compare.</p>
       </div>
@@ -251,7 +251,7 @@ function renderMPComparisons(hasBudget) {
 
   const cats = state.budget.categories;
   return `
-    <div class="card" style="margin-bottom:12px;">
+    <div class="card mb-md">
       <div class="section-title" style="margin-bottom:12px;">Comparisons</div>
       <p class="helper" style="margin-bottom:12px;">How your spending compares to similar households.</p>
       ${cats.map(cat => {
@@ -281,7 +281,7 @@ function renderMPGoals() {
   const milestones = state.milestones || [];
 
   return `
-    <div class="card" style="margin-bottom:12px;">
+    <div class="card mb-md">
       <div class="row" style="margin-bottom:8px;">
         <div class="section-title" style="margin:0;">Goals</div>
         <button class="button secondary small"
@@ -322,7 +322,7 @@ function renderMPCommitments() {
   const commitments = state.commitments || [];
 
   return `
-    <div class="card" style="margin-bottom:12px;">
+    <div class="card mb-md">
       <div class="section-title" style="margin-bottom:8px;">Active Commitments</div>
       ${commitments.length === 0 ? `
         <p class="helper">No active commitments yet. Complete a budget review to create one.</p>

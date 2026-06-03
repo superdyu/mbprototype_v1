@@ -151,15 +151,9 @@ const LP_SCRIPTS = {
 };
 
 // ─── Playback state ───────────────────────────────────────────────────────────
-let _lpSentences = [];
-let _lpIndex     = 0;
-let _lpPlaying   = false;
-let _lpEnded           = false; // true once last sentence auto-pauses
-let _lpCompleted       = false; // true once end reached this session — never re-locked
-let _lpCurrentLessonId = null;  // tracks which lesson is loaded; fresh ID = fresh load
-let _lpPendingAutoPlay = false; // consumed once by lpMountHook after fresh load render
-let _lpTimer     = null;
-let _lpSpeed     = 1;     // 1 | 1.5 | 2
+// All playback variables live in state.lessonPlayback (state.js).
+// Consolidated there so navigation resets them cleanly and render.js doesn't
+// need to read globals from lesson.js.
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function lpFmtTime(sec) {
@@ -172,94 +166,94 @@ function lpHighlight(index) {
   const prev = document.getElementById("lp-prev");
   const curr = document.getElementById("lp-curr");
   const next = document.getElementById("lp-next");
-  if (prev) prev.textContent = _lpSentences[index - 1] || "";
-  if (curr) curr.textContent = _lpSentences[index]     || "";
-  if (next) next.textContent = _lpSentences[index + 1] || "";
+  if (prev) prev.textContent = state.lessonPlayback.sentences[index - 1] || "";
+  if (curr) curr.textContent = state.lessonPlayback.sentences[index]     || "";
+  if (next) next.textContent = state.lessonPlayback.sentences[index + 1] || "";
 }
 
 function lpUpdateProgress() {
   // Normalize so index 0 = 0% and last index = 100%
-  const last = Math.max(1, _lpSentences.length - 1);
-  const pct  = (_lpIndex / last) * 100;
+  const last = Math.max(1, state.lessonPlayback.sentences.length - 1);
+  const pct  = (state.lessonPlayback.index / last) * 100;
   const bar  = document.getElementById("lp-bar");
   if (bar) bar.style.width = Math.min(100, pct).toFixed(1) + "%";
 
-  const total   = _lpSentences.length * 3; // total seconds at 1×
-  const elapsed = Math.round((_lpIndex / last) * total);
+  const total   = state.lessonPlayback.sentences.length * 3; // total seconds at 1×
+  const elapsed = Math.round((state.lessonPlayback.index / last) * total);
   const timeEl  = document.getElementById("lp-time");
   if (timeEl) timeEl.textContent = lpFmtTime(elapsed);
 }
 
 function lpUpdatePlayBtn() {
   const btn  = document.getElementById("lp-playbtn");
-  if (btn) btn.textContent = _lpEnded ? "↻" : (_lpPlaying ? "⏸" : "▶");
+  if (btn) btn.textContent = state.lessonPlayback.ended ? "↻" : (state.lessonPlayback.playing ? "⏸" : "▶");
   const wave = document.getElementById("lp-wave");
-  if (wave) wave.classList.toggle("playing", _lpPlaying && !_lpEnded);
+  if (wave) wave.classList.toggle("playing", state.lessonPlayback.playing && !state.lessonPlayback.ended);
 }
 
 function lpUnlockNext() {
-  _lpCompleted = true;
+  state.lessonPlayback.completed = true;
   const btn = document.getElementById("lp-next-btn");
   if (btn) btn.disabled = false;
 }
 
 function lpLockNext() {
-  if (_lpCompleted) return; // user already finished — keep Next available
+  if (state.lessonPlayback.completed) return; // user already finished — keep Next available
   const btn = document.getElementById("lp-next-btn");
   if (btn) btn.disabled = true;
 }
 
 // ─── Playback controls ────────────────────────────────────────────────────────
 function lpAdvance() {
-  if (_lpIndex < _lpSentences.length - 1) {
-    _lpIndex++;
-    lpHighlight(_lpIndex);
+  if (state.lessonPlayback.index < state.lessonPlayback.sentences.length - 1) {
+    state.lessonPlayback.index++;
+    lpHighlight(state.lessonPlayback.index);
     lpUpdateProgress();
   } else {
     // Reached end: snap to 100%, unlock Next, switch to replay icon
-    _lpEnded = true;
+    state.lessonPlayback.ended = true;
     lpPause();
     const bar = document.getElementById("lp-bar");
     if (bar) bar.style.width = "100%";
     const timeEl = document.getElementById("lp-time");
-    if (timeEl) timeEl.textContent = lpFmtTime(Math.round(_lpSentences.length * 3 / _lpSpeed));
+    if (timeEl) timeEl.textContent = lpFmtTime(Math.round(state.lessonPlayback.sentences.length * 3 / state.lessonPlayback.speed));
     lpUnlockNext();
     lpUpdatePlayBtn();
   }
 }
 
 function lpPlay() {
-  if (_lpPlaying || _lpEnded) return;
-  _lpPlaying = true;
-  _lpTimer = setInterval(lpAdvance, Math.round(3000 / _lpSpeed));
+  if (state.lessonPlayback.playing || state.lessonPlayback.ended) return;
+  state.lessonPlayback.playing = true;
+  state.lessonPlayback.timer = setInterval(lpAdvance, Math.round(3000 / state.lessonPlayback.speed));
   lpUpdatePlayBtn();
 }
 
 function lpPause() {
-  _lpPlaying = false;
-  if (_lpTimer) { clearInterval(_lpTimer); _lpTimer = null; }
+  state.lessonPlayback.playing = false;
+  if (state.lessonPlayback.timer) { clearInterval(state.lessonPlayback.timer); state.lessonPlayback.timer = null; }
   lpUpdatePlayBtn();
 }
 
 // Stops playback and clears the interval. Called by render.js before destroying
 // the lesson DOM so the timer doesn't fire against stale element references.
 function lpStopPlayback() {
-  _lpPlaying = false;
-  if (_lpTimer) { clearInterval(_lpTimer); _lpTimer = null; }
+  state.lessonPlayback.playing = false;
+  if (state.lessonPlayback.timer) { clearInterval(state.lessonPlayback.timer); state.lessonPlayback.timer = null; }
 }
 
 function lpTogglePlay() {
-  if (_lpPlaying) lpPause(); else lpPlay();
+  if (state.lessonPlayback.playing) lpPause(); else lpPlay();
 }
 
 // Unified play button action — toggles play/pause or restarts if ended
 function lpPlayAction() {
-  if (_lpEnded) lpRestart(); else lpTogglePlay();
+  if (state.lessonPlayback.ended) lpRestart(); else lpTogglePlay();
 }
 
 function lpRestart() {
-  _lpIndex  = 0;
-  _lpEnded  = false;
+  state.lessonPlayback.index  = 0;
+  state.lessonPlayback.ended  = false;
   lpLockNext();
   lpHighlight(0);
   lpUpdateProgress();
@@ -268,48 +262,48 @@ function lpRestart() {
 
 // ±2 sentences per skip (~7s at 1×)
 function lpSkip(delta) {
-  if (_lpEnded && delta < 0) {
+  if (state.lessonPlayback.ended && delta < 0) {
     // Allow seeking backward after end — clears ended state
-    _lpEnded = false;
+    state.lessonPlayback.ended = false;
     lpLockNext();
   }
-  _lpIndex = Math.max(0, Math.min(_lpSentences.length - 1, _lpIndex + delta));
-  lpHighlight(_lpIndex);
+  state.lessonPlayback.index = Math.max(0, Math.min(state.lessonPlayback.sentences.length - 1, state.lessonPlayback.index + delta));
+  lpHighlight(state.lessonPlayback.index);
   lpUpdateProgress();
   lpUpdatePlayBtn();
-  if (_lpPlaying) {
-    clearInterval(_lpTimer);
-    _lpTimer = setInterval(lpAdvance, Math.round(3000 / _lpSpeed));
+  if (state.lessonPlayback.playing) {
+    clearInterval(state.lessonPlayback.timer);
+    state.lessonPlayback.timer = setInterval(lpAdvance, Math.round(3000 / state.lessonPlayback.speed));
   }
 }
 
 function lpSetSpeed(s) {
-  _lpSpeed = s;
+  state.lessonPlayback.speed = s;
   const btn = document.getElementById("lp-speed");
   if (btn) btn.textContent = s + "×";
-  if (_lpPlaying) {
-    clearInterval(_lpTimer);
-    _lpTimer = setInterval(lpAdvance, Math.round(3000 / _lpSpeed));
+  if (state.lessonPlayback.playing) {
+    clearInterval(state.lessonPlayback.timer);
+    state.lessonPlayback.timer = setInterval(lpAdvance, Math.round(3000 / state.lessonPlayback.speed));
   }
 }
 
 function lpCycleSpeed() {
   const speeds = [1, 1.5, 2];
-  lpSetSpeed(speeds[(speeds.indexOf(_lpSpeed) + 1) % speeds.length]);
+  lpSetSpeed(speeds[(speeds.indexOf(state.lessonPlayback.speed) + 1) % speeds.length]);
 }
 
 // Called by render.js after lesson screen HTML is written to DOM.
 // Auto-starts fresh loads; resumes playback interrupted by a mid-play re-render.
 function lpMountHook(wasPlaying) {
-  if (_lpPendingAutoPlay) { _lpPendingAutoPlay = false; lpPlay(); }
+  if (state.lessonPlayback.pendingAutoPlay) { state.lessonPlayback.pendingAutoPlay = false; lpPlay(); }
   else if (wasPlaying)    { lpPlay(); }
 }
 
 function lpSeekTo(index) {
-  _lpIndex = Math.max(0, Math.min(_lpSentences.length - 1, parseInt(index) || 0));
-  _lpEnded = false;
+  state.lessonPlayback.index = Math.max(0, Math.min(state.lessonPlayback.sentences.length - 1, parseInt(index) || 0));
+  state.lessonPlayback.ended = false;
   lpLockNext();
-  lpHighlight(_lpIndex);
+  lpHighlight(state.lessonPlayback.index);
   lpUpdateProgress();
   lpUpdatePlayBtn();
 }
@@ -332,28 +326,28 @@ function renderLesson() {
 
   // Reset state only when a different lesson is opened. Same-lesson re-renders
   // (e.g. admin stage-style toggle, debouncedRender) preserve playback position.
-  if (_lpCurrentLessonId !== lesson.id) {
-    _lpCurrentLessonId = lesson.id;
-    _lpSentences       = LP_SCRIPTS[lesson.id] || [
+  if (state.lessonPlayback.currentLessonId !== lesson.id) {
+    state.lessonPlayback.currentLessonId = lesson.id;
+    state.lessonPlayback.sentences       = LP_SCRIPTS[lesson.id] || [
       "This lesson's content will be added soon.",
       "Tap Next to proceed to the quiz."
     ];
-    _lpIndex           = 0;
-    _lpPlaying         = false;
-    _lpEnded           = false;
-    _lpCompleted       = false;
-    _lpSpeed           = 1;
-    _lpPendingAutoPlay = true;
-    if (_lpTimer) { clearInterval(_lpTimer); _lpTimer = null; }
+    state.lessonPlayback.index           = 0;
+    state.lessonPlayback.playing         = false;
+    state.lessonPlayback.ended           = false;
+    state.lessonPlayback.completed       = false;
+    state.lessonPlayback.speed           = 1;
+    state.lessonPlayback.pendingAutoPlay = true;
+    if (state.lessonPlayback.timer) { clearInterval(state.lessonPlayback.timer); state.lessonPlayback.timer = null; }
   }
 
   const isWaveform  = state.lpStageStyle !== "clean";
-  const totalTime   = lpFmtTime(Math.round(_lpSentences.length * 3));
-  const last        = Math.max(1, _lpSentences.length - 1);
-  const barPct      = (_lpIndex / last * 100).toFixed(1);
-  const elapsed     = lpFmtTime(Math.round((_lpIndex / last) * _lpSentences.length * 3));
-  const playLabel   = _lpEnded ? "↻" : (_lpPlaying ? "⏸" : "▶");
-  const waveClass   = `lp-wave${isWaveform ? "" : " lp-wave-hidden"}${_lpPlaying && !_lpEnded ? " playing" : ""}`;
+  const totalTime   = lpFmtTime(Math.round(state.lessonPlayback.sentences.length * 3));
+  const last        = Math.max(1, state.lessonPlayback.sentences.length - 1);
+  const barPct      = (state.lessonPlayback.index / last * 100).toFixed(1);
+  const elapsed     = lpFmtTime(Math.round((state.lessonPlayback.index / last) * state.lessonPlayback.sentences.length * 3));
+  const playLabel   = state.lessonPlayback.ended ? "↻" : (state.lessonPlayback.playing ? "⏸" : "▶");
+  const waveClass   = `lp-wave${isWaveform ? "" : " lp-wave-hidden"}${state.lessonPlayback.playing && !state.lessonPlayback.ended ? " playing" : ""}`;
 
   return `
     <div class="lp-layout">
@@ -375,9 +369,9 @@ function renderLesson() {
 
       <!-- MIDDLE: subtitle strip — shows prev / current / next sentence -->
       <div class="lp-subtitle">
-        <p class="lp-sub-prev" id="lp-prev">${h(_lpSentences[_lpIndex - 1] || "")}</p>
-        <p class="lp-sub-curr" id="lp-curr">${h(_lpSentences[_lpIndex]     || "")}</p>
-        <p class="lp-sub-next" id="lp-next">${h(_lpSentences[_lpIndex + 1] || "")}</p>
+        <p class="lp-sub-prev" id="lp-prev">${h(state.lessonPlayback.sentences[state.lessonPlayback.index - 1] || "")}</p>
+        <p class="lp-sub-curr" id="lp-curr">${h(state.lessonPlayback.sentences[state.lessonPlayback.index]     || "")}</p>
+        <p class="lp-sub-next" id="lp-next">${h(state.lessonPlayback.sentences[state.lessonPlayback.index + 1] || "")}</p>
       </div>
 
       <!-- BOTTOM: audio controls -->
@@ -386,7 +380,7 @@ function renderLesson() {
           <button class="button secondary lp-ctrl-btn" type="button" onclick="lpSkip(-2)">◀ 7s</button>
           <button class="button lp-ctrl-btn" id="lp-playbtn" type="button" onclick="lpPlayAction()">${playLabel}</button>
           <button class="button secondary lp-ctrl-btn" type="button" onclick="lpSkip(2)">7s ▶</button>
-          <button class="button secondary lp-speed-btn" id="lp-speed" type="button" onclick="lpCycleSpeed()">${_lpSpeed}×</button>
+          <button class="button secondary lp-speed-btn" id="lp-speed" type="button" onclick="lpCycleSpeed()">${state.lessonPlayback.speed}×</button>
         </div>
         <div class="lp-progress-row">
           <span id="lp-time" class="lp-time-label">${elapsed}</span>
@@ -395,7 +389,7 @@ function renderLesson() {
           </div>
           <span class="lp-time-label">${totalTime}</span>
         </div>
-        <button class="button full" id="lp-next-btn" type="button" onclick="go('quiz')" ${(_lpEnded || _lpCompleted) ? "" : "disabled"}>Next</button>
+        <button class="button full" id="lp-next-btn" type="button" onclick="go('quiz')" ${(state.lessonPlayback.ended || state.lessonPlayback.completed) ? "" : "disabled"}>Next</button>
       </div>
 
     </div>
@@ -415,12 +409,12 @@ function renderLessonAdmin() {
         </select>
       </div>
       <div class="input-group">
-        <label>Jump to sentence (0–${_lpSentences.length - 1})</label>
-        <input type="number" min="0" max="${_lpSentences.length - 1}" value="${_lpIndex}"
+        <label>Jump to sentence (0–${state.lessonPlayback.sentences.length - 1})</label>
+        <input type="number" min="0" max="${state.lessonPlayback.sentences.length - 1}" value="${state.lessonPlayback.index}"
                oninput="lpSeekTo(this.value)">
       </div>
       <p class="helper" style="margin-top:6px;">
-        ${_lpSentences.length} sentences · ~${lpFmtTime(Math.round(_lpSentences.length * 3))} at 1×
+        ${state.lessonPlayback.sentences.length} sentences · ~${lpFmtTime(Math.round(state.lessonPlayback.sentences.length * 3))} at 1×
       </p>
     </div>
   `;

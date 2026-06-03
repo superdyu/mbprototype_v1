@@ -42,6 +42,21 @@ const state = {
   // "waveform": animated bars above title | "clean": title only
   lpStageStyle: "waveform",
 
+  // ── Lesson playback session state ─────────────────────────────────────────
+  // All playback variables consolidated here so navigation resets them cleanly
+  // and render.js doesn't need to import globals from lesson.js.
+  lessonPlayback: {
+    sentences:       [],
+    index:           0,
+    playing:         false,
+    ended:           false,
+    completed:       false,
+    currentLessonId: null,
+    pendingAutoPlay: false,
+    timer:           null,
+    speed:           1
+  },
+
   // Color mode — toggled from admin panel, resets to light on page refresh
   settings: { colorMode: "light" },
 
@@ -821,5 +836,6 @@ function resetUserData() {
   state.nextAction           = null;
   state.monthlyUpdateGap     = null;
   state.editingGoalId        = null;
+  state.lessonPlayback       = { sentences: [], index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1 };
   render();
 }

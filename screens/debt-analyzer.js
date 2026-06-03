@@ -161,7 +161,7 @@ var STRATEGY_META = {
 };
 
 // ─── SVG Charts ───────────────────────────────────────────────────────────────
-function renderInterestBarChart(analyses) {
+function _renderInterestBarChart(analyses) {
   var keys    = ["snowball","avalanche","equal","minimum"];
   var values  = keys.map(function(k) { return analyses[k].totalInterest; });
   var maxVal  = Math.max.apply(null, values) || 1;
@@ -197,7 +197,7 @@ function renderInterestBarChart(analyses) {
   `;
 }
 
-function renderBalanceTimeline(analyses) {
+function _renderBalanceTimeline(analyses) {
   var keys      = ["snowball","avalanche","equal","minimum"];
   var W         = 300;
   var H         = 160;
@@ -290,7 +290,7 @@ function renderBalanceTimeline(analyses) {
 }
 
 // ─── Strategy card ────────────────────────────────────────────────────────────
-function renderStrategyCard(key, result, isBest) {
+function _renderStrategyCard(key, result, isBest) {
   var meta     = STRATEGY_META[key];
   var payoff   = result.monthsToPayoff;
   var duration = payoff ? (payoff >= 12
@@ -341,7 +341,7 @@ function renderStrategyCard(key, result, isBest) {
 }
 
 // ─── Prose section ────────────────────────────────────────────────────────────
-function renderDebtAnalyzerProse(analyses) {
+function _renderDebtAnalyzerProse(analyses) {
   var av   = analyses.avalanche;
   var sn   = analyses.snowball;
   var mn   = analyses.minimum;
@@ -476,22 +476,22 @@ function renderDebtAnalyzer() {
       <!-- Strategy cards -->
       <div class="section-title" style="margin:0 0 10px;">Strategy Comparison</div>
       ${analyses ? ["snowball","avalanche","equal","minimum"].map(function(k) {
-        return renderStrategyCard(k, analyses[k], k === bestKey);
+        return _renderStrategyCard(k, analyses[k], k === bestKey);
       }).join("") : ""}
 
       ${analyses ? `
         <!-- Graphs -->
         <div class="card" style="margin-bottom:14px;">
           <div class="section-title" style="margin-bottom:12px;">Total Interest Paid by Strategy</div>
-          ${renderInterestBarChart(analyses)}
+          ${_renderInterestBarChart(analyses)}
 
           <div class="section-title" style="margin:16px 0 12px;">Balance Over Time</div>
           <p class="helper" style="margin:0 0 10px;">How your total debt balance decreases under each strategy.</p>
-          ${renderBalanceTimeline(analyses)}
+          ${_renderBalanceTimeline(analyses)}
         </div>
 
         <!-- Prose -->
-        ${renderDebtAnalyzerProse(analyses)}
+        ${_renderDebtAnalyzerProse(analyses)}
       ` : ""}
     ` : ""}
   `;
