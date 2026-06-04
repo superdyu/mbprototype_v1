@@ -134,16 +134,16 @@
             onfocus="moneyFocus(this)" onblur="moneyBlur(this)"/>
         </div>
         <div class="field">
-          <label>Household size</label>
-          <select id="household">
-            <option value="1">1 person</option>
-            <option value="2">2 people</option>
-            <option value="3">3 people</option>
-            <option value="4">4 people</option>
-            <option value="5">5 people</option>
-            <option value="6">6 people</option>
-            <option value="7">7 people</option>
-            <option value="8">8+ people</option>
+          <label>Dependents</label>
+          <select id="dependents" onchange="onDependentsChange()">
+            <option value="0">0 dependents</option>
+            <option value="1">1 dependent</option>
+            <option value="2">2 dependents</option>
+            <option value="3">3 dependents</option>
+            <option value="4">4 dependents</option>
+            <option value="5">5 dependents</option>
+            <option value="6">6 dependents</option>
+            <option value="7">7+ dependents</option>
           </select>
         </div>
 
@@ -327,7 +327,7 @@ const ZIP_DATA = {
 
 const steps = [
   ["Baby Budget", "Build a starter budget without connecting bank accounts."],
-  ["Basics",      "Add income, household, and local cost context."],
+  ["Basics",      "Add income, dependents, and local cost context."],
   ["Housing",     "Start with your largest monthly cost."],
   ["Bills",       "Add required monthly costs before flexible spending."],
   ["Adjust",      "Set flexible spending by category."],
@@ -387,7 +387,7 @@ window.addEventListener("message", function(e) {
     // Restore plain text / select fields
     var fields = ["housing","housingExtras","utilities","medical","transportFixed","phone","internet","otherFixed"];
     if (d.zip && $("zip"))           $("zip").value = d.zip;
-    if ($("household") && d.household)  $("household").value = String(Math.round(d.household));
+    if ($("dependents") && d.dependents)  $("dependents").value = String(Math.round(d.dependents));
     if ($("preIncome") && d.preIncome > 0) $("preIncome").value = (+d.preIncome).toLocaleString();
     if ($("netIncome") && d.netIncome > 0) $("netIncome").value = (+d.netIncome).toLocaleString();
     fields.forEach(function(id) {
@@ -432,20 +432,36 @@ function moneyBlur(el) {
 // ── Income / ZIP helpers ───────────────────────────────────────────────────
 function monthlyIncome() { return num("netIncome"); }
 
-function estimateCaTax(mg) {
+function estimateCaTax(mg, dependents) {
   var a = mg * 12;
   var r = a<=20000?.11:a<=40000?.16:a<=60000?.20:a<=80000?.24:a<=120000?.28:a<=200000?.32:.37;
-  return Math.round(mg * (1 - r));
+  // Each dependent reduces tax liability by ~$1,100/year (federal + CA combined)
+  var depSavings = (dependents || 0) * 1100;
+  var baseTax = a * r;
+  var adjustedTax = Math.max(0, baseTax - depSavings);
+  var afterTaxAnnual = a - adjustedTax;
+  return Math.round(afterTaxAnnual / 12);
 }
 
 function onPreIncomeInput() {
   var pre = parseFmt($("preIncome") && $("preIncome").value);
   if (pre > 0 && $("netIncome")) {
-    var net = estimateCaTax(pre);
+    var deps = num("dependents") || 0;
+    var net = estimateCaTax(pre, deps);
     $("netIncome").value = net.toLocaleString();
     renderSummary();
   }
   checkStep1Next();
+}
+
+function onDependentsChange() {
+  var pre = parseFmt($("preIncome") && $("preIncome").value);
+  if (pre > 0 && $("netIncome")) {
+    var deps = num("dependents") || 0;
+    var net = estimateCaTax(pre, deps);
+    $("netIncome").value = net.toLocaleString();
+    renderSummary();
+  }
 }
 
 function checkStep1Next() {
@@ -457,7 +473,7 @@ function zipEntry()      { return ($("zip") && $("zip").value || "").trim(); }
 function zipObj()        { return ZIP_DATA[zipEntry()] || null; }
 function zipIndex()      { return (zipObj() && zipObj().index) || 100; }
 function zipMultiplier() { return zipIndex() / 100; }
-function householdMultiplier() { var h = Math.max(1, num("household")); return 1 + (h-1) * .42; }
+function householdMultiplier() { var d = Math.max(0, num("dependents")); return 1 + d * .42; }
 
 function housingCosts() { return num("housing") + num("housingExtras") + num("utilities"); }
 function fixedCosts()   { return housingCosts() + num("medical") + num("transportFixed") + num("phone") + num("internet") + num("otherFixed"); }
@@ -822,7 +838,7 @@ function next() {
       zip: zipEntry(),
       preIncome: num("preIncome"),
       netIncome: num("netIncome"),
-      household: num("household") || 1,
+      dependents: num("dependents") || 0,
       housing: num("housing"),
       housingExtras: num("housingExtras"),
       utilities: num("utilities"),
@@ -854,7 +870,7 @@ function restart() {
 }
 
 // ── Input listeners ────────────────────────────────────────────────────────
-["zip", "household", "netIncome", "preIncome",
+["zip", "dependents", "netIncome", "preIncome",
  "housing", "housingExtras", "utilities",
  "medical", "transportFixed", "phone", "internet", "otherFixed"
 ].forEach(function(id) {
