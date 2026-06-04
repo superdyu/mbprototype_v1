@@ -109,12 +109,9 @@ function renderAboutMe() {
       <div class="card" style="max-width:340px;width:100%;padding:24px;">
         <div style="font-weight:850;font-size:17px;margin-bottom:8px;">Build your budget</div>
         <p class="helper" style="margin-bottom:20px;">Answer a few questions and Money Buddy will estimate your monthly plan — takes about 3 minutes.</p>
-        <button class="button primary full" type="button" style="margin-bottom:10px;"
+        <button class="button primary full" type="button"
                 onclick="dismissAboutMeOverlay(); state.flowOrigin='aboutMe'; state.postResultContext='budget'; go('babyBudget');">
           Let's go →
-        </button>
-        <button class="button secondary full" type="button" onclick="dismissAboutMeOverlay();">
-          Maybe later
         </button>
       </div>
     </div>
