@@ -105,7 +105,7 @@ function renderAboutMe() {
 
     ${showBudgetPrompt ? `
     <!-- Budget prompt overlay (shown when budget empty) -->
-    <div id="aboutMeBudgetOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;">
+    <div id="aboutMeBudgetOverlay" style="position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;">
       <div class="card" style="max-width:340px;width:100%;padding:24px;">
         <div style="font-weight:850;font-size:17px;margin-bottom:8px;">Build your budget</div>
         <p class="helper" style="margin-bottom:20px;">Answer a few questions and Money Buddy will estimate your monthly plan — takes about 3 minutes.</p>
