@@ -129,11 +129,6 @@
             onfocus="moneyFocus(this)" onblur="moneyBlur(this)"/>
         </div>
         <div class="field">
-          <label>After-tax monthly income <span style="font-size:10px;color:var(--muted);font-weight:400;">(estimated &#8212; you can override)</span></label>
-          <input id="netIncome" type="text" inputmode="decimal" placeholder="e.g. 7,500"
-            onfocus="moneyFocus(this)" onblur="moneyBlur(this)"/>
-        </div>
-        <div class="field">
           <label>Dependents</label>
           <select id="dependents" onchange="onDependentsChange()">
             <option value="0">0 dependents</option>
@@ -145,6 +140,11 @@
             <option value="6">6 dependents</option>
             <option value="7">7+ dependents</option>
           </select>
+        </div>
+        <div class="field">
+          <label>After-tax monthly income <span style="font-size:10px;color:var(--muted);font-weight:400;">(estimated &#8212; you can override)</span></label>
+          <input id="netIncome" type="text" inputmode="decimal" placeholder="e.g. 7,500"
+            onfocus="moneyFocus(this)" onblur="moneyBlur(this)"/>
         </div>
 
         <!-- Cost-of-living thermometer + sentence (shown when ZIP matches) -->
@@ -320,9 +320,22 @@ window.onerror = function(msg, src, line) {
 // ── Constants ──────────────────────────────────────────────────────────────
 const AVG_INCOME = 4500;
 const ZIP_DATA = {
-  "95126": { label: "95126 San Jose",      index: 145 },
-  "95014": { label: "95014 Cupertino",     index: 170 },
-  "95054": { label: "95054 Santa Clara",   index: 155 }
+  "95126": { label: "95126 San Jose",      index: 145, state: "CA" },
+  "95014": { label: "95014 Cupertino",     index: 170, state: "CA" },
+  "95054": { label: "95054 Santa Clara",   index: 155, state: "CA" }
+};
+
+// Combined federal + state marginal tax rates by bracket and state
+const STATE_TAX_RATES = {
+  "CA": [
+    { annual: 20000,  rate: 0.12 },   // fed 11% + CA 1%
+    { annual: 40000,  rate: 0.18 },   // fed 16% + CA 2%
+    { annual: 60000,  rate: 0.24 },   // fed 20% + CA 4%
+    { annual: 80000,  rate: 0.30 },   // fed 24% + CA 6%
+    { annual: 120000, rate: 0.36 },   // fed 28% + CA 8%
+    { annual: 200000, rate: 0.413 },  // fed 32% + CA 9.3%
+    { annual: Infinity, rate: 0.503 } // fed 37% + CA 13.3%
+  ]
 };
 
 const steps = [
@@ -433,10 +446,22 @@ function moneyBlur(el) {
 function monthlyIncome() { return num("netIncome"); }
 
 function estimateCaTax(mg, dependents) {
-  var a = mg * 12;
-  var r = a<=20000?.11:a<=40000?.16:a<=60000?.20:a<=80000?.24:a<=120000?.28:a<=200000?.32:.37;
-  // Each dependent reduces tax liability by ~$1,100/year (federal + CA combined)
-  var depSavings = (dependents || 0) * 1100;
+  var a = mg * 12;  // annual income
+  var zo = zipObj();
+  var state = (zo && zo.state) || "CA";
+  var stateBrackets = STATE_TAX_RATES[state] || STATE_TAX_RATES["CA"];
+
+  // Find the combined tax rate (federal + state) for this income level
+  var r = 0.24;  // default fallback
+  for (var i = 0; i < stateBrackets.length; i++) {
+    if (a <= stateBrackets[i].annual) {
+      r = stateBrackets[i].rate;
+      break;
+    }
+  }
+
+  // Each dependent's standard deduction ($4,700) × marginal rate = tax savings
+  var depSavings = (dependents || 0) * 4700 * r;
   var baseTax = a * r;
   var adjustedTax = Math.max(0, baseTax - depSavings);
   var afterTaxAnnual = a - adjustedTax;
