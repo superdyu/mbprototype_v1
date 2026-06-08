@@ -259,7 +259,7 @@ function lpRestart() {
   lpPlay();
 }
 
-// ±2 sentences per skip (~7s at 1×)
+// ±1 sentence per skip (10s at 1×)
 function lpSkip(delta) {
   if (_lpEnded && delta < 0) {
     // Allow seeking backward after end — clears ended state
@@ -376,9 +376,9 @@ function renderLesson() {
       <!-- BOTTOM: audio controls -->
       <div class="lp-controls">
         <div class="lp-ctrl-row">
-          <button class="button secondary lp-ctrl-btn" type="button" onclick="lpSkip(-2)">◀ 7s</button>
+          <button class="button secondary lp-ctrl-btn" type="button" onclick="lpSkip(-1)">◀ 10s</button>
           <button class="button lp-ctrl-btn" id="lp-playbtn" type="button" onclick="lpPlayAction()">${playLabel}</button>
-          <button class="button secondary lp-ctrl-btn" type="button" onclick="lpSkip(2)">7s ▶</button>
+          <button class="button secondary lp-ctrl-btn" type="button" onclick="lpSkip(1)">10s ▶</button>
           <button class="button secondary lp-speed-btn" id="lp-speed" type="button" onclick="lpCycleSpeed()">${_lpSpeed}×</button>
         </div>
         <div class="lp-progress-row">
