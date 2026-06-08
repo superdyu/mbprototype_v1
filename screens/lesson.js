@@ -178,7 +178,7 @@ function lpUpdateProgress() {
   const bar  = document.getElementById("lp-bar");
   if (bar) bar.style.width = Math.min(100, pct).toFixed(1) + "%";
 
-  const total   = state.lessonPlayback.sentences.length * 3; // total seconds at 1×
+  const total   = state.lessonPlayback.sentences.length * 10; // total seconds at 1×
   const elapsed = Math.round((state.lessonPlayback.index / last) * total);
   const timeEl  = document.getElementById("lp-time");
   if (timeEl) timeEl.textContent = lpFmtTime(elapsed);
@@ -216,7 +216,7 @@ function lpAdvance() {
     const bar = document.getElementById("lp-bar");
     if (bar) bar.style.width = "100%";
     const timeEl = document.getElementById("lp-time");
-    if (timeEl) timeEl.textContent = lpFmtTime(Math.round(state.lessonPlayback.sentences.length * 3 / state.lessonPlayback.speed));
+    if (timeEl) timeEl.textContent = lpFmtTime(Math.round(state.lessonPlayback.sentences.length * 10 / state.lessonPlayback.speed));
     lpUnlockNext();
     lpUpdatePlayBtn();
   }
@@ -225,7 +225,7 @@ function lpAdvance() {
 function lpPlay() {
   if (state.lessonPlayback.playing || state.lessonPlayback.ended) return;
   state.lessonPlayback.playing = true;
-  state.lessonPlayback.timer = setInterval(lpAdvance, Math.round(3000 / state.lessonPlayback.speed));
+  state.lessonPlayback.timer = setInterval(lpAdvance, Math.round(10000 / state.lessonPlayback.speed));
   lpUpdatePlayBtn();
 }
 
@@ -260,7 +260,7 @@ function lpRestart() {
   lpPlay();
 }
 
-// ±2 sentences per skip (~7s at 1×)
+// ±1 sentence per skip (10s at 1×)
 function lpSkip(delta) {
   if (state.lessonPlayback.ended && delta < 0) {
     // Allow seeking backward after end — clears ended state
@@ -273,7 +273,7 @@ function lpSkip(delta) {
   lpUpdatePlayBtn();
   if (state.lessonPlayback.playing) {
     clearInterval(state.lessonPlayback.timer);
-    state.lessonPlayback.timer = setInterval(lpAdvance, Math.round(3000 / state.lessonPlayback.speed));
+    state.lessonPlayback.timer = setInterval(lpAdvance, Math.round(10000 / state.lessonPlayback.speed));
   }
 }
 
@@ -283,7 +283,7 @@ function lpSetSpeed(s) {
   if (btn) btn.textContent = s + "×";
   if (state.lessonPlayback.playing) {
     clearInterval(state.lessonPlayback.timer);
-    state.lessonPlayback.timer = setInterval(lpAdvance, Math.round(3000 / state.lessonPlayback.speed));
+    state.lessonPlayback.timer = setInterval(lpAdvance, Math.round(10000 / state.lessonPlayback.speed));
   }
 }
 
@@ -342,10 +342,10 @@ function renderLesson() {
   }
 
   const isWaveform  = state.lpStageStyle !== "clean";
-  const totalTime   = lpFmtTime(Math.round(state.lessonPlayback.sentences.length * 3));
+  const totalTime   = lpFmtTime(Math.round(state.lessonPlayback.sentences.length * 10));
   const last        = Math.max(1, state.lessonPlayback.sentences.length - 1);
   const barPct      = (state.lessonPlayback.index / last * 100).toFixed(1);
-  const elapsed     = lpFmtTime(Math.round((state.lessonPlayback.index / last) * state.lessonPlayback.sentences.length * 3));
+  const elapsed     = lpFmtTime(Math.round((state.lessonPlayback.index / last) * state.lessonPlayback.sentences.length * 10));
   const playLabel   = state.lessonPlayback.ended ? "↻" : (state.lessonPlayback.playing ? "⏸" : "▶");
   const waveClass   = `lp-wave${isWaveform ? "" : " lp-wave-hidden"}${state.lessonPlayback.playing && !state.lessonPlayback.ended ? " playing" : ""}`;
 
@@ -377,9 +377,9 @@ function renderLesson() {
       <!-- BOTTOM: audio controls -->
       <div class="lp-controls">
         <div class="lp-ctrl-row">
-          <button class="button secondary lp-ctrl-btn" type="button" onclick="lpSkip(-2)">◀ 7s</button>
+          <button class="button secondary lp-ctrl-btn" type="button" onclick="lpSkip(-1)">◀ 10s</button>
           <button class="button lp-ctrl-btn" id="lp-playbtn" type="button" onclick="lpPlayAction()">${playLabel}</button>
-          <button class="button secondary lp-ctrl-btn" type="button" onclick="lpSkip(2)">7s ▶</button>
+          <button class="button secondary lp-ctrl-btn" type="button" onclick="lpSkip(1)">10s ▶</button>
           <button class="button secondary lp-speed-btn" id="lp-speed" type="button" onclick="lpCycleSpeed()">${state.lessonPlayback.speed}×</button>
         </div>
         <div class="lp-progress-row">
@@ -414,7 +414,7 @@ function renderLessonAdmin() {
                oninput="lpSeekTo(this.value)">
       </div>
       <p class="helper" style="margin-top:6px;">
-        ${state.lessonPlayback.sentences.length} sentences · ~${lpFmtTime(Math.round(state.lessonPlayback.sentences.length * 3))} at 1×
+        ${state.lessonPlayback.sentences.length} sentences · ~${lpFmtTime(Math.round(state.lessonPlayback.sentences.length * 10))} at 1×
       </p>
     </div>
   `;
