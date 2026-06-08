@@ -184,7 +184,7 @@ function lpUpdateProgress() {
   const bar  = document.getElementById("lp-bar");
   if (bar) bar.style.width = Math.min(100, pct).toFixed(1) + "%";
 
-  const total   = _lpSentences.length * 3; // total seconds at 1×
+  const total   = _lpSentences.length * 10; // total seconds at 1×
   const elapsed = Math.round((_lpIndex / last) * total);
   const timeEl  = document.getElementById("lp-time");
   if (timeEl) timeEl.textContent = lpFmtTime(elapsed);
@@ -222,7 +222,7 @@ function lpAdvance() {
     const bar = document.getElementById("lp-bar");
     if (bar) bar.style.width = "100%";
     const timeEl = document.getElementById("lp-time");
-    if (timeEl) timeEl.textContent = lpFmtTime(Math.round(_lpSentences.length * 3 / _lpSpeed));
+    if (timeEl) timeEl.textContent = lpFmtTime(Math.round(_lpSentences.length * 10 / _lpSpeed));
     lpUnlockNext();
     lpUpdatePlayBtn();
   }
@@ -231,7 +231,7 @@ function lpAdvance() {
 function lpPlay() {
   if (_lpPlaying || _lpEnded) return;
   _lpPlaying = true;
-  _lpTimer = setInterval(lpAdvance, Math.round(3000 / _lpSpeed));
+  _lpTimer = setInterval(lpAdvance, Math.round(10000 / _lpSpeed));
   lpUpdatePlayBtn();
 }
 
@@ -272,7 +272,7 @@ function lpSkip(delta) {
   lpUpdatePlayBtn();
   if (_lpPlaying) {
     clearInterval(_lpTimer);
-    _lpTimer = setInterval(lpAdvance, Math.round(3000 / _lpSpeed));
+    _lpTimer = setInterval(lpAdvance, Math.round(10000 / _lpSpeed));
   }
 }
 
@@ -282,7 +282,7 @@ function lpSetSpeed(s) {
   if (btn) btn.textContent = s + "×";
   if (_lpPlaying) {
     clearInterval(_lpTimer);
-    _lpTimer = setInterval(lpAdvance, Math.round(3000 / _lpSpeed));
+    _lpTimer = setInterval(lpAdvance, Math.round(10000 / _lpSpeed));
   }
 }
 
@@ -341,10 +341,10 @@ function renderLesson() {
   }
 
   const isWaveform  = state.lpStageStyle !== "clean";
-  const totalTime   = lpFmtTime(Math.round(_lpSentences.length * 3));
+  const totalTime   = lpFmtTime(Math.round(_lpSentences.length * 10));
   const last        = Math.max(1, _lpSentences.length - 1);
   const barPct      = (_lpIndex / last * 100).toFixed(1);
-  const elapsed     = lpFmtTime(Math.round((_lpIndex / last) * _lpSentences.length * 3));
+  const elapsed     = lpFmtTime(Math.round((_lpIndex / last) * _lpSentences.length * 10));
   const playLabel   = _lpEnded ? "↻" : (_lpPlaying ? "⏸" : "▶");
   const waveClass   = `lp-wave${isWaveform ? "" : " lp-wave-hidden"}${_lpPlaying && !_lpEnded ? " playing" : ""}`;
 
@@ -413,7 +413,7 @@ function renderLessonAdmin() {
                oninput="lpSeekTo(this.value)">
       </div>
       <p class="helper" style="margin-top:6px;">
-        ${_lpSentences.length} sentences · ~${lpFmtTime(Math.round(_lpSentences.length * 3))} at 1×
+        ${_lpSentences.length} sentences · ~${lpFmtTime(Math.round(_lpSentences.length * 10))} at 1×
       </p>
     </div>
   `;
