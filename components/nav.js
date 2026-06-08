@@ -1,5 +1,5 @@
 // ─── Bottom Navigation Bar ────────────────────────────────────────────────────
-// Renders the 5-tab persistent nav: Home | Analysis | Goals | Learn | Market.
+// Renders the 5-tab persistent nav: Home | Budget | Goals | Learn | Market.
 // Only visible on screens in NAV_VISIBLE_SCREENS. Excluded screens:
 //   babyBudget    — full-height iframe; nav conflicts with the layout
 //   lesson        — full-height audiobook player; same constraint as babyBudget
@@ -17,7 +17,7 @@ function renderNav() {
   return `
     <nav class="bottom-tabs" aria-label="Primary navigation">
       <button class="tab ${active === "home"        ? "active" : ""}" onclick="go('home')">Home</button>
-      <button class="tab ${active === "analysis"    ? "active" : ""}" onclick="go('analysis')">Analysis</button>
+      <button class="tab ${active === "analysis"    ? "active" : ""}" onclick="go('analysis')">Budget</button>
       <button class="tab ${active === "goals"       ? "active" : ""}" onclick="go('goals')">Goals</button>
       <button class="tab ${active === "learn"       ? "active" : ""}" onclick="go('learn')">Learn</button>
       <button class="tab ${active === "marketplace" ? "active" : ""}" onclick="go('marketplace')">Market</button>
