@@ -475,8 +475,7 @@ function getSegment(net) {
 }
 
 // ── Thermometer ────────────────────────────────────────────────────────────
-// Range: 70–185 → national 100 sits at ~26% of track
-var THERMO_MIN = 70, THERMO_MAX = 185;
+// Adaptive scaling: baseline (100) and ZIP index (zi) positioned proportionally
 
 function updateThermometer(zi, hasValidZip) {
   var tDiv = $("colThermo");
@@ -485,26 +484,26 @@ function updateThermometer(zi, hasValidZip) {
   if (!hasValidZip) { tDiv.style.display = "none"; return; }
   tDiv.style.display = "";
 
-  var range = THERMO_MAX - THERMO_MIN;
-  var nPct  = ((100 - THERMO_MIN) / range * 100).toFixed(1); // ~26%
-  var zPct  = Math.max(2, Math.min(98, (zi - THERMO_MIN) / range * 100)).toFixed(1);
+  var barMax = Math.max(zi, 100);
+  var peerPct = (100 / barMax * 100).toFixed(1);
+  var userPct = Math.max(2, Math.min(98, (zi / barMax * 100))).toFixed(1);
 
   var nEl = $("thermoNatl"), zEl = $("thermoZip");
   var fEl = $("thermoFill"), nLbl = $("thermoNatlLabel"), zLbl = $("thermoZipLabel");
 
-  if (nEl)  nEl.style.left = nPct + "%";
-  if (zEl)  zEl.style.left = zPct + "%";
+  if (nEl)  nEl.style.left = peerPct + "%";
+  if (zEl)  zEl.style.left = userPct + "%";
 
-  var fLeft  = Math.min(+nPct, +zPct);
-  var fWidth = Math.abs(+zPct - +nPct);
+  var fLeft  = Math.min(+peerPct, +userPct);
+  var fWidth = Math.abs(+userPct - +peerPct);
   if (fEl) {
     fEl.style.left  = fLeft + "%";
     fEl.style.width = fWidth + "%";
     fEl.style.background = zi >= 100 ? "var(--accent)" : "var(--warn)";
   }
-  if (nLbl) nLbl.style.left = nPct + "%";
+  if (nLbl) nLbl.style.left = peerPct + "%";
   if (zLbl) {
-    zLbl.style.left = zPct + "%";
+    zLbl.style.left = userPct + "%";
     var diff = Math.round(zi - 100);
     zLbl.textContent = diff > 0 ? "+" + diff + "% vs avg" : (diff < 0 ? diff + "% vs avg" : "at avg");
     zLbl.style.color = zi > 100 ? "var(--accent)" : (zi < 100 ? "var(--warn)" : "var(--muted)");
