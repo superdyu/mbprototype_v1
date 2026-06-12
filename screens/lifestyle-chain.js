@@ -381,12 +381,114 @@ function renderLifestyleChainReview(theme) {
       </div>
     </div>
 
-    <button class="button primary full" type="button" onclick="saveLifestyleChain()">
-      Save — Update Budget
+    ${renderLifestyleImpactCard(theme)}
+
+    <button id="lcSaveBtn" class="button primary full" type="button" onclick="saveLifestyleChain()">
+      ${lifestyleSaveLabel(theme)}
     </button>
     <button class="button secondary full" style="margin-top:8px;" type="button"
             onclick="cancelLifestyleChain()">Cancel</button>
   `;
+}
+
+// ─── Budget impact summary (review step) ─────────────────────────────────────
+// Shows the OVERALL picture only — total income, total spend, remaining/savings —
+// not every unchanged field. Updates live as sub-sliders move (refreshLifestyleImpact).
+// When the projected remaining goes negative, the user is asked to balance the
+// budget again: monthly savings can eat into buffered cash on hand for a while
+// (debt payments stay funded), so saving is allowed but clearly flagged.
+
+function themeSliderTotal(theme) {
+  const subItems = LIFESTYLE_SUB_ITEMS[theme] || [];
+  const subs     = (state.lifestyleSubSliders && state.lifestyleSubSliders[theme]) || {};
+  return subItems.reduce(function(s, item) { return s + (subs[item] || 0); }, 0);
+}
+
+// Projected totals if the current slider values were saved right now.
+function lifestyleProjectedImpact(theme) {
+  if (state.budget.status === "empty") return null;
+  const bucketKey = LIFESTYLE_PARENT_BUCKET[theme];
+  const cat = bucketKey ? state.budget.categories.find(function(c) { return c.key === bucketKey; }) : null;
+  if (!cat) return null;
+
+  const income    = budgetMonthlyIncome();
+  const planNow   = budgetPlanTotal();
+  const parentNow = budgetCategoryTotal(cat);
+  // Themes sharing the "lifestyle" parent bucket combine into one target
+  let target = themeSliderTotal(theme);
+  if (bucketKey === "lifestyle") {
+    target = ["entertainment", "shopping", "other"].reduce(function(s, t) { return s + themeSliderTotal(t); }, 0);
+  }
+  const plan = planNow - parentNow + target;
+  return { income: income, plan: plan, remaining: income - plan, delta: plan - planNow };
+}
+
+function lifestyleSignedFmt(n) {
+  return (n < 0 ? "−" : "") + budgetFmt(n);
+}
+
+function lifestyleSaveLabel(theme) {
+  const impact = lifestyleProjectedImpact(theme);
+  return impact && impact.remaining < 0 ? "Save anyway — dips into savings" : "Save — Update Budget";
+}
+
+function renderLifestyleImpactCard(theme) {
+  const impact = lifestyleProjectedImpact(theme);
+  if (!impact) return "";
+  const negative = impact.remaining < 0;
+  const deltaTxt = impact.delta === 0 ? "no change"
+    : (impact.delta > 0 ? "+" : "−") + budgetFmt(Math.abs(impact.delta)) + " vs current plan";
+
+  return `
+    <div class="card" style="margin-bottom:14px;">
+      <div class="section-title" style="margin-bottom:10px;">Budget impact</div>
+      <div class="row" style="margin-bottom:6px;">
+        <span class="helper">Total income</span>
+        <span style="font-weight:850;">${budgetFmt(impact.income)}</span>
+      </div>
+      <div class="row" style="margin-bottom:6px;">
+        <span class="helper">Total spend</span>
+        <span style="font-weight:850;"><span id="lcImpactSpend">${budgetFmt(impact.plan)}</span>
+          <span id="lcImpactDelta" class="helper" style="font-weight:400;">(${deltaTxt})</span></span>
+      </div>
+      <div class="row" style="border-top:1px solid var(--line);padding-top:6px;">
+        <span class="helper" style="font-weight:700;">Remaining / Savings</span>
+        <span id="lcImpactRemaining" style="font-weight:850;color:${negative ? "var(--danger)" : "var(--accent)"};">
+          ${lifestyleSignedFmt(impact.remaining)}
+        </span>
+      </div>
+      <div id="lcImpactWarn" style="display:${negative ? "block" : "none"};margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--danger-bg, var(--soft));border:1px solid var(--danger);">
+        <p class="helper" style="margin:0;color:var(--danger);font-weight:700;">Your plan dips into savings.</p>
+        <p class="helper" style="margin:4px 0 0;">
+          Monthly savings can eat into your cash on hand for a while — debt payments stay
+          funded — but it's best to balance your budget. Trim the sliders above until
+          Remaining is positive, or save anyway.
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+// Live-patches the impact card while sliders move (no full re-render, so the
+// active slider keeps its drag state). Called from updateSubSlider().
+function refreshLifestyleImpact(theme) {
+  const impact = lifestyleProjectedImpact(theme);
+  if (!impact) return;
+  const negative = impact.remaining < 0;
+  const spendEl  = $("lcImpactSpend");
+  const deltaEl  = $("lcImpactDelta");
+  const remEl    = $("lcImpactRemaining");
+  const warnEl   = $("lcImpactWarn");
+  const saveBtn  = $("lcSaveBtn");
+  if (spendEl) spendEl.textContent = budgetFmt(impact.plan);
+  if (deltaEl) deltaEl.textContent = "(" + (impact.delta === 0 ? "no change"
+    : (impact.delta > 0 ? "+" : "−") + budgetFmt(Math.abs(impact.delta)) + " vs current plan") + ")";
+  if (remEl) {
+    remEl.textContent  = lifestyleSignedFmt(impact.remaining);
+    remEl.style.color  = negative ? "var(--danger)" : "var(--accent)";
+  }
+  if (warnEl)  warnEl.style.display = negative ? "block" : "none";
+  if (saveBtn) saveBtn.textContent  = negative ? "Save anyway — dips into savings" : "Save — Update Budget";
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -461,6 +563,8 @@ function updateSubSlider(theme, index, value) {
     const total = Object.values(state.lifestyleSubSliders[theme]).reduce((a, b) => a + b, 0);
     totalEl.textContent = budgetFmt(total);
   }
+  // Keep the Budget impact card and save button in sync with the sliders
+  refreshLifestyleImpact(theme);
 }
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
