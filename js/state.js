@@ -809,7 +809,13 @@ const state = {
   lifestyleChainStep:     0,     // 0-based index of current question in chain
 
   // ── Commitments from post-result loop ────────────────────────────────────
-  commitments: []  // [{id, text, createdAt, goalId}]
+  commitments: [],  // [{id, text, createdAt, goalId}]
+
+  // ── Wizard re-run prompt ──────────────────────────────────────────────────
+  // Set by the bb-complete handler when the wizard overwrites an existing
+  // budget while lifestyle answers exist. post-result.js shows a choice card:
+  // re-apply lifestyle settings to the new baseline, or start fresh.
+  wizardRerunPrompt: false
 };
 
 // Wipes user-entered profile data and re-renders. Called from admin panel.
@@ -836,6 +842,7 @@ function resetUserData() {
   state.nextAction           = null;
   state.monthlyUpdateGap     = null;
   state.editingGoalId        = null;
+  state.wizardRerunPrompt    = false;
   state.lessonPlayback       = { sentences: [], index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1 };
   render();
 }

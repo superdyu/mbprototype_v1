@@ -510,24 +510,7 @@ function saveLifestyleChain() {
 
   // Only update budget if it has been built
   if (state.budget.status !== "empty" && newTotal > 0) {
-    const bucketKey = LIFESTYLE_PARENT_BUCKET[theme];
-    const cat       = bucketKey && state.budget.categories
-      ? state.budget.categories.find(function(c) { return c.key === bucketKey; })
-      : null;
-
-    if (cat) {
-      let targetTotal = newTotal;
-      // For lifestyle bucket, combine all three lifestyle themes' sub-slider totals
-      if (bucketKey === "lifestyle") {
-        const lifestyleThemes = ["entertainment", "shopping", "other"];
-        targetTotal = lifestyleThemes.reduce(function(sum, t) {
-          const subs = state.lifestyleSubSliders[t] || {};
-          return sum + Object.values(subs).reduce(function(a, b) { return a + b; }, 0);
-        }, 0) || newTotal;
-      }
-      // Distribute targetTotal proportionally across existing subcategories
-      distributeToSubcategories(cat, targetTotal);
-    }
+    applyLifestyleThemeToBudget(theme);
   }
 
   // Mark theme as updated
@@ -540,6 +523,32 @@ function saveLifestyleChain() {
   state.postResultTheme     = theme;
   if (!state.flowOrigin) state.flowOrigin = "aboutMe";
   go("postResult");
+}
+
+// Applies a theme's saved sub-slider totals to its parent budget category.
+// For themes sharing the "lifestyle" parent bucket (entertainment, shopping,
+// other), all three themes' sub-slider totals are combined into one target.
+// Also called by wizard-bridge.js when re-applying lifestyle settings after
+// a wizard re-run.
+function applyLifestyleThemeToBudget(theme) {
+  const subItems    = LIFESTYLE_SUB_ITEMS[theme] || [];
+  const currentSubs = (state.lifestyleSubSliders && state.lifestyleSubSliders[theme]) || {};
+  const newTotal    = subItems.reduce(function(s, item) { return s + (currentSubs[item] || 0); }, 0);
+  const bucketKey   = LIFESTYLE_PARENT_BUCKET[theme];
+  const cat         = bucketKey && state.budget.categories
+    ? state.budget.categories.find(function(c) { return c.key === bucketKey; })
+    : null;
+  if (!cat || newTotal <= 0) return;
+
+  let targetTotal = newTotal;
+  if (bucketKey === "lifestyle") {
+    const lifestyleThemes = ["entertainment", "shopping", "other"];
+    targetTotal = lifestyleThemes.reduce(function(sum, t) {
+      const subs = state.lifestyleSubSliders[t] || {};
+      return sum + Object.values(subs).reduce(function(a, b) { return a + b; }, 0);
+    }, 0) || newTotal;
+  }
+  distributeToSubcategories(cat, targetTotal);
 }
 
 // Distribute a new total proportionally across a category's subcategories

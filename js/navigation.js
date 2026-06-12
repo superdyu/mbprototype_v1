@@ -318,8 +318,15 @@ window.addEventListener('popstate', function(e) {
 window.addEventListener("message", function(e) {
   if (!e.data) return;
   if (e.data.type === "bb-complete") {
+    const wasComplete = state.budget.status === "complete";
     applyDebtDataFromWizard(e.data.debts);
-    if (e.data.inputs) state.budget.wizardInputs = e.data.inputs;
+    if (e.data.inputs) {
+      state.budget.wizardInputs = e.data.inputs;
+      applyWizardInputsToBudget(e.data.inputs);   // wizard is the budget baseline
+    }
+    // Re-run scenario: budget rebuilt while lifestyle answers exist — post-result
+    // asks whether to re-apply lifestyle settings or start fresh (wizard-bridge.js)
+    state.wizardRerunPrompt = wasComplete && lifestyleHasAnswers();
     state.budget.status = "complete";
     state.budget.profile.lastUpdated = new Date().toISOString().slice(0, 10);
     if (!state.flowOrigin) state.flowOrigin = "aboutMe";
