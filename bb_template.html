@@ -350,11 +350,11 @@ const steps = [
 
 // BLS CE Survey — % of flexible (remaining after housing+bills) income by income quintile
 const SEG = [
-  { max: 2500,     food: 30, transport: 18, health: 8,  lifestyle: 10, savings:  6 },
-  { max: 4000,     food: 27, transport: 17, health: 9,  lifestyle: 12, savings: 10 },
-  { max: 6500,     food: 25, transport: 16, health: 9,  lifestyle: 13, savings: 13 },
-  { max: 10000,    food: 23, transport: 15, health: 8,  lifestyle: 12, savings: 17 },
-  { max: Infinity, food: 20, transport: 13, health: 7,  lifestyle: 11, savings: 22 }
+  { max: 2500,     food: 30, transport: 18, health: 8,  lifestyle: 10, debt: 12, savings:  6 },
+  { max: 4000,     food: 27, transport: 17, health: 9,  lifestyle: 12, debt: 11, savings: 10 },
+  { max: 6500,     food: 25, transport: 16, health: 9,  lifestyle: 13, debt: 10, savings: 13 },
+  { max: 10000,    food: 23, transport: 15, health: 8,  lifestyle: 12, debt:  9, savings: 17 },
+  { max: Infinity, food: 20, transport: 13, health: 7,  lifestyle: 11, debt:  8, savings: 22 }
 ];
 
 // Slider range as % of flexible income
@@ -363,6 +363,7 @@ const RANGE = {
   transport: { min: 3,  max: 30 },
   health:    { min: 2,  max: 20 },
   lifestyle: { min: 2,  max: 30 },
+  debt:      { min: 0,  max: 35 },
   savings:   { min: 0,  max: 40 }
 };
 
@@ -371,6 +372,7 @@ const SUB = {
   transport: ["Gas & Charging", "Car Maintenance", "Rideshare & Transit", "Parking & Tolls", "Vehicle Registration"],
   health:    ["Medical Copays", "Dental & Vision", "Prescriptions & OTC", "Gym & Fitness", "Education & Tuition", "Books & Courses"],
   lifestyle: ["Entertainment", "Streaming & Subs", "Clothing & Shoes", "Personal Care", "Hobbies & Travel", "Gifts & Giving"],
+  debt:      ["Credit Card Payments", "Student Loan Payments", "Auto / Personal Loans", "Other Debt Payments"],
   savings:   ["Emergency Fund", "Retirement (IRA/401k)", "Investments", "Extra Debt Payments"]
 };
 
@@ -379,6 +381,10 @@ const BUCKETS = [
   { key: "transport", label: "Transportation",       icon: "\uD83D\uDE97" },
   { key: "health",    label: "Health & Education",   icon: "\u2695\uFE0F" },
   { key: "lifestyle", label: "Lifestyle",            icon: "\u2728" },
+  // Total monthly debt payments. Its own lever so lifestyle-driven savings dips
+  // never eat into debt servicing \u2014 savings can run negative against buffered
+  // cash, debt payments stay funded. Savings remains last (absorbs rounding).
+  { key: "debt",      label: "Debt Payments",        icon: "\uD83D\uDCB3" },
   { key: "savings",   label: "Savings & Future",     icon: "\uD83D\uDCB0" }
 ];
 
