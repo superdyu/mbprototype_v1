@@ -99,7 +99,10 @@ function goDebtAnalyzer() {
 }
 
 function applyDebtDataFromWizard(rawDebts) {
-  if (!Array.isArray(rawDebts)) return;
+  // The current wizard build always sends debts: [] (it no longer collects
+  // debt instruments). An empty array must NOT wipe debts the user entered
+  // via My Debts — only a non-empty wizard payload replaces the debt list.
+  if (!Array.isArray(rawDebts) || rawDebts.length === 0) return;
   var ts = Date.now();
   state.budget.debts = rawDebts.map(function(d, i) {
     return Object.assign({}, d, { id: "d_" + ts + "_" + i, expanded: false });

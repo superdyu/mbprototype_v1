@@ -438,7 +438,7 @@ function renderDebtAnalyzer() {
             <button id="${h(toggleId)}"
                     class="button secondary" style="font-size:11px;padding:6px 12px;${on ? "background:var(--accent-soft);border-color:var(--accent);color:var(--accent);" : ""}"
                     type="button"
-                    onclick="toggleDebtInclusion('${h(d.id)}')"
+                    onclick="toggleDebtInclusion('${h(d.id)}')">
               ${on ? "Included ✓" : "Excluded"}
             </button>
           </div>

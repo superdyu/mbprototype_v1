@@ -139,7 +139,3 @@ function startMonthlyUpdate() {
   state.postResultContext = "monthlyUpdate";
   go("accountBalances");
 }
-
-function renderBudgetSetupAdmin() {
-  return renderBudgetAdmin();
-}

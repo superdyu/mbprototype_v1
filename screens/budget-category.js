@@ -187,7 +187,7 @@ function renderBudgetCategory() {
         income (${budgetFmt(budgetMonthlyIncome())}/mo), household size
         (${state.budget.profile.householdSize} person${state.budget.profile.householdSize > 1 ? "s" : ""}),
         and cost-of-living index for ZIP ${h(state.budget.profile.zip)}
-        (${(BUDGET_ZIP_INDEX[state.budget.profile.zip] || 1.0).toFixed(2)}×).
+        (${getZipIndex(state.budget.profile.zip).toFixed(2)}×).
         Sub-category splits are approximate national averages within each bucket.
       </p>
     </div>
