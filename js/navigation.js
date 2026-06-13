@@ -328,6 +328,10 @@ window.addEventListener("message", function(e) {
     // asks whether to re-apply lifestyle settings or start fresh (wizard-bridge.js)
     state.wizardRerunPrompt = wasComplete && lifestyleHasAnswers();
     state.budget.status = "complete";
+    // Mark the "Build your starter budget" daily task done. Joins on destination
+    // — the same field the home task uses to launch the wizard — mirroring the
+    // lesson-completion pattern (t.lessonId === lesson.id) elsewhere in this file.
+    state.tasks.forEach(t => { if (t.destination === "babyBudget") t.completed = true; });
     state.budget.profile.lastUpdated = new Date().toISOString().slice(0, 10);
     if (!state.flowOrigin) state.flowOrigin = "aboutMe";
     state.postResultContext = "budget";
