@@ -28,7 +28,10 @@ const destinations = [
   ["quiz",           "Quiz"],
   ["simulation",     "Simulation"],
   ["marketplace",    "Marketplace"],
-  ["reward",         "Reward"]
+  ["reward",         "Reward"],
+  ["goalCreate",     "Goal: Create"],
+  ["goalTracker",    "Goal: Tracker"],
+  ["goalVault",      "Goal: Victory Vault"]
 ];
 
 const state = {
@@ -815,7 +818,22 @@ const state = {
   // Set by the bb-complete handler when the wizard overwrites an existing
   // budget while lifestyle answers exist. post-result.js shows a choice card:
   // re-apply lifestyle settings to the new baseline, or start fresh.
-  wizardRerunPrompt: false
+  wizardRerunPrompt: false,
+
+  // ── Goals V2 module ───────────────────────────────────────────────────────
+  // Standalone goal-tracking module (see docs/goals-module-plan.md).
+  // A goal = frozen `baseline` + append-only `events[]`; sprints, cohort
+  // standings, pace, and achievements are all DERIVED at render time. The
+  // module reads host state only through js/goals/goals-bridge.js and never
+  // writes to budget/debts. clockOffsetDays drives the module's simulated
+  // clock (goalsTodayISO) — host screens keep real time.
+  goalsV2: {
+    clockOffsetDays: 0,        // sim-time offset, days (admin time travel)
+    goals: [],                 // GoalV2[] — single list, all statuses
+    draft: null,               // creation-wizard scratch; discarded on cancel
+    selectedGoalId: null,      // tracker's current goal id
+    celebrationDismissedAt: null
+  }
 };
 
 // Wipes user-entered profile data and re-renders. Called from admin panel.
@@ -842,6 +860,7 @@ function resetUserData() {
   state.nextAction           = null;
   state.monthlyUpdateGap     = null;
   state.editingGoalId        = null;
+  state.goalsV2              = { clockOffsetDays: 0, goals: [], draft: null, selectedGoalId: null, celebrationDismissedAt: null };
   state.wizardRerunPrompt    = false;
   state.lessonPlayback       = { sentences: [], index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1 };
   render();
