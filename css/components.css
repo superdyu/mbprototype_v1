@@ -884,6 +884,26 @@
 .budget-stepper-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .budget-stepper-input:focus { outline: none; border-color: var(--accent); }
 
+/* Goals V2 form fields — theme-aware (light + dark), no number spinners.
+   Mirrors .input-group input; spinner removal scoped to number inputs so
+   <select> keeps its native caret. */
+.goal-field {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 13px;
+  padding: 9px;
+  font-family: inherit;
+  outline: none;
+}
+.goal-field:focus { border-color: var(--accent); }
+.goal-field option { background: var(--card); color: var(--text); }
+input.goal-field[type="number"] { -moz-appearance: textfield; }
+input.goal-field[type="number"]::-webkit-outer-spin-button,
+input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
 /* Income-relative progress bar with peer marker */
 .budget-sub-bar {
   position: relative;

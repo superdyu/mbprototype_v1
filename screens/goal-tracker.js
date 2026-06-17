@@ -64,7 +64,7 @@ function renderGoalTracker() {
       <div class="card" style="margin-top:10px;">
         <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;">Log a custom amount</label>
         <div class="row" style="gap:6px;align-items:center;">
-          <input id="gtCheckinAmount" type="number" min="0" step="any" placeholder="${unit === "usd" ? "$ amount" : unit}" style="flex:1;padding:9px;border-radius:8px;">
+          <input id="gtCheckinAmount" type="number" class="goal-field" style="flex:1;" min="0" step="any" placeholder="${unit === "usd" ? "$ amount" : unit}">
           <button class="button secondary" type="button" onclick="gtCheckIn()">Log</button>
         </div>
       </div>`;

@@ -111,7 +111,7 @@ function goalsTuneRow(label, path, value, step, min, max) {
   return `
     <div class="input-group" style="margin-bottom:8px;">
       <label style="font-size:11px;">${h(label)}</label>
-      <input type="number" value="${h(value)}" ${step != null ? `step="${step}"` : ""} ${min != null ? `min="${min}"` : ""} ${max != null ? `max="${max}"` : ""}
+      <input type="number" class="goal-field" value="${h(value)}" ${step != null ? `step="${step}"` : ""} ${min != null ? `min="${min}"` : ""} ${max != null ? `max="${max}"` : ""}
              oninput="goalsAdminSetTuning('${h(path)}', this.value)">
     </div>`;
 }

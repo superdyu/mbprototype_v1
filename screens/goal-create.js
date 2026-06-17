@@ -95,12 +95,12 @@ function gcStepInputs(d) {
 function gcRenderField(f, val) {
   var lbl = `<label style="display:block;font-size:12px;font-weight:700;margin:12px 0 4px;">${h(f.label)}</label>`;
   if (f.type === "select") {
-    return lbl + `<select onchange="gcSetInput('${h(f.key)}', this.value, 'select')" style="width:100%;padding:9px;border-radius:8px;">
+    return lbl + `<select class="goal-field" onchange="gcSetInput('${h(f.key)}', this.value, 'select')">
       ${f.options.map(function(o) { return `<option value="${h(o.value)}" ${val === o.value ? "selected" : ""}>${h(o.label)}</option>`; }).join("")}
     </select>`;
   }
   if (f.type === "date") {
-    return lbl + `<input type="date" value="${h(val || "")}" onchange="gcSetInput('${h(f.key)}', this.value, 'date')" style="width:100%;padding:9px;border-radius:8px;">`;
+    return lbl + `<input type="date" class="goal-field" value="${h(val || "")}" onchange="gcSetInput('${h(f.key)}', this.value, 'date')">`;
   }
   if (f.type === "debtPicker") {
     var debts = goalsDebtsSnapshot();
@@ -110,7 +110,7 @@ function gcRenderField(f, val) {
       var on = chosen.indexOf(dbt.id) !== -1;
       return `<label class="item-card" style="cursor:pointer;margin-bottom:6px;">
         <div><div class="task-title">${h(dbt.name)}</div><p class="task-desc">${budgetFmt(dbt.balance)} · ${h(String(dbt.apr))}% APR</p></div>
-        <input type="checkbox" ${on ? "checked" : ""} onchange="gcToggleDebt('${h(dbt.id)}', this.checked)">
+        <input type="checkbox" style="accent-color:var(--accent);" ${on ? "checked" : ""} onchange="gcToggleDebt('${h(dbt.id)}', this.checked)">
       </label>`;
     }).join("");
   }
@@ -119,8 +119,8 @@ function gcRenderField(f, val) {
   var suffix = f.type === "pct" ? "%" : "";
   return lbl + `<div class="row" style="align-items:center;gap:4px;">
     ${prefix ? `<span style="font-weight:700;">${prefix}</span>` : ""}
-    <input type="number" value="${h(val == null ? "" : val)}" ${f.min != null ? `min="${f.min}"` : ""} ${f.max != null ? `max="${f.max}"` : ""} ${f.step != null ? `step="${f.step}"` : ""}
-           onchange="gcSetInput('${h(f.key)}', this.value, '${h(f.type)}')" style="flex:1;padding:9px;border-radius:8px;">
+    <input type="number" class="goal-field" style="flex:1;" value="${h(val == null ? "" : val)}" ${f.min != null ? `min="${f.min}"` : ""} ${f.max != null ? `max="${f.max}"` : ""} ${f.step != null ? `step="${f.step}"` : ""}
+           onchange="gcSetInput('${h(f.key)}', this.value, '${h(f.type)}')">
     ${suffix ? `<span style="font-weight:700;">${suffix}</span>` : ""}
   </div>`;
 }
@@ -143,7 +143,7 @@ function gcRenderAutofillCard(key, a) {
       </div>
       <p class="helper" style="margin:0;">${h(a.explanation)} <em style="opacity:.7;">(${h(a.source)}${a.overridden ? ", overridden" : ""})</em></p>
       ${a._editing ? `<div class="row" style="align-items:center;gap:6px;margin-top:8px;">
-        <input type="number" step="any" value="${h(a.value)}" onchange="gcOverrideAutofill('${h(key)}', this.value)" style="flex:1;padding:8px;border-radius:8px;">
+        <input type="number" class="goal-field" style="flex:1;" step="any" value="${h(a.value)}" onchange="gcOverrideAutofill('${h(key)}', this.value)">
         <button class="button secondary small" type="button" onclick="gcCancelOverride('${h(key)}')">Done</button>
       </div>` : ""}
     </div>
