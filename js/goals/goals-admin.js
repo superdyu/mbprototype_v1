@@ -62,14 +62,23 @@ function renderGoalsSimPanel() {
   `;
 }
 
-// Claim the current sprint, then jump the clock forward one cadence — repeat to
-// build an on-pace, high-sprint-rate (engaged) record.
+// Advance one sprint cadence, mark every elapsed window claimed, and top progress
+// up to just past the expected baseline — i.e., the record of an on-pace, full-
+// sprint-rate (engaged) user. (Eased 60% claims alone stay behind the baseline,
+// so a top-up is needed to actually read as on-pace.)
 function goalsSimulateEngagedWeek() {
   var goal = goalsById(state.goalsV2.selectedGoalId);
   if (!goal) { render(); return; }
-  var plan = goalsSprintPlan(goal);
-  if (!plan.complete && !plan.current.done) goalsCompleteSprint(goal.id, plan.current.key, plan.current.target);
   state.goalsV2.clockOffsetDays = (state.goalsV2.clockOffsetDays || 0) + goalsSprintCadence(goal);
+  var plan = goalsSprintPlan(goal);
+  if (plan.complete) { render(); return; }
+  plan.past.forEach(function(p) { if (!p.done) goalsCompleteSprint(goal.id, p.key, 0); });   // mark claimed, value via top-up
+  if (!plan.current.done) goalsCompleteSprint(goal.id, plan.current.key, 0);
+  var expected = goalsBaselineExpectedValue(goal, goalsTodayISO());
+  var cur = goalsCurrentValue(goal);
+  var gap = goal.baseline.direction === "down" ? (cur - expected) : (expected - cur);
+  var buffer = Math.max(1, Math.abs(goal.baseline.targetValue - goal.baseline.startValue) * 0.02);
+  if (gap > 0) goalsCheckIn(goal.id, gap + buffer);
   render();
 }
 
@@ -84,4 +93,40 @@ function goalsSimulateLapse() {
 function goalsAdminResetModule() {
   state.goalsV2 = { clockOffsetDays: 0, goals: [], draft: null, selectedGoalId: null, celebrationDismissedAt: null };
   render();
+}
+
+// ── Tuning editor (commit 11) ─────────────────────────────────────────────────
+// Hot-edit the GOALS_TUNING economy live, like a game balance panel. Mirrors the
+// Learn xpConfig pattern (oninput → set + debouncedRender).
+function goalsAdminSetTuning(path, val) {
+  var parts = path.split(".");
+  var o = GOALS_TUNING;
+  for (var i = 0; i < parts.length - 1; i++) o = o[parts[i]];
+  var n = parseFloat(val);
+  if (!isNaN(n)) o[parts[parts.length - 1]] = n;
+  debouncedRender();
+}
+
+function goalsTuneRow(label, path, value, step, min, max) {
+  return `
+    <div class="input-group" style="margin-bottom:8px;">
+      <label style="font-size:11px;">${h(label)}</label>
+      <input type="number" value="${h(value)}" ${step != null ? `step="${step}"` : ""} ${min != null ? `min="${min}"` : ""} ${max != null ? `max="${max}"` : ""}
+             oninput="goalsAdminSetTuning('${h(path)}', this.value)">
+    </div>`;
+}
+
+function renderGoalsTuningPanel() {
+  var t = GOALS_TUNING;
+  return `
+    <div class="admin-card">
+      <p class="admin-card-title">Goals · Tuning</p>
+      ${goalsTuneRow("Cohort size", "cohort.size", t.cohort.size, 1, 4, 60)}
+      ${goalsTuneRow("First-sprint ease (0–1)", "sprints.firstSprintEase", t.sprints.firstSprintEase, 0.05, 0.1, 1)}
+      ${goalsTuneRow("Upcoming sprints shown", "sprints.upcomingShown", t.sprints.upcomingShown, 1, 1, 6)}
+      ${goalsTuneRow("Comfortable ratio", "feasibility.comfortableRatio", t.feasibility.comfortableRatio, 0.05, 0.1, 1)}
+      ${goalsTuneRow("Tight ratio", "feasibility.tightRatio", t.feasibility.tightRatio, 0.05, 0.2, 1.5)}
+      ${goalsTuneRow("Lapse after (days)", "cohort.engagement.lapseAfterDays", t.cohort.engagement.lapseAfterDays, 1, 1, 60)}
+    </div>
+  `;
 }

@@ -31,7 +31,7 @@ function renderAboutMe() {
                      : budgetStatus === "complete"    ? "Set up"
                      : "Needs review";
 
-  const goalsCount = (state.goals || []).length;
+  const goalsCount = (state.goalsV2.goals || []).length;
 
   const acctEntries = (state.accountBalances || []).filter(function(e) { return e.type === "account"; });
   const debtEntries = (state.accountBalances || []).filter(function(e) { return e.type === "debt"; });
@@ -70,13 +70,13 @@ function renderAboutMe() {
       <div class="helper" style="font-size:18px;">›</div>
     </div>
 
-    <!-- Goals component -->
+    <!-- Goals component (Goals V2 — persistent entry to the goal flow) -->
     <div class="section-title" style="margin:20px 0 8px;">Goals</div>
     <p class="helper" style="margin-bottom:10px;">Choose what Money Buddy should help with next.</p>
-    <div class="item-card" onclick="go('goals')" style="cursor:pointer;">
+    <div class="item-card" onclick="goGoalsEntry()" style="cursor:pointer;">
       <div>
         <div class="task-title">Goals</div>
-        <p class="task-desc">${goalsCount} ${goalsCount === 1 ? "goal" : "goals"} set</p>
+        <p class="task-desc">${goalsCount > 0 ? goalsCount + " " + (goalsCount === 1 ? "goal" : "goals") + " set" : "Start your first goal"}</p>
       </div>
       <div class="helper" style="font-size:18px;">›</div>
     </div>
@@ -107,11 +107,15 @@ function renderAboutMe() {
     <!-- Budget prompt overlay (shown when budget empty) -->
     <div id="aboutMeBudgetOverlay" style="position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;">
       <div class="card" style="max-width:340px;width:100%;padding:24px;">
-        <div style="font-weight:850;font-size:17px;margin-bottom:8px;">Build your budget</div>
-        <p class="helper" style="margin-bottom:20px;">Answer a few questions and Money Buddy will estimate your monthly plan — takes about 3 minutes.</p>
-        <button class="button primary full" type="button"
+        <div style="font-weight:850;font-size:17px;margin-bottom:8px;">Let's get started</div>
+        <p class="helper" style="margin-bottom:18px;">Build your budget so Money Buddy can estimate your monthly plan — or jump straight into setting a goal.</p>
+        <button class="button primary full" type="button" style="margin-bottom:10px;"
                 onclick="dismissAboutMeOverlay(); state.flowOrigin='aboutMe'; state.postResultContext='budget'; go('babyBudget');">
-          Let's go →
+          Build my budget →
+        </button>
+        <button class="button secondary full" type="button"
+                onclick="dismissAboutMeOverlay(); goGoalsEntry();">
+          Set up a goal
         </button>
       </div>
     </div>
@@ -122,6 +126,16 @@ function renderAboutMe() {
 function dismissAboutMeOverlay() {
   var el = document.getElementById('aboutMeBudgetOverlay');
   if (el) el.remove();
+}
+
+// Persistent entry into the Goals V2 flow (popup button + Goals card both route
+// here): straight to the creation wizard if there are no goals yet, otherwise to
+// the tracker on the most recent goal.
+function goGoalsEntry() {
+  var goals = state.goalsV2.goals || [];
+  if (goals.length === 0) { go('goalCreate'); return; }
+  state.goalsV2.selectedGoalId = goals[goals.length - 1].id;
+  go('goalTracker');
 }
 
 function lifestyleCompletedCount() {
