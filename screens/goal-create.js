@@ -35,18 +35,28 @@ function gcShell(inner) {
   `;
 }
 
+// Polished, tappable choice card: icon tile · title + description · circular
+// chevron affordance, all vertically centered. Inline flex (the global
+// .item-card is a block, so its trailing children would otherwise stack).
+function gcChoiceCard(icon, title, desc, onclick) {
+  return `
+    <div class="item-card" style="display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="${onclick}">
+      <div style="flex:0 0 auto;width:44px;height:44px;border-radius:12px;background:var(--soft);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:22px;">${h(icon)}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="task-title">${h(title)}</div>
+        <p class="task-desc">${h(desc)}</p>
+      </div>
+      <div style="flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;line-height:1;">&#8250;</div>
+    </div>`;
+}
+
 // ── Step 1: category ─────────────────────────────────────────────────────────
 function gcStepCategory() {
   return `
     <div class="section-title" style="margin:4px 0 8px;">What kind of goal?</div>
-    ${GOALS_CATEGORIES.map(function(c) { return `
-      <div class="item-card" style="cursor:pointer;" onclick="gcSelectCategory('${h(c.key)}')">
-        <div>
-          <div class="task-title">${h(c.icon)} ${h(c.label)}</div>
-          <p class="task-desc">${h(c.blurb)}</p>
-        </div>
-        <div class="helper" style="font-size:18px;">›</div>
-      </div>`; }).join("")}
+    ${GOALS_CATEGORIES.map(function(c) {
+      return gcChoiceCard(c.icon, c.label, c.blurb, "gcSelectCategory('" + h(c.key) + "')");
+    }).join("")}
   `;
 }
 
@@ -56,14 +66,9 @@ function gcStepType(d) {
   var types = goalsTypesForCategory(d.categoryKey);
   return `
     <div class="section-title" style="margin:4px 0 8px;">${cat ? h(cat.icon + " " + cat.label) : "Pick a goal"}</div>
-    ${types.map(function(t) { return `
-      <div class="item-card" style="cursor:pointer;" onclick="gcSelectType('${h(t.key)}')">
-        <div>
-          <div class="task-title">${h(t.icon)} ${h(t.title)}</div>
-          <p class="task-desc">${h(t.blurb)}</p>
-        </div>
-        <div class="helper" style="font-size:18px;">›</div>
-      </div>`; }).join("")}
+    ${types.map(function(t) {
+      return gcChoiceCard(t.icon, t.title, t.blurb, "gcSelectType('" + h(t.key) + "')");
+    }).join("")}
   `;
 }
 
