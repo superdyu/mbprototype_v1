@@ -43,3 +43,45 @@ function goalsAdminOpenTracker() {
   }
   go("goalTracker");
 }
+
+// ── Simulators (commit 7) ─────────────────────────────────────────────────────
+// Drive the selected goal's engagement signals without manual clicking, so the
+// cohort/achievement loops are testable in seconds.
+function renderGoalsSimPanel() {
+  var goal = goalsById(state.goalsV2.selectedGoalId);
+  return `
+    <div class="admin-card">
+      <p class="admin-card-title">Goals · Simulate</p>
+      ${goal ? `<p class="helper" style="margin-bottom:8px;">Acting on: <strong>${h(goal.title)}</strong></p>` : `<p class="helper" style="margin-bottom:8px;">Select a goal in the tracker first.</p>`}
+      <div class="row" style="gap:6px;flex-wrap:wrap;">
+        <button class="button secondary small" type="button" onclick="goalsSimulateEngagedWeek()">Engaged week</button>
+        <button class="button secondary small" type="button" onclick="goalsSimulateLapse()">Lapse</button>
+        <button class="button secondary small" type="button" onclick="goalsAdminResetModule()">Reset module</button>
+      </div>
+    </div>
+  `;
+}
+
+// Claim the current sprint, then jump the clock forward one cadence — repeat to
+// build an on-pace, high-sprint-rate (engaged) record.
+function goalsSimulateEngagedWeek() {
+  var goal = goalsById(state.goalsV2.selectedGoalId);
+  if (!goal) { render(); return; }
+  var plan = goalsSprintPlan(goal);
+  if (!plan.complete && !plan.current.done) goalsCompleteSprint(goal.id, plan.current.key, plan.current.target);
+  state.goalsV2.clockOffsetDays = (state.goalsV2.clockOffsetDays || 0) + goalsSprintCadence(goal);
+  render();
+}
+
+// Advance past the lapse threshold with no action → "lapsed" engagement tier.
+function goalsSimulateLapse() {
+  var goal = goalsById(state.goalsV2.selectedGoalId);
+  var jump = GOALS_TUNING.cohort.engagement.lapseAfterDays + 4;
+  state.goalsV2.clockOffsetDays = (state.goalsV2.clockOffsetDays || 0) + (goal ? Math.max(jump, goalsSprintCadence(goal) + 4) : jump);
+  render();
+}
+
+function goalsAdminResetModule() {
+  state.goalsV2 = { clockOffsetDays: 0, goals: [], draft: null, selectedGoalId: null, celebrationDismissedAt: null };
+  render();
+}
