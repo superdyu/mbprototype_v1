@@ -108,9 +108,12 @@ function gcRenderField(f, val) {
     if (debts.length === 0) return lbl + `<p class="helper">No debts on file — add debts in My Debts first.</p>`;
     return lbl + debts.map(function(dbt) {
       var on = chosen.indexOf(dbt.id) !== -1;
-      return `<label class="item-card" style="cursor:pointer;margin-bottom:6px;">
-        <div><div class="task-title">${h(dbt.name)}</div><p class="task-desc">${budgetFmt(dbt.balance)} · ${h(String(dbt.apr))}% APR</p></div>
-        <input type="checkbox" style="accent-color:var(--accent);" ${on ? "checked" : ""} onchange="gcToggleDebt('${h(dbt.id)}', this.checked)">
+      return `<label class="item-card" style="display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:6px;">
+        <div style="flex:1;min-width:0;">
+          <div class="task-title">${h(dbt.name)}</div>
+          <p class="task-desc">${budgetFmt(dbt.balance)} · ${h(String(dbt.apr))}% APR</p>
+        </div>
+        <input type="checkbox" style="accent-color:var(--accent);width:18px;height:18px;flex:0 0 auto;" ${on ? "checked" : ""} onchange="gcToggleDebt('${h(dbt.id)}', this.checked)">
       </label>`;
     }).join("");
   }
