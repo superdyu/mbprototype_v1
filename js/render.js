@@ -33,6 +33,9 @@ function adminSubtitle() {
   if (state.screen === "reward")         return "Last reward output (read-only).";
   if (state.screen === "myDebts")        return "Manage debt instruments, add or remove entries.";
   if (state.screen === "debtAnalyzer")   return "Adjust extra payment, toggle debts in/out of simulation.";
+  if (state.screen === "goalCreate")     return "Goals V2 — creation wizard. Clock + navigate in the panel below.";
+  if (state.screen === "goalTracker")    return "Goals V2 — active tracker. Time-travel and simulate engagement.";
+  if (state.screen === "goalVault")      return "Goals V2 — victory vault. Completed goals and earned medals.";
   return "Manual controls for this wireframe screen.";
 }
 
@@ -65,6 +68,9 @@ function renderScreen() {
   if (state.screen === "settings")          return renderSettings();
   if (state.screen === "myDebts")           return renderMyDebts();
   if (state.screen === "debtAnalyzer")      return renderDebtAnalyzer();
+  if (state.screen === "goalCreate")        return renderGoalCreate();
+  if (state.screen === "goalTracker")       return renderGoalTracker();
+  if (state.screen === "goalVault")         return renderGoalVault();
   console.warn("[MoneyBuddy] renderScreen: unknown screen →", state.screen);
   return renderHome();
 }
@@ -85,6 +91,9 @@ function renderAdmin() {
   if (state.screen === "budgetCategory") return renderBudgetCategoryAdmin();
   if (state.screen === "myDebts")       return renderMyDebtsAdmin();
   if (state.screen === "debtAnalyzer")  return renderDebtAnalyzerAdmin();
+  if (state.screen === "goalCreate")    return renderGoalCreateAdmin();
+  if (state.screen === "goalTracker")   return renderGoalTrackerAdmin();
+  if (state.screen === "goalVault")     return renderGoalVaultAdmin();
 
   return `
     <div class="admin-card">
@@ -96,7 +105,8 @@ function renderAdmin() {
           ${["home","aboutMe","budgetSetup","babyBudget","myProgress","lifestyle","lifestyleChain",
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
              "goals","learn","topic","lesson","quiz","simulation","marketplace",
-             "marketplaceDetail","reward","settings","myDebts","debtAnalyzer"].map(s => `
+             "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
+             "goalCreate","goalTracker","goalVault"].map(s => `
             <option value="${s}" ${state.screen === s ? "selected" : ""}>${s}</option>
           `).join("")}
         </select>

@@ -75,6 +75,9 @@ function activeTabFor(screen) {
   if (screen === "lifestyleChain")    return "aboutMe";
   if (screen === "accountBalances")   return "aboutMe";
   if (screen === "debtBalances")      return "aboutMe";
+  if (screen === "goalCreate")        return "aboutMe";  // Goals V2 sub-screens live under About Me
+  if (screen === "goalTracker")       return "aboutMe";
+  if (screen === "goalVault")         return "aboutMe";
   // Marketplace sub-screen
   if (screen === "marketplaceDetail") return "marketplace";
   // Learn sub-screens
