@@ -28,6 +28,14 @@
   --bar: #d0d5dd;
   --progress-bg: #e8ebf0;
   --tier-copper: #b87333;
+  /* Streak splash — branded full-bleed launch screen (see streak-counter.js) */
+  --streak-bg: #6b5fd1;
+  --streak-burst: #7d72e0;
+  --streak-pill: #5849bf;
+  --streak-text: #ffffff;
+  --streak-accent: #f6b73c;
+  --streak-on: #ffffff;
+  --streak-off: rgba(255, 255, 255, .28);
 }
 
 /* ─── Spacing scale ──────────────────────────────────────────────────────────
@@ -68,4 +76,6 @@
   --soft: #23272f;
   --bar: #3d4251;
   --progress-bg: #2a2d35;
+  /* Streak splash intentionally has NO dark-mode override — it inherits the
+     :root --streak-* tokens so the branded purple is identical in both modes. */
 }

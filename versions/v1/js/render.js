@@ -12,6 +12,7 @@
 // cheaper than fine-grained diffing and simpler to reason about.
 
 function adminSubtitle() {
+  if (state.screen === "streak")         return "Streak splash — static launch screen shown first on every refresh.";
   if (state.screen === "home")           return "Edit daily task cards and destinations.";
   if (state.screen === "learn")          return "Adjust XP config, lesson states, badge progress.";
   if (state.screen === "topic")          return "Override lesson statuses for this badge.";
@@ -40,6 +41,7 @@ function adminSubtitle() {
 }
 
 function renderScreen() {
+  if (state.screen === "streak")            return renderStreak();
   if (state.screen === "home")              return renderHome();
   if (state.screen === "aboutMe")           return renderAboutMe();
   if (state.screen === "budgetSetup")       return renderBudgetSetup();
@@ -76,6 +78,7 @@ function renderScreen() {
 }
 
 function renderAdmin() {
+  if (state.screen === "streak")        return renderStreakAdmin();
   if (state.screen === "home")          return renderHomeAdmin();
   if (state.screen === "goals")         return renderGoalsAdmin();
   if (state.screen === "learn")         return renderLearnAdmin();
@@ -102,7 +105,7 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="go(this.value)">
-          ${["home","aboutMe","budgetSetup","babyBudget","myProgress","lifestyle","lifestyleChain",
+          ${["streak","home","aboutMe","budgetSetup","babyBudget","myProgress","lifestyle","lifestyleChain",
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
              "goals","learn","topic","lesson","quiz","simulation","marketplace",
              "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
@@ -126,6 +129,7 @@ function render() {
 
   screenRoot.classList.toggle("baby-budget-mode", state.screen === "babyBudget");
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");
+  screenRoot.classList.toggle("streak-mode",      state.screen === "streak");
   document.querySelector(".screen").classList.toggle("dark-mode", state.settings.colorMode === "dark");
   screenRoot.innerHTML  = renderScreen();
   if (state.screen === "lesson") lpMountHook(lpWasPlaying);

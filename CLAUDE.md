@@ -1,15 +1,41 @@
-# MoneyBuddy Prototype (v1)
+# MoneyBuddy Prototype
 
 In-browser, mobile-shaped prototype of a personal-finance coaching app. This is a
 **clickable prototype**, not production software — favor clarity and fast iteration
 over abstraction, but keep the file structure clean (see Architecture).
 
+## Repo structure — multiple versions behind a gate
+
+The repo root is a **passcode + version-selector gate** (`index.html`, `gate/`),
+not the app itself. Each major iteration is a fully self-contained, independently
+runnable copy of the app under `versions/<name>/` (currently `versions/v1/` and
+`versions/v2/`). `versions/v1/` is a frozen milestone — don't edit it. New work
+happens in the newest version folder (currently `versions/v2/`) unless told
+otherwise.
+
+- **The gate** (`index.html`, `gate/style.css`, `gate/gate.js`) is deliberately
+  standalone and outside the app's module system — it never loads a version's
+  `<script>` tags (see "Everything is global" below; two versions' scripts
+  sharing one page would collide). Picking a version does a real page
+  navigation to `versions/<name>/index.html`. Passcode is a hardcoded,
+  intentionally-not-secure speed bump — don't add real auth here.
+- **Adding a new major version:** copy the newest `versions/<name>/` folder to
+  `versions/<next>/`, then add one entry to the `VERSIONS` array in
+  `gate/gate.js`. No other wiring needed.
+- Everything below this section (Architecture, hard conventions, Goals V2,
+  Testing) describes the structure **inside a single version folder** — paths
+  like `css/variables.css` or `js/state.js` are relative to whichever
+  `versions/<name>/` you're working in.
+
 ## How to run / preview
 
 - **No build step, no dependencies, no package.json.** Pure static files.
-- Preview: open `index.html` in a browser. The app renders into a phone frame on
-  the left and an **Admin Tools** panel on the right (manual controls + time
-  travel + state inspector for the active screen).
+- Preview the gate: open the repo-root `index.html` (passcode `1337`), then pick
+  a version.
+- Preview a specific version directly (skip the gate): open
+  `versions/v1/index.html` or `versions/v2/index.html`. The app renders into a
+  phone frame on the left and an **Admin Tools** panel on the right (manual
+  controls + time travel + state inspector for the active screen).
 - In a headless environment with no browser, you cannot visually QA. Instead:
   - Syntax-check any file you touch: `node --check path/to/file.js`
   - For logic, write a temporary DOM-stubbed Node smoke harness that loads the

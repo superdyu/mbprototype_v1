@@ -61,6 +61,12 @@ body {
   bottom: 0; /* extend past tab bar — nav is hidden when lesson is active */
 }
 
+.screen-scroll.streak-mode {
+  padding: 0;
+  overflow: hidden;
+  bottom: 0; /* full-bleed branded splash — nav is hidden on the streak screen */
+}
+
 /* Bottom nav */
 .bottom-tabs {
   position: absolute;

@@ -64,6 +64,7 @@ function generateId(prefix) {
 }
 
 function activeTabFor(screen) {
+  if (screen === "streak")            return "home";   // splash → no nav, but keep mapping defined
   // About Me sub-screens
   if (screen === "goals")             return "aboutMe";  // goals input editor lives in About Me
   if (screen === "babyBudget")        return "aboutMe";

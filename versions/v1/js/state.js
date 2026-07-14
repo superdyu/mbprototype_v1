@@ -16,6 +16,7 @@
 // the per-task destination picker in the home admin panel.
 
 const destinations = [
+  ["streak",         "Streak Splash"],
   ["aboutMe",        "About Me"],
   ["budgetSetup",    "Budget Setup"],
   ["babyBudget",     "Baby Budget"],
@@ -35,8 +36,8 @@ const destinations = [
 ];
 
 const state = {
-  // Navigation
-  screen: "home",
+  // Navigation — opens on the streak splash on every fresh load/refresh.
+  screen: "streak",
 
   // Admin panel collapse — persists across screens
   adminCollapsed: false,
