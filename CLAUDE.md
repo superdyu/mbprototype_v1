@@ -13,6 +13,15 @@ runnable copy of the app under `versions/<name>/` (currently `versions/v1/` and
 happens in the newest version folder (currently `versions/v2/`) unless told
 otherwise.
 
+- **`versions/v1/` is enforced-locked, not just documented.** Every file and
+  directory under it is chmod'd read-only (`a-w`), and a local
+  `.git/hooks/pre-commit` rejects any commit touching `versions/v1/` unless
+  `ALLOW_V1_EDIT=1` is set. To make a deliberate, explicitly-requested change:
+  `chmod -R u+w versions/v1/`, edit, then `chmod -R a-w versions/v1/` again
+  before committing with `ALLOW_V1_EDIT=1 git commit ...`. The hook lives only
+  in this local `.git/hooks/` (not tracked by git, doesn't travel with clones)
+  — the chmod lock is the durable part.
+
 - **The gate** (`index.html`, `gate/style.css`, `gate/gate.js`) is deliberately
   standalone and outside the app's module system — it never loads a version's
   `<script>` tags (see "Everything is global" below; two versions' scripts
