@@ -37,6 +37,7 @@ function adminSubtitle() {
   if (state.screen === "goalCreate")     return "Goals V2 — creation wizard. Clock + navigate in the panel below.";
   if (state.screen === "goalTracker")    return "Goals V2 — active tracker. Time-travel and simulate engagement.";
   if (state.screen === "goalVault")      return "Goals V2 — victory vault. Completed goals and earned medals.";
+  if (state.screen === "chat")           return "Chat mock — keyword matching, not AI. Routes listed below.";
   return "Manual controls for this wireframe screen.";
 }
 
@@ -68,6 +69,7 @@ function renderScreen() {
   if (state.screen === "marketplaceDetail") return renderMarketplaceDetail();
   if (state.screen === "reward")            return renderReward();
   if (state.screen === "settings")          return renderSettings();
+  if (state.screen === "chat")              return renderChat();
   if (state.screen === "myDebts")           return renderMyDebts();
   if (state.screen === "debtAnalyzer")      return renderDebtAnalyzer();
   if (state.screen === "goalCreate")        return renderGoalCreate();
@@ -97,6 +99,7 @@ function renderAdmin() {
   if (state.screen === "goalCreate")    return renderGoalCreateAdmin();
   if (state.screen === "goalTracker")   return renderGoalTrackerAdmin();
   if (state.screen === "goalVault")     return renderGoalVaultAdmin();
+  if (state.screen === "chat")          return renderChatAdmin();
 
   return `
     <div class="admin-card">
@@ -109,7 +112,7 @@ function renderAdmin() {
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
              "goals","learn","topic","lesson","quiz","simulation","marketplace",
              "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
-             "goalCreate","goalTracker","goalVault"].map(s => `
+             "goalCreate","goalTracker","goalVault","chat"].map(s => `
             <option value="${s}" ${state.screen === s ? "selected" : ""}>${s}</option>
           `).join("")}
         </select>
@@ -130,9 +133,11 @@ function render() {
   screenRoot.classList.toggle("baby-budget-mode", state.screen === "babyBudget");
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");
   screenRoot.classList.toggle("streak-mode",      state.screen === "streak");
+  screenRoot.classList.toggle("chat-mode",        state.screen === "chat");
   document.querySelector(".screen").classList.toggle("dark-mode", state.settings.colorMode === "dark");
   screenRoot.innerHTML  = renderScreen();
   if (state.screen === "lesson") lpMountHook(lpWasPlaying);
+  if (state.screen === "chat")   chatMountHook();   // pin the thread to the newest message
   navRoot.innerHTML     = renderNav();
   const hasNav = !!navRoot.innerHTML;
   // Hide navRoot and clear the 78px bottom reservation when no nav is shown.

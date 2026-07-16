@@ -12,6 +12,8 @@
 //   postResult     — post-input reaction prompt; keep focus on the prompt
 //   nextAction     — next action selection; keep focus on the choice
 //   commitment     — commitment creation; keep focus on the input
+//   chat           — full-screen chat; has its own Back button, and the input
+//                    bar needs the bottom edge the nav would occupy
 const NAV_VISIBLE_SCREENS = ["home", "aboutMe", "budgetSetup", "budgetCategory",
   "myProgress", "goals", "learn", "topic", "simulation", "marketplace", "marketplaceDetail",
   "settings", "myDebts", "debtAnalyzer", "lifestyle", "accountBalances", "debtBalances"];

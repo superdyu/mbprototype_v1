@@ -643,6 +643,14 @@ const state = {
   // without losing the input's value. Cleared when user navigates away.
   searchQuery: "",
 
+  // ─── Chat with Buddy ──────────────────────────────────────────────────────
+  // messages: the session transcript, [{ from:"user"|"buddy", text, link? }].
+  // Append-only via chatRespond() (js/chat-router.js). Persisting it here (vs.
+  // rebuilding per visit) is what lets the user follow a reply's link and come
+  // back to the conversation intact. The greeting is NOT stored — chat.js
+  // always renders CHAT_GREETING ahead of this array.
+  chat: { messages: [] },
+
   // ─── Reward session data ──────────────────────────────────────────────────
   // Written by completeLesson() before navigating to the reward screen.
   // The reward screen reads entirely from this — no hardcoded values.
@@ -864,5 +872,6 @@ function resetUserData() {
   state.goalsV2              = { clockOffsetDays: 0, goals: [], draft: null, selectedGoalId: null, celebrationDismissedAt: null };
   state.wizardRerunPrompt    = false;
   state.lessonPlayback       = { sentences: [], index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1 };
+  state.chat                 = { messages: [] };
   render();
 }

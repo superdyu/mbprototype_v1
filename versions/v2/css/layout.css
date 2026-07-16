@@ -67,6 +67,14 @@ body {
   bottom: 0; /* full-bleed branded splash — nav is hidden on the streak screen */
 }
 
+.screen-scroll.chat-mode {
+  padding: 0;
+  overflow: hidden;
+  bottom: 0; /* nav is hidden on chat — the input bar sits on the bottom edge */
+  /* The chat shell owns its own scrolling: the thread scrolls, the chips and
+     input bar stay pinned. See .chat-shell in components.css. */
+}
+
 /* Bottom nav */
 .bottom-tabs {
   position: absolute;

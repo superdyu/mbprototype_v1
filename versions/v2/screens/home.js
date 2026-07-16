@@ -9,6 +9,7 @@
 //   Entry: Default screen on launch; Home tab tap from anywhere
 //   Exit:  Task CTAs: lessons via selectLesson(), other screens via taskGo()
 //          Settings button in header → settings screen
+//          "Chat with Buddy" pill on the stage → chat screen
 //
 // STATES
 //   Tasks show "Done" badge when task.completed = true, CTA button when false.
@@ -32,7 +33,12 @@ function renderHome() {
       <button class="settings-btn" type="button" onclick="go('settings')">Settings</button>
     </div>
 
-    <div class="card stage-card">Stage</div>
+    <!-- Stage: placeholder for the future Buddy character/scene. The chat pill is
+         positioned to overhang its bottom edge (see .chat-buddy-btn in components.css). -->
+    <div class="card stage-card">
+      Stage
+      <button class="chat-buddy-btn" type="button" onclick="go('chat')">Chat with Buddy</button>
+    </div>
 
     <div class="row" style="margin-bottom:12px;">
       <div class="section-title" style="margin:0;">Daily Tasks</div>
