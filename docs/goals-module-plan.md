@@ -8,6 +8,8 @@ MoneyBuddy needs a goal system that solves long-horizon abandonment: large finan
 
 **Execution scope for THIS session (Dyuman's call, 2026-06-12): Step 0 only — commit this document as `docs/goals-module-plan.md` and push.** Implementation (commits 1–11) happens in a later session, likely on Opus after the Fable suspension; the doc is written so that session needs no other context. Decisions already made by Dyuman: cohort is **explicitly labeled as simulated** in the UI; sprint completion is a **claim button**; full module scope (no phase cut).
 
+> **Note (post-restructure):** this doc predates the `versions/<name>/` split. Every path below (`js/goals/...`, `screens/goal-*.js`, `index.html`, etc.) is relative to whichever version folder you're implementing in — currently `versions/v2/`, per the root `CLAUDE.md`.
+
 ## Architecture principles
 
 1. **Derive, don't store.** A goal = frozen `baseline` + append-only `events[]`. Sprints, cohort standings, pace, achievements are all computed at render time by pure functions. One deliberate exception: debt-paydown goals store a sampled `payoffCurve` at creation, because re-deriving from live `state.budget.debts` would silently rewrite the frozen baseline when the user edits debts.

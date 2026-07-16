@@ -2,7 +2,7 @@
 // Standalone script for the repo-root landing page. Deliberately NOT part of
 // any version's app — the versions under versions/*/ each load their own set
 // of <script> tags into one shared global namespace (state, render(), go(),
-// etc. per versions/v1/CLAUDE.md conventions), so this page must never load
+// etc. per the root CLAUDE.md's Architecture conventions), so this page must never load
 // two versions' scripts together. Picking a version is a real page navigation
 // (location.href), so each version boots fresh in its own document.
 //

@@ -30,7 +30,9 @@ otherwise.
   intentionally-not-secure speed bump — don't add real auth here.
 - **Adding a new major version:** copy the newest `versions/<name>/` folder to
   `versions/<next>/`, then add one entry to the `VERSIONS` array in
-  `gate/gate.js`. No other wiring needed.
+  `gate/gate.js`. Also update the "currently `versions/v1/` and `versions/v2/`"
+  / "newest version folder (currently `versions/v2/`)" prose above and in "How
+  to run / preview" below — they name specific folders and go stale otherwise.
 - Everything below this section (Architecture, hard conventions, Goals V2,
   Testing) describes the structure **inside a single version folder** — paths
   like `css/variables.css` or `js/state.js` are relative to whichever
@@ -81,7 +83,8 @@ otherwise.
   `adminSubtitle()`, and the admin jump list. `js/navigation.js` — `go(screen)`,
   history. `js/wizard-bridge.js` — budget-wizard data bridge.
 - `components/` — reusable visualizations (`thermometer`, `badge-ring`,
-  `sprint-timeline`, `nav`). Reuse these; don't re-implement charts inline.
+  `sprint-timeline`, `streak-counter`, `nav`). Reuse these; don't re-implement
+  charts inline.
 - `screens/` — one file per screen, each exporting a `render<Screen>()` and an
   optional `render<Screen>Admin()`.
 - `js/goals/` — the **Goals V2** module (see below). `docs/goals-module-plan.md`
