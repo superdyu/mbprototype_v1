@@ -2,14 +2,14 @@
 // TAB: My Progress | NAV BAR: Visible
 //
 // PURPOSE
-// Primary output hub. Shows the user's money picture based on all their About Me
+// Primary output hub. Shows the user's money picture based on all their Budget
 // inputs — budget results, comparisons, goals progress, and the assumptions
-// that drove those estimates. Read-first; every section links back to About Me
+// that drove those estimates. Read-first; every section links back to Budget
 // for editing.
 //
 // NAVIGATION
-//   Entry: My Progress tab tap; completing any About Me input flow
-//   Exit:  Edit links → About Me sub-screens; back to About Me after editing
+//   Entry: My Progress tab tap; completing any Budget input flow
+//   Exit:  Edit links → Budget sub-screens; back to Budget after editing
 //
 // STATES
 //   Sections render with placeholder/seed data when no real data is present.
@@ -22,7 +22,7 @@
 // PRODUCTION NOTES
 //   Section order (confirmed): Profile → Budget Results → Assumptions Used →
 //   Comparisons → Goals → Active Commitments.
-//   Edit links navigate to About Me sub-screens and should restore My Progress
+//   Edit links navigate to Budget sub-screens and should restore My Progress
 //   as the return destination (state.flowOrigin = "myProgress").
 //   Assumptions math (ZIP modifier, peer comparisons) reuses existing
 //   budget-utils.js functions.
@@ -377,7 +377,7 @@ function renderMyProgressAdmin() {
   return `
     <div class="admin-card">
       <p class="admin-card-title">My Progress</p>
-      <p class="helper">Output hub — data flows from About Me inputs.</p>
+      <p class="helper">Output hub — data flows from Budget inputs.</p>
       <p class="admin-card-title" style="margin-top:10px;">Monthly Gap Simulator</p>
       <button class="button secondary full" style="margin-top:6px;" type="button"
               onclick="state.monthlyUpdateGap={actualMonthlySpend:3800,planMonthlySpend:3200,gapPct:19,direction:'over',loggedAcct:12000,loggedDebt:8000};render()">

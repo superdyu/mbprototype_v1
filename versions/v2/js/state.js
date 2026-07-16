@@ -17,7 +17,7 @@
 
 const destinations = [
   ["streak",         "Streak Splash"],
-  ["aboutMe",        "About Me"],
+  ["aboutMe",        "Budget"],
   ["budgetSetup",    "Budget Setup"],
   ["babyBudget",     "Baby Budget"],
   ["myProgress",     "My Progress"],

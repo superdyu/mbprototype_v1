@@ -65,8 +65,8 @@ function generateId(prefix) {
 
 function activeTabFor(screen) {
   if (screen === "streak")            return "home";   // splash → no nav, but keep mapping defined
-  // About Me sub-screens
-  if (screen === "goals")             return "aboutMe";  // goals input editor lives in About Me
+  // Budget sub-screens
+  if (screen === "goals")             return "aboutMe";  // goals input editor lives in Budget
   if (screen === "babyBudget")        return "aboutMe";
   if (screen === "budgetSetup")       return "aboutMe";
   if (screen === "budgetCategory")    return "aboutMe";
@@ -76,7 +76,7 @@ function activeTabFor(screen) {
   if (screen === "lifestyleChain")    return "aboutMe";
   if (screen === "accountBalances")   return "aboutMe";
   if (screen === "debtBalances")      return "aboutMe";
-  if (screen === "goalCreate")        return "aboutMe";  // Goals V2 sub-screens live under About Me
+  if (screen === "goalCreate")        return "aboutMe";  // Goals V2 sub-screens live under Budget
   if (screen === "goalTracker")       return "aboutMe";
   if (screen === "goalVault")         return "aboutMe";
   // Marketplace sub-screen

@@ -1,5 +1,10 @@
-// ─── About Me ─────────────────────────────────────────────────────────────────
-// TAB: About Me | NAV BAR: Visible
+// ─── Budget (input hub) ───────────────────────────────────────────────────────
+// TAB: Budget | NAV BAR: Visible
+//
+// NAMING: this screen is labeled "Budget" in the UI, but its internal screen id
+// is still `aboutMe` (go('aboutMe'), activeTabFor → "aboutMe", file about-me.js).
+// The rename was label-only — don't "fix" the ids to match without renaming the
+// screen everywhere (render.js switch, utils.js, nav.js, chat-router.js routes).
 //
 // PURPOSE
 // Primary input hub. User tells Money Buddy about their financial life here —
@@ -7,9 +12,10 @@
 // the inputs, the more accurate My Progress outputs become.
 //
 // NAVIGATION
-//   Entry: About Me tab tap from any screen in NAV_VISIBLE_SCREENS
+//   Entry: Budget tab tap from any screen in NAV_VISIBLE_SCREENS
+//          Chat: budget/planning keyword route when no budget exists yet
 //   Exit:  Each component card → its own sub-screen (drill-down model)
-//          Back to About Me is the return point for all About Me sub-screens
+//          Back to this hub is the return point for all its sub-screens
 //
 // STATES
 //   Component cards show completion/status indicators based on user data state.
@@ -21,7 +27,7 @@
 //
 // PRODUCTION NOTES
 //   This screen is the input side of the input/output loop. My Progress is the
-//   output side. No results or comparisons should appear here. All About Me
+//   output side. No results or comparisons should appear here. All Budget-hub
 //   sub-screens return to aboutMe on back/cancel.
 
 function renderAboutMe() {
@@ -43,7 +49,7 @@ function renderAboutMe() {
   return `
     <div class="home-header">
       <div>
-        <h1 class="title">About Me</h1>
+        <h1 class="title">Budget</h1>
         <p class="subtitle">Update your money picture.</p>
       </div>
     </div>
@@ -149,7 +155,7 @@ function lifestyleCompletedCount() {
 function renderAboutMeAdmin() {
   return `
     <div class="admin-card">
-      <p class="admin-card-title">About Me</p>
+      <p class="admin-card-title">Budget</p>
       <p class="helper">No admin controls for the hub screen. Use individual component screens.</p>
     </div>
   `;

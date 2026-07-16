@@ -1,14 +1,16 @@
 // ─── Budget Setup ─────────────────────────────────────────────────────────────
-// TAB: About Me (sub-screen) | NAV BAR: Visible — About Me tab highlighted
+// TAB: Budget (sub-screen) | NAV BAR: Visible — Budget tab highlighted
 //
 // PURPOSE
-// Budget input sub-screen within About Me. Shows current budget parameters
+// Budget input sub-screen within the Budget tab (screen id `aboutMe`). Shows
+// current budget parameters
 // (income, ZIP, household, major bills) and provides entry points for the Baby
 // Budget wizard (full setup) and Update This Month (quick monthly check-in).
 //
 // NAVIGATION
-//   Entry: About Me → Budget card
-//   Exit:  ← About Me; Baby Budget CTA → babyBudget screen;
+//   Entry: Budget tab → Budget card
+//          Chat: budget/planning keyword route when a budget already exists
+//   Exit:  ← Budget; Baby Budget CTA → babyBudget screen;
 //          Update This Month CTA → (future monthly update flow)
 //
 // STATES
@@ -36,7 +38,7 @@ function renderBudgetSetup() {
   return `
     <div class="card" style="margin-bottom:14px;">
       <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
-              type="button" onclick="goBackFromBudgetSetup()">← ${state.flowOrigin === 'myProgress' ? 'My Progress' : 'About Me'}</button>
+              type="button" onclick="goBackFromBudgetSetup()">← ${state.flowOrigin === 'myProgress' ? 'My Progress' : 'Budget'}</button>
       <h1 class="title" style="margin:0;font-size:20px;">Budget</h1>
       <p class="subtitle" style="margin:4px 0 0;">Build it once. Update it when life changes.</p>
     </div>

@@ -2,13 +2,13 @@
 // TAB: None | NAV BAR: Hidden — completion moment
 //
 // PURPOSE
-// Endpoint for any completed About Me input flow. Confirms the action, then
+// Endpoint for any completed Budget input flow. Confirms the action, then
 // offers two exits: "See My Progress" (impact landing) and "Back to [origin]".
 //
 // NAVIGATION
 //   Entry: Post-result loop (accept, review-later, make-goal paths)
 //   Exit:  Primary → My Progress (impact landing per context)
-//          Secondary → state.flowOrigin (Home / About Me / My Progress)
+//          Secondary → state.flowOrigin (Home / Budget / My Progress)
 //
 // PRODUCTION NOTES
 //   Impact landing: budget/monthlyUpdate → My Progress (Budget Results at top).
@@ -42,7 +42,7 @@ function renderFinish() {
 
   const originLabel = origin === "home"       ? "Home"
                     : origin === "myProgress" ? "My Progress"
-                    : "About Me";
+                    : "Budget";
 
   return `
     <div style="padding:40px 0 24px;text-align:center;">

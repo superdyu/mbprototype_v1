@@ -18,7 +18,7 @@ function adminSubtitle() {
   if (state.screen === "topic")          return "Override lesson statuses for this badge.";
   if (state.screen === "reward-preview") return "Lesson preview — read-only. Edit content in Learn admin.";
   if (state.screen === "lesson")         return "Toggle stage style, seek to sentence for testing.";
-  if (state.screen === "aboutMe")        return "About Me tab — input hub for budget, lifestyle, goals, balances.";
+  if (state.screen === "aboutMe")        return "Budget tab — input hub for budget, lifestyle, goals, balances.";
   if (state.screen === "goals")          return "Goals editor — create, edit, delete goals.";
   if (state.screen === "budgetSetup")    return "Budget setup — income, housing, ZIP, major bills.";
   if (state.screen === "budgetCategory") return "Intentional toggle, target spend, sub-category amounts.";
@@ -55,7 +55,7 @@ function renderScreen() {
   if (state.screen === "nextAction")        return renderNextAction();
   if (state.screen === "commitment")        return renderCommitment();
   if (state.screen === "finish")            return renderFinish();
-  if (state.screen === "goals")             return renderGoals();      // About Me → Goals (input/edit)
+  if (state.screen === "goals")             return renderGoals();      // Budget → Goals (input/edit)
   if (state.screen === "analysis")          return renderAboutMe();    // legacy redirect
   if (state.screen === "learn")             return renderLearn();
   if (state.screen === "topic")             return renderTopic();

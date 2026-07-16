@@ -1,5 +1,5 @@
 // ─── Account Balances ──────────────────────────────────────────────────────────
-// TAB: About Me (sub-screen) | NAV BAR: Visible — About Me tab highlighted
+// TAB: Budget (sub-screen) | NAV BAR: Visible — Budget tab highlighted
 //
 // PURPOSE
 // Records point-in-time bank/cash account balance snapshots with date stamps.
@@ -7,8 +7,8 @@
 // Also serves as the first step of the Update This Month flow.
 //
 // NAVIGATION
-//   Entry: About Me → Account Balances card; Budget Setup → Update This Month
-//   Exit:  ← About Me (or → debtBalances if in monthly update flow)
+//   Entry: Budget → Account Balances card; Budget Setup → Update This Month
+//   Exit:  ← Budget (or → debtBalances if in monthly update flow)
 //
 // STATES
 //   Shows existing balance entries as a timeline list.
@@ -29,7 +29,7 @@ function renderAccountBalances() {
   return `
     <div class="card" style="margin-bottom:14px;">
       <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
-              type="button" onclick="go('aboutMe')">← About Me</button>
+              type="button" onclick="go('aboutMe')">← Budget</button>
       <h1 class="title" style="margin:0;font-size:20px;">Account Balances</h1>
       <p class="subtitle" style="margin:4px 0 0;">What's sitting in your accounts today?</p>
     </div>

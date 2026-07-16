@@ -1,5 +1,5 @@
 // ─── Goal Vault (Goals V2 · Phase 3 Victory Vault) ────────────────────────────
-// TAB: About Me (sub-screen) | NAV BAR: Visible — About Me highlighted
+// TAB: Budget (sub-screen) | NAV BAR: Visible — Budget highlighted
 //
 // Strictly a trophy room: completed-goal trophies (each with its permanent rank
 // title) and a medal wall of every earned achievement — including medals from
@@ -14,7 +14,7 @@ function renderGoalVault() {
   var header = `
     <div class="card" style="margin-bottom:14px;">
       <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
-              type="button" onclick="go('aboutMe')">← About Me</button>
+              type="button" onclick="go('aboutMe')">← Budget</button>
       <h1 class="title" style="margin:0;font-size:20px;">🏆 Victory Vault</h1>
       <p class="subtitle" style="margin:4px 0 0;">Everything you've earned.</p>
     </div>`;

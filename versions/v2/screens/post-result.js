@@ -2,7 +2,7 @@
 // TAB: None | NAV BAR: Hidden — full focus on reaction
 //
 // PURPOSE
-// First screen of the post-input loop. After completing any major About Me input
+// First screen of the post-input loop. After completing any major Budget input
 // (Baby Budget, lifestyle chain, monthly update), shows a context summary, then asks
 // "How does this feel?" with a 4-notch slider before the user decides next steps.
 //

@@ -1,5 +1,5 @@
 // ─── Lifestyle Theme Selection ─────────────────────────────────────────────────
-// TAB: About Me (sub-screen) | NAV BAR: Visible — About Me tab highlighted
+// TAB: Budget (sub-screen) | NAV BAR: Visible — Budget tab highlighted
 //
 // PURPOSE
 // Shows 5 lifestyle theme cards. Each theme is a short question chain that helps
@@ -7,8 +7,8 @@
 // Cards show completion state (last updated date or "Not started").
 //
 // NAVIGATION
-//   Entry: About Me → Lifestyle card
-//   Exit:  ← About Me; each theme card → lifestyleChain screen
+//   Entry: Budget → Lifestyle card
+//   Exit:  ← Budget; each theme card → lifestyleChain screen
 //
 // PRODUCTION NOTES
 //   Completing a theme chain derives sub-slider values that update the parent
@@ -26,7 +26,7 @@ function renderLifestyle() {
   return `
     <div class="card" style="margin-bottom:14px;">
       <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
-              type="button" onclick="go('aboutMe')">← About Me</button>
+              type="button" onclick="go('aboutMe')">← Budget</button>
       <h1 class="title" style="margin:0;font-size:20px;">Lifestyle</h1>
       <p class="subtitle" style="margin:4px 0 0;">Small answers. Better results.</p>
     </div>

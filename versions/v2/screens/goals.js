@@ -1,14 +1,14 @@
 // ─── Goals ────────────────────────────────────────────────────────────────────
-// TAB: About Me (sub-screen) | NAV BAR: Visible — About Me tab highlighted
+// TAB: Budget (sub-screen) | NAV BAR: Visible — Budget tab highlighted
 //
 // PURPOSE
-// Source of truth for goal creation and editing within About Me. Users set what
+// Source of truth for goal creation and editing within the Budget tab. Users set what
 // they want Money Buddy to help with here. Goal progress is displayed in
 // My Progress (read side). This screen is the write side.
 //
 // NAVIGATION
-//   Entry: About Me → Goals card
-//   Exit:  ← About Me
+//   Entry: Budget → Goals card
+//   Exit:  ← Budget
 //
 // STATES
 //   List: shows all goals with Edit/Delete per card; Add Goal form when
@@ -29,7 +29,7 @@ function renderGoals() {
   return `
     <div class="card" style="margin-bottom:14px;">
       <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
-              type="button" onclick="goBackFromGoals()">← ${state.flowOrigin === 'myProgress' ? 'My Progress' : 'About Me'}</button>
+              type="button" onclick="goBackFromGoals()">← ${state.flowOrigin === 'myProgress' ? 'My Progress' : 'Budget'}</button>
       <h1 class="title" style="margin:0;font-size:20px;">Goals</h1>
       <p class="subtitle" style="margin:4px 0 0;">Choose what Money Buddy should help with next.</p>
     </div>

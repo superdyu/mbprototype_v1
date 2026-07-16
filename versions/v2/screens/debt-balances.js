@@ -1,5 +1,5 @@
 // ─── Debt Balances ─────────────────────────────────────────────────────────────
-// TAB: About Me (sub-screen) | NAV BAR: Visible — About Me tab highlighted
+// TAB: Budget (sub-screen) | NAV BAR: Visible — Budget tab highlighted
 //
 // PURPOSE
 // Records point-in-time debt balance snapshots with date stamps. Separate from
@@ -7,8 +7,8 @@
 // This screen is purely about logging current balances over time for trend tracking.
 //
 // NAVIGATION
-//   Entry: About Me → Debt Balances card; Account Balances → "Next" in monthly update flow
-//   Exit:  ← About Me; completing monthly update → net position check → optional budget prompt
+//   Entry: Budget → Debt Balances card; Account Balances → "Next" in monthly update flow
+//   Exit:  ← Budget; completing monthly update → net position check → optional budget prompt
 //
 // STATES
 //   Debt dropdown populated from state.budget.debts (the debt catalog).
@@ -28,7 +28,7 @@ function renderDebtBalances() {
   return `
     <div class="card" style="margin-bottom:14px;">
       <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
-              type="button" onclick="go('aboutMe')">← About Me</button>
+              type="button" onclick="go('aboutMe')">← Budget</button>
       <h1 class="title" style="margin:0;font-size:20px;">Debt Balances</h1>
       <p class="subtitle" style="margin:4px 0 0;">What do you owe right now?</p>
     </div>

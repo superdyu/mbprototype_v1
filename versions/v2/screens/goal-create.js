@@ -1,5 +1,5 @@
 // ─── Goal Create (Goals V2 · Phase 1 wizard) ──────────────────────────────────
-// TAB: About Me (sub-screen) | NAV BAR: Visible — About Me highlighted
+// TAB: Budget (sub-screen) | NAV BAR: Visible — Budget highlighted
 //
 // Four-step wizard driven by state.goalsV2.draft:
 //   category → type → inputs (with autofill context cards) → feasibility

@@ -1,5 +1,7 @@
 // ─── Bottom Navigation Bar ────────────────────────────────────────────────────
-// Renders the 5-tab persistent nav: Home | About Me | My Progress | Learn | Market.
+// Renders the 5-tab persistent nav: Home | Budget | My Progress | Learn | Market.
+// NOTE: the "Budget" tab's internal screen id is still `aboutMe` (rename was
+// label-only) — go('aboutMe') is correct, not go('budget').
 // Only visible on screens in NAV_VISIBLE_SCREENS. Excluded screens:
 //   babyBudget    — full-height iframe; nav conflicts with the layout
 //   lesson        — full-height audiobook player; same constraint as babyBudget
@@ -21,7 +23,7 @@ function renderNav() {
   return `
     <nav class="bottom-tabs" aria-label="Primary navigation">
       <button class="tab ${active === "home"        ? "active" : ""}" onclick="go('home')">Home</button>
-      <button class="tab ${active === "aboutMe"     ? "active" : ""}" onclick="go('aboutMe')">About Me</button>
+      <button class="tab ${active === "aboutMe"     ? "active" : ""}" onclick="go('aboutMe')">Budget</button>
       <button class="tab ${active === "myProgress"  ? "active" : ""}" onclick="go('myProgress')">My Progress</button>
       <button class="tab ${active === "learn"       ? "active" : ""}" onclick="go('learn')">Learn</button>
       <button class="tab ${active === "marketplace" ? "active" : ""}" onclick="go('marketplace')">Market</button>

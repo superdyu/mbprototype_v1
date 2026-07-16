@@ -1,5 +1,5 @@
 // ─── Goal Tracker (Goals V2 · Phase 2) ────────────────────────────────────────
-// TAB: About Me (sub-screen) | NAV BAR: Visible — About Me highlighted
+// TAB: Budget (sub-screen) | NAV BAR: Visible — Budget highlighted
 //
 // The active goal cockpit: pace vs the frozen baseline (thermometer), the sprint
 // timeline, and the two actions — claim the current sprint or log a custom
@@ -75,7 +75,7 @@ function renderGoalTracker() {
   return `
     <div class="card" style="margin-bottom:12px;">
       <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
-              type="button" onclick="go('aboutMe')">← About Me</button>
+              type="button" onclick="go('aboutMe')">← Budget</button>
       <h1 class="title" style="margin:0;font-size:20px;">${h(meta.icon || "🎯")} ${h(goal.title)}</h1>
       <p class="subtitle" style="margin:4px 0 0;">${h((goalsCategoryMeta(goal.categoryKey) || {}).label || "")}</p>
     </div>

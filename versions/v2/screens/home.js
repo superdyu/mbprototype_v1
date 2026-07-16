@@ -104,7 +104,7 @@ function renderHomeAdmin() {
           <label>Tab</label>
           <select onchange="setTaskTab(${index}, this.value)">
             <option value="learn"       ${task.tab === "learn"       ? "selected" : ""}>Learn (Lesson)</option>
-            <option value="aboutMe"     ${task.tab === "aboutMe"     ? "selected" : ""}>About Me</option>
+            <option value="aboutMe"     ${task.tab === "aboutMe"     ? "selected" : ""}>Budget</option>
             <option value="myProgress"  ${task.tab === "myProgress"  ? "selected" : ""}>My Progress</option>
             <option value="marketplace" ${task.tab === "marketplace" ? "selected" : ""}>Marketplace</option>
             <option value="settings"    ${task.tab === "settings"    ? "selected" : ""}>Settings</option>
