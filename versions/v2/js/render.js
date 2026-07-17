@@ -104,6 +104,7 @@ function renderAdmin() {
   if (state.screen === "goalTracker")   return renderGoalTrackerAdmin();
   if (state.screen === "goalVault")     return renderGoalVaultAdmin();
   if (state.screen === "chat")          return renderChatAdmin();
+  if (state.screen === "lifestyleSurvey") return renderLifestyleSurveyAdmin();
 
   return `
     <div class="admin-card">

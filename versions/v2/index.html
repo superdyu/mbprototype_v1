@@ -68,6 +68,8 @@ window.onunhandledrejection = function(e) {
 <!-- Builder seam: normalized baseline both budget builders write through,
      plus each builder's adapter (wizard-bridge loads later with core engine) -->
 <script src="js/budget-baseline.js"></script>
+<!-- Survey content table must load before the bridge that reads it -->
+<script src="js/lifestyle-survey-content.js"></script>
 <script src="js/lifestyle-survey-bridge.js"></script>
 
 <!-- 2. Shared components (before screens that use them) -->

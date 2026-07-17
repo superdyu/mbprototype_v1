@@ -1209,3 +1209,126 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 }
 
 .chat-input:focus { border-color: var(--accent); }
+
+/* ─── Lifestyle Survey (builder flow) ────────────────────────────────────────
+   Screens: screens/lifestyle-survey.js. Full-screen flow (nav hidden). The
+   4-notch slider is a native range input with decorative dots under the track;
+   commit on release (onchange) — never oninput, a mid-drag re-render would
+   destroy the thumb. Theme tokens only. */
+.ls-wrap { padding-top: 6px; }
+
+.ls-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.ls-header .button { font-size: 12px; padding: 8px 14px; }
+
+/* Stage box — same placeholder treatment as the home screen's stage card */
+.ls-stage {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 850;
+  letter-spacing: -.03em;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+/* 4-notch slider: dots mark the discrete stops beneath the range track */
+.ls-track-wrap { position: relative; padding: 6px 2px 0; }
+.ls-track-dots {
+  position: absolute;
+  top: 14px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.ls-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 2px solid var(--line);
+}
+.ls-dot.active { background: var(--accent); border-color: var(--accent); }
+.ls-slider {
+  width: 100%;
+  position: relative;
+  z-index: 1;
+  padding: 0;
+  accent-color: var(--accent);
+  background: transparent;
+}
+.ls-track-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.ls-notch-detail {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+/* Income mode toggle (twin of the wizard's seg-toggle) */
+.ls-seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.ls-seg-btn {
+  padding: 9px;
+  font-size: 13px;
+  font-weight: 850;
+  background: var(--card);
+  color: var(--muted);
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+}
+.ls-seg-btn.active { background: var(--accent); color: #fff; }
+
+/* Review step: compact slider rows + pinned-feel totals */
+.ls-review-totals {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--screen);
+  padding: 4px 0 8px;
+}
+.ls-total-box {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+.ls-review-row { padding: 10px 12px; margin-bottom: 8px; }
+
+/* Modal overlay (skip confirm / save prompt) */
+.ls-modal-bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, .5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 100;
+}
