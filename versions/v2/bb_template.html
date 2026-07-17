@@ -265,19 +265,42 @@ const SEG = [
   { max: Infinity, housing: 26, bills: 10, food: 11, transport:  8, health: 7, lifestyle: 10, debt: 6, savings: 22 }
 ];
 
-// Slider range as % of net income. Maxima sit well above the SEG default on
-// purpose — that headroom is what lets someone drag to what they ACTUALLY spend
-// and land in overspend, which the totals bar then shows honestly.
-const RANGE = {
-  housing:   { min: 0, max: 60 },
-  bills:     { min: 0, max: 30 },
-  food:      { min: 0, max: 30 },
-  transport: { min: 0, max: 25 },
-  health:    { min: 0, max: 20 },
-  lifestyle: { min: 0, max: 25 },
-  debt:      { min: 0, max: 30 },
-  savings:   { min: 0, max: 40 }
+// Slider range rule: the right edge is anchored to the AVERAGE for the user's
+// income tier, not a fixed number — "avg 30% rent → max 60%" style. SPREAD is a
+// stand-in for how many standard deviations of real-world variance a category
+// has (debt and savings vary wildly between households; housing and bills are
+// tighter), balanced against usability. maxPct = clamp(avg × spread, avg + 10,
+// RANGE_CAP): the floor guarantees drag room when a tier's average is tiny
+// (low-tier savings avg is 2%), the cap keeps the drag scale usable. Left edge
+// is always $0. See rangeMaxPct().
+const SPREAD = {
+  housing: 2.0, bills: 2.0, food: 2.2, transport: 2.2,
+  health: 2.5, lifestyle: 2.5, debt: 4.0, savings: 4.0
 };
+const RANGE_CAP = 65;
+
+function rangeMaxPct(key, seg) {
+  var avg = seg[key] || 0;
+  return Math.min(RANGE_CAP, Math.max(avg * SPREAD[key], avg + 10));
+}
+
+// How strongly each category's DEFAULT tracks the ZIP cost-of-living index
+// (the "modifier" in gov+modifier). Housing is fully local; groceries, bills
+// and transport partially; the rest aren't location-priced. Savings has no
+// entry because it's seeded as the residual (net − everything else, floored
+// at 0) — the local premium comes out of savings first, which is also how it
+// works in real life. NOTE: this means a pricey ZIP on a modest income can
+// open the budget already overspent. That is intentional and user-confirmed —
+// the totals bar says "Overspent" honestly rather than pretending balance.
+// Household size is deliberately NOT a seeding modifier: the SEG quintile
+// percentages are household-level BLS figures already, so multiplying by
+// householdMultiplier() would double-count.
+const ZIP_SENSITIVITY = { housing: 1.0, bills: 0.5, food: 0.5, transport: 0.5,
+                          health: 0, lifestyle: 0, debt: 0 };
+
+function zipMod(key) {
+  return 1 + (zipMultiplier() - 1) * (ZIP_SENSITIVITY[key] || 0);
+}
 
 // Slider increment, sized to the expense: dragging housing in $10 steps would
 // take 200 drags. Scaled up again for higher incomes — see stepFor().
@@ -607,25 +630,22 @@ function initAdjustStep() {
   var net = monthlyIncome();
   var seg = getSegment(net);
 
-  // Seed every slider at peer spending for this income quintile — SEG rows sum
-  // to 100% of net, so the budget opens fully allocated and balanced, and the
-  // user drags from a sane starting point rather than from zero.
-  //
-  // Deliberately NOT modified by ZIP or household here: multiplying housing by
-  // a 1.45 cost-of-living index would open a brand-new user in overspend before
-  // they touched anything. The ZIP still drives the thermometer and the tax
-  // estimate; zipMultiplier() / householdMultiplier() are available if we later
-  // decide the localized default is worth that first impression.
+  // Seed every slider at gov+modifier peer spending: the BLS quintile share of
+  // net income (SEG), scaled by the ZIP cost-of-living index per category
+  // (ZIP_SENSITIVITY). Savings is NOT seeded from its SEG share — it's the
+  // residual (net − everything else, floored at 0), so a pricey ZIP eats
+  // savings first, and once savings hits $0 the budget opens overspent and the
+  // totals bar says so. In a national-average ZIP the modifiers are all 1 and
+  // savings lands exactly on its SEG share (rows sum to 100).
   if (Object.keys(adjustVals).length === 0) {
     var allocated = 0;
     for (var i = 0; i < BUCKETS.length; i++) {
       var b = BUCKETS[i];
       var st = stepFor(b.key);
-      if (i < BUCKETS.length - 1) {
-        adjustVals[b.key] = Math.round(net * seg[b.key] / 100 / st) * st;
+      if (b.key !== "savings") {
+        adjustVals[b.key] = Math.round(net * seg[b.key] / 100 * zipMod(b.key) / st) * st;
         allocated += adjustVals[b.key];
       } else {
-        // Savings is last and absorbs the rounding so the total lands on net.
         adjustVals[b.key] = Math.max(0, Math.round(net - allocated));
       }
     }
@@ -648,10 +668,13 @@ function renderAdjustBuckets() {
   var html = "";
   BUCKETS.forEach(function(b) {
     var st        = stepFor(b.key);
-    var minAmt    = Math.max(0, Math.round(net * RANGE[b.key].min / 100 / st) * st);
-    var maxAmt    = Math.max(minAmt + st, Math.round(net * RANGE[b.key].max / 100 / st) * st);
-    var avgAmt    = Math.round(net * seg[b.key] / 100 / st) * st;
+    var minAmt    = 0;
+    var maxAmt    = Math.max(st, Math.round(net * rangeMaxPct(b.key, seg) / 100 / st) * st);
+    var avgAmt    = Math.round(net * seg[b.key] / 100 * zipMod(b.key) / st) * st;
     var curAmt    = adjustVals[b.key] || 0;
+    // Never let the range clip a real value (typed amounts and ZIP-modified
+    // seeds can exceed the spread-rule max — the slider must still reach them).
+    if (curAmt > maxAmt) maxAmt = Math.ceil(curAmt / st) * st;
     var sliderVal = Math.min(Math.max(curAmt, minAmt), maxAmt);
     var expanded  = !!adjustExpanded[b.key];
     var fmtAmt    = curAmt > 0 ? curAmt.toLocaleString() : "0";
@@ -754,11 +777,42 @@ function updateAdjustHeader() {
 }
 
 // ── Save-time balancing ────────────────────────────────────────────────────
-// Replaces the old "allocate everything before you can review" modal, which was
-// the only reason the Review step existed as a gate. Now: leftover money
-// silently becomes savings, and overspend is left exactly as the user set it
-// (the totals bar already says so in red). Nothing blocks the save — that is
-// the point of a 2-minute budget.
+// Asked when Save is hit with >1% of take-home unallocated: proceed (leftover
+// goes to savings) or go back to the sliders. Built with createElement rather
+// than an HTML string so build_bb.py's escape check has nothing to trip on.
+function showUnallocatedPrompt(leftOver) {
+  var bg = document.createElement("div");
+  bg.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:999";
+
+  var card = document.createElement("div");
+  card.style.cssText = "background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,0.24)";
+
+  var msg = document.createElement("div");
+  msg.style.cssText = "font-size:14px;line-height:1.45;color:var(--text);margin-bottom:16px";
+  msg.textContent = "You still have " + money(leftOver) + " of your take-home unassigned. Save it as savings, or keep adjusting?";
+
+  var saveBtn = document.createElement("button");
+  saveBtn.type = "button";
+  saveBtn.style.cssText = "width:100%;padding:12px;background:var(--accent);color:#fff;border:1px solid var(--accent);border-radius:13px;font-size:13px;font-weight:850;cursor:pointer;margin-bottom:8px";
+  saveBtn.textContent = "Add " + money(leftOver) + " to Savings & save";
+  saveBtn.onclick = function() { bg.remove(); saveBudget(); };
+
+  var stayBtn = document.createElement("button");
+  stayBtn.type = "button";
+  stayBtn.style.cssText = "width:100%;padding:12px;background:var(--soft);color:var(--muted);border:1px solid var(--line);border-radius:13px;font-size:13px;font-weight:850;cursor:pointer";
+  stayBtn.textContent = "Keep adjusting";
+  stayBtn.onclick = function() { bg.remove(); };
+
+  card.appendChild(msg);
+  card.appendChild(saveBtn);
+  card.appendChild(stayBtn);
+  bg.appendChild(card);
+  document.body.appendChild(bg);
+}
+
+// Sweeps unallocated take-home into savings. Called on every save: silently
+// for sub-1% crumbs, and as the "proceed" path of showUnallocatedPrompt above.
+// Overspend is never corrected — it saves exactly as the user set it.
 function autoAllocateToSavings() {
   var net   = monthlyIncome();
   var total = BUCKETS.reduce(function(s, b) { return s + (adjustVals[b.key] || 0); }, 0);
@@ -798,9 +852,20 @@ function next() {
   // Basics → Adjust
   if (step === 0) { step = 1; renderStep(); return; }
 
-  // Adjust → save. No review step and no allocation gate: sweep any leftover
-  // into savings and post. Overspend saves as-is; the post-result screen is
-  // where the user reviews the outcome.
+  // Adjust → save. No review step, but meaningfully-unallocated money (>1% of
+  // take-home) gets one popup: dump it into savings and save, or keep
+  // adjusting. Overspend never prompts — it saves as-is and the totals bar +
+  // post-result screen show it honestly.
+  var net = monthlyIncome();
+  var total = BUCKETS.reduce(function(s, b) { return s + (adjustVals[b.key] || 0); }, 0);
+  var leftOver = net - total;
+  if (leftOver > net * 0.01) { showUnallocatedPrompt(leftOver); return; }
+  saveBudget();
+}
+
+// Builds the payload and posts it. Sub-1% crumbs still sweep silently into
+// savings so the saved plan lands exactly on take-home.
+function saveBudget() {
   autoAllocateToSavings();
 
   var housingParts = splitBucket(adjustVals.housing || 0, HOUSING_SPLIT);
