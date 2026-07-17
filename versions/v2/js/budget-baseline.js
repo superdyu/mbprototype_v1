@@ -39,6 +39,20 @@ const BUDGET_BUILDER_LABELS = {
   "lifestyleSurvey": "Lifestyle Survey"
 };
 
+// Display names for the 8 baseline amounts (host-side twin of the wizard's
+// BUCKETS labels — the iframe can't share code with us). Order matters: it's
+// the display order on the update-confirm screen.
+const BASELINE_AMOUNT_LABELS = [
+  ["housing",   "Housing"],
+  ["bills",     "Bills & Required"],
+  ["food",      "Food & Daily"],
+  ["transport", "Transportation"],
+  ["health",    "Health & Education"],
+  ["lifestyle", "Lifestyle"],
+  ["debt",      "Debt Payments"],
+  ["savings",   "Savings & Future"]
+];
+
 // Splits one rolled-up amount into per-cost fields; last key absorbs rounding.
 function baselineSplit(total, split) {
   const out = {};
@@ -181,10 +195,17 @@ function budgetToBaseline() {
 
 // ── Routing ───────────────────────────────────────────────────────────────────
 // Every builder save lands here. First-time budget → applied immediately and
-// straight into the post-result flow. Updating an existing budget will route
-// through the shared old-vs-new confirmation page (next commit) so updates get
-// one unified flow across all builder combinations.
+// straight into the post-result flow. Updating an EXISTING budget → the shared
+// old-vs-new confirmation page (screens/budget-update-confirm.js) decides, so
+// updates get one unified flow across all builder combinations — same builder
+// re-run or a switch, it's the same page.
 function submitBudgetBaseline(baseline) {
+  if (!baseline) return;
+  if (state.budget.status !== "empty") {
+    state.pendingBaseline = baseline;
+    go("budgetUpdateConfirm");
+    return;
+  }
   applyBudgetBaseline(baseline);
   if (!state.flowOrigin) state.flowOrigin = "aboutMe";
   state.postResultContext = "budget";

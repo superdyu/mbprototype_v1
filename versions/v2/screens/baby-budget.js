@@ -56,9 +56,14 @@ function mountBabyBudget() {
   if (frame && !frame.dataset.loaded) {
     frame.addEventListener("load", () => {
       frame.contentWindow.postMessage({ type: "bb-theme", colorMode: state.settings.colorMode }, "*");
-      // Prefill with previously entered values when editing a completed budget
-      if (state.budget.wizardInputs && state.budget.status === "complete") {
-        frame.contentWindow.postMessage({ type: "bb-prefill", inputs: state.budget.wizardInputs }, "*");
+      // Prefill from the CURRENT budget (via the reverse baseline adapter), not
+      // from this wizard's own last save — so re-entry shows the budget as it
+      // stands even if the Lifestyle Survey built it. A pending unconfirmed
+      // edit ("Keep editing" on the update-confirm screen) takes precedence so
+      // the user's in-flight slider state survives the round trip.
+      if (state.pendingBaseline || state.budget.status === "complete") {
+        const prefill = baselineToBbPrefill(state.pendingBaseline || budgetToBaseline());
+        frame.contentWindow.postMessage({ type: "bb-prefill", inputs: prefill }, "*");
       }
     }, { once: true });
     frame.srcdoc = decodeBabyBudgetSource();

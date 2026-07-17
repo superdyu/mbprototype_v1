@@ -26,6 +26,24 @@
 // How baseline fields land on state.budget (categories, overhead, stamps) is
 // budget-baseline.js's contract, not this file's.
 
+// Reverse direction: baseline → the bb-prefill message shape the wizard's
+// prefill handler accepts. Used on re-entry so the wizard opens on THE budget
+// as it stands (or on a pending unconfirmed edit), regardless of which builder
+// last saved — the wizard rolls adjustVals straight into its sliders.
+function baselineToBbPrefill(baseline) {
+  if (!baseline) return null;
+  const p = baseline.profile || {};
+  return {
+    zip:           p.zip || "",
+    gender:        p.gender || "",
+    age:           p.age || 0,
+    householdSize: p.householdSize || 0,
+    incomeMode:    p.incomeMode || "annual",
+    preIncome:     p.grossMonthly || 0,   // monthly gross; wizard re-annualizes for display
+    adjustVals:    Object.assign({}, baseline.amounts)
+  };
+}
+
 function bbPayloadToBaseline(inputs) {
   if (!inputs) return null;
   const av = inputs.adjustVals || {};

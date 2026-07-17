@@ -14,6 +14,8 @@
 //   commitment     — commitment creation; keep focus on the input
 //   chat           — full-screen chat; has its own Back button, and the input
 //                    bar needs the bottom edge the nav would occupy
+//   budgetUpdateConfirm — old→new budget comparison; a decision gate, keep
+//                    focus on confirm/keep-editing/discard
 const NAV_VISIBLE_SCREENS = ["home", "aboutMe", "budgetSetup", "budgetCategory",
   "myProgress", "goals", "learn", "topic", "simulation", "marketplace", "marketplaceDetail",
   "settings", "myDebts", "debtAnalyzer", "lifestyle", "accountBalances", "debtBalances"];
