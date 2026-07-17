@@ -8,27 +8,34 @@ function decodeBabyBudgetSource() {
   return new TextDecoder().decode(bytes);
 }
 
-// ─── Baby Budget Wizard ───────────────────────────────────────────────────────
-// TAB: Analysis | NAV BAR: Hidden — full-height iframe overrides all layout
+// ─── 2 Minute Budget Wizard ───────────────────────────────────────────────────
+// TAB: Budget | NAV BAR: Hidden — full-height iframe overrides all layout
+//
+// NAMING: the screen id is `babyBudget` and this file is baby-budget.js, but the
+// wizard is called the "2 Minute Budget" in the UI. Label-only rename — the ids,
+// filenames, and the bb-* postMessage names all still say baby/bb.
 //
 // PURPOSE
-// 7-step onboarding wizard that collects income type, earners, fixed bills,
-// lifestyle spending, and debts. On completion, populates state.budget.profile,
-// state.budget.categories, and state.budget.debts.
+// 2-step wizard: Basics (gender, age, household size, ZIP, gross income) then
+// Adjust (8 sliders covering every category, housing and bills included). On
+// completion, populates state.budget.profile and state.budget.categories.
 //
 // NAVIGATION
-//   Entry: "Set Up Your Budget" CTA on Analysis empty state
-//   Exit:  Wizard completion (bb-complete postMessage) → Analysis (status → "complete")
-//          Wizard back button (bb-back postMessage) → Analysis
+//   Entry: "2 Minute Budget" card on the budgetSetup setup choice (first run),
+//          or "Edit Budget" there once a budget exists (re-entry prefills)
+//   Exit:  Wizard completion (bb-complete postMessage) → postResult (status → "complete")
+//          Wizard back button from step 0 (bb-back postMessage) → budgetSetup
 //
 // STATES
-//   7-step wizard: income type → earner details → variable income → bills →
-//   lifestyle → adjust buckets → review & confirm
+//   Step 0 Basics → Step 1 Adjust → save. No review step: saving posts straight
+//   to the parent, and post-result is where the user reviews the outcome.
 //
 // PRODUCTION NOTES
 //   Embedded as a base64-encoded srcdoc iframe. The wizard is fully self-contained
 //   HTML/CSS/JS in bb_template.html. Build process: edit bb_template.html then run
-//   `python3 build_bb.py` to regenerate the base64 payload in this file.
+//   `python3 build_bb.py` FROM INSIDE this version folder (its paths are
+//   CWD-relative) to regenerate the base64 payload in this file. Never hand-edit
+//   the base64 — it is overwritten on every build.
 //   Production path: migrate wizard to native app screens (screens/wizard-*.js)
 //   so it shares the app's design system, state, and routing. The iframe approach
 //   was chosen for prototype speed but adds a build step on every wizard change.
@@ -39,7 +46,7 @@ function renderBabyBudget() {
     <iframe
       id="babyBudgetFrame"
       class="bb-iframe"
-      title="Baby Budget original functional flow"
+      title="2 Minute Budget wizard"
     ></iframe>
   `;
 }
@@ -71,34 +78,44 @@ function reloadBabyBudget() {
 function renderBabyBudgetAdmin() {
   return `
     <div class="admin-card">
-      <p class="admin-card-title">Baby Budget v12 — Overhauled Flow</p>
+      <p class="admin-card-title">2 Minute Budget v14</p>
       <p class="helper">
-        Streamlined 7-step flow. Debt step removed (preserved in code). Tier selection removed.
-        Subscriptions removed from Bills. New 4-bucket Adjust step with BLS income-segment defaults.
-        CoL donut diagram replaces horizontal bars.
+        Collapsed from 7 steps to 2. Welcome, Housing, Bills, Review and Saved are
+        gone: Housing and Bills are sliders now, and the Review step's job (a last
+        look before saving) belongs to the post-result screen.
       </p>
     </div>
 
     <div class="admin-card">
       <p class="admin-card-title">Step Sequence</p>
       <div class="helper">
-        0. Welcome<br>
-        1. Basics (income, ZIP, household)<br>
-        2. Housing<br>
-        3. Bills &amp; Required Costs<br>
-        4. Adjust (Food &amp; Daily &middot; Getting Around &middot; Lifestyle &middot; Savings &amp; Future)<br>
-        5. Review<br>
-        6. Saved
+        0. Basics &mdash; gender, age, household size, ZIP, gross income (annual|monthly)<br>
+        1. Adjust &mdash; 8 sliders: Housing &middot; Bills &amp; Required &middot; Food &amp; Daily
+        &middot; Transportation &middot; Health &amp; Education &middot; Lifestyle
+        &middot; Debt Payments &middot; Savings &amp; Future
       </div>
+    </div>
+
+    <div class="admin-card">
+      <p class="admin-card-title">Behavior</p>
+      <p class="helper">
+        Sliders seed at BLS peer spending for the user's income quintile; each
+        tier sums to 100% of net, so the budget opens fully allocated. Saving is
+        never blocked &mdash; leftover sweeps into Savings, overspend saves as-is.
+        Take-home is derived from gross (not entered), so the tax estimate moves
+        with household size.
+      </p>
     </div>
 
     <div class="admin-card">
       <p class="admin-card-title">Integration</p>
       <p class="helper">
         Embedded iframe sends bb-complete (debts: []) on save and bb-back on cancel.
-        Debt logic preserved as comment block for future Debt section in Analysis tab.
+        The rolled-up Housing and Bills sliders are split back into per-cost fields
+        before posting, so js/wizard-bridge.js maps them unchanged.
+        Debt logic preserved as comment block for future Debt section.
       </p>
-      <button class="button full" type="button" onclick="reloadBabyBudget()">Reload Baby Budget</button>
+      <button class="button full" type="button" onclick="reloadBabyBudget()">Reload Wizard</button>
     </div>
   `;
 }

@@ -1,5 +1,5 @@
 // ─── Wizard → Budget Bridge ───────────────────────────────────────────────────
-// Maps Baby Budget wizard output (the bb-complete postMessage payload) onto the
+// Maps 2 Minute Budget wizard output (the bb-complete postMessage payload) onto the
 // app's budget model. The wizard is the SOURCE OF TRUTH for the budget
 // baseline: completing it overwrites profile, categories, and fixed overhead.
 // Lifestyle chains then modify that baseline (lifestyle-chain.js).
@@ -12,11 +12,6 @@
 //   inputs.netIncome            → profile.earners[0].monthlyNet, incomeType "salary"
 //   inputs.dependents           → profile.householdSize = dependents + 1 (fallback only)
 //
-// NOTE on the housing/bills fields below: the 2 Minute Budget collects those as
-// two rolled-up SLIDERS, not as the per-cost form fields it used to. The wizard
-// splits them back into these fields before posting (HOUSING_SPLIT / BILLS_SPLIT
-// in bb_template.html), so this mapping is unchanged and the budget model still
-// gets its separate rent / utilities / phone / … lines.
 //   inputs.housing              → housing.rent
 //   inputs.housingExtras        → housing.hoa
 //   inputs.utilities            → housing.utilities
@@ -34,6 +29,12 @@
 //                                 NOTE: debt CRUD in My Debts re-syncs this line to
 //                                 the sum of instrument minimums afterward.
 //   e.data.debts                → My Debts is untouched (current wizard sends [])
+//
+// NOTE on the housing/bills fields above: the 2 Minute Budget collects those as
+// two rolled-up SLIDERS, not as the per-cost form fields it used to. The wizard
+// splits them back into these fields before posting (HOUSING_SPLIT / BILLS_SPLIT
+// in bb_template.html), so this mapping is unchanged and the budget model still
+// gets its separate rent / utilities / phone / … lines.
 //
 // RE-RUN SCENARIO: if the wizard completes while a budget already existed AND
 // lifestyle answers are saved, state.wizardRerunPrompt is set. The post-result

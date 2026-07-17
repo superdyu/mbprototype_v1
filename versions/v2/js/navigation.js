@@ -277,7 +277,7 @@ function completeLesson() {
 //   marketplace → marketplace, marketplaceDetail
 //
 // Post-result flow (no tab active, no nav bar):
-//   Baby Budget complete / lifestyle save / monthly update complete
+//   2 Minute Budget complete / lifestyle save / monthly update complete
 //     → postResult → nextAction → commit → finish → myProgress
 //   "Adjust it" path: nextAction → budgetSetup (mid-loop exit)
 //   "Compare more" path: nextAction → myProgress (mid-loop exit)
@@ -313,7 +313,7 @@ window.addEventListener('popstate', function(e) {
   render();
 });
 
-// Listen for Baby Budget completion signal (postMessage from the iframe).
+// Listen for 2 Minute Budget completion signal (postMessage from the iframe).
 // When received, mark the budget complete and navigate to the dashboard.
 window.addEventListener("message", function(e) {
   if (!e.data) return;

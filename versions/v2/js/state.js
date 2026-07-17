@@ -19,7 +19,7 @@ const destinations = [
   ["streak",         "Streak Splash"],
   ["aboutMe",        "Budget"],
   ["budgetSetup",    "Budget Setup"],
-  ["babyBudget",     "Baby Budget"],
+  ["babyBudget",     "2 Minute Budget"],
   ["myProgress",     "My Progress"],
   ["lifestyle",      "Lifestyle"],
   ["learn",          "Learn"],
@@ -79,7 +79,9 @@ const state = {
       description: "Create a rough first budget without connecting accounts.",
       cta: "Start",
       tab: "aboutMe",
-      destination: "babyBudget",
+      // budgetSetup, not babyBudget: first-timers land on the setup choice
+      // (Lifestyle Survey vs 2 Minute Budget) rather than skipping into the wizard.
+      destination: "budgetSetup",
       completed: false
     },
     {
@@ -756,7 +758,7 @@ const state = {
     ],
 
     // Debt instruments — cashflow debt only (credit cards, loans, etc.; not mortgage).
-    // Populated by Baby Budget wizard via postMessage bridge or admin panel.
+    // Populated by the 2 Minute Budget wizard via postMessage bridge or admin panel.
     debts: [
       {
         id: "d_1", type: "creditCard", name: "Chase Sapphire",

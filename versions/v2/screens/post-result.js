@@ -3,11 +3,11 @@
 //
 // PURPOSE
 // First screen of the post-input loop. After completing any major Budget input
-// (Baby Budget, lifestyle chain, monthly update), shows a context summary, then asks
+// (2 Minute Budget, lifestyle chain, monthly update), shows a context summary, then asks
 // "How does this feel?" with a 4-notch slider before the user decides next steps.
 //
 // NAVIGATION
-//   Entry: Triggered after completing Baby Budget, lifestyle chain, or monthly update
+//   Entry: Triggered after completing the 2 Minute Budget, lifestyle chain, or monthly update
 //   Exit:  Reaction selected → nextAction screen
 //
 // PRODUCTION NOTES

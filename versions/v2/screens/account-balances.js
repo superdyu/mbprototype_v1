@@ -18,7 +18,7 @@
 //   Accounts: Checking, Savings, Cash, Investment, Brokerage, or custom (typed in).
 //   Monthly update flow: account balances → debt balances (2-step).
 //   After completing both steps, net position is compared to budget estimate.
-//   If gap > 10%, prompt to update Baby Budget sliders.
+//   If gap > 10%, prompt to update the 2 Minute Budget sliders.
 
 const ACCOUNT_TYPES = ["Checking", "Savings", "Cash", "Investment", "Brokerage", "Custom"];
 

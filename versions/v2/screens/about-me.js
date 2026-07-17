@@ -115,8 +115,11 @@ function renderAboutMe() {
       <div class="card" style="max-width:340px;width:100%;padding:24px;">
         <div style="font-weight:850;font-size:17px;margin-bottom:8px;">Let's get started</div>
         <p class="helper" style="margin-bottom:18px;">Build your budget so Money Buddy can estimate your monthly plan — or jump straight into setting a goal.</p>
+        <!-- Routes to budgetSetup, not straight into the wizard: with no budget
+             yet, that screen shows the Lifestyle Survey vs 2 Minute Budget
+             choice, and launchBabyBudget() there owns the flow context. -->
         <button class="button primary full" type="button" style="margin-bottom:10px;"
-                onclick="dismissAboutMeOverlay(); state.flowOrigin='aboutMe'; state.postResultContext='budget'; go('babyBudget');">
+                onclick="dismissAboutMeOverlay(); go('budgetSetup');">
           Build my budget →
         </button>
         <button class="button secondary full" type="button"

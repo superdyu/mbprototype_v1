@@ -18,7 +18,7 @@
 //   After completing monthly update (account + debt balances), the app computes:
 //   net = sum(accountBalances) - sum(debtBalances)
 //   Expected net is derived from budget state.
-//   If gap > 10%, prompt user to revisit Baby Budget sliders.
+//   If gap > 10%, prompt user to revisit the 2 Minute Budget sliders.
 
 function renderDebtBalances() {
   const debts    = (state.budget && state.budget.debts) || [];
