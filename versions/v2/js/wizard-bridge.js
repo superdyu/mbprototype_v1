@@ -6,8 +6,17 @@
 //
 // FIELD MAPPING (documented for production handoff):
 //   inputs.zip                  → profile.zip
+//   inputs.gender               → profile.gender      (2 Minute Budget; segmentation only)
+//   inputs.age                  → profile.age         (2 Minute Budget; segmentation only)
+//   inputs.householdSize        → profile.householdSize (preferred over dependents)
 //   inputs.netIncome            → profile.earners[0].monthlyNet, incomeType "salary"
-//   inputs.dependents           → profile.householdSize = dependents + 1 (the user)
+//   inputs.dependents           → profile.householdSize = dependents + 1 (fallback only)
+//
+// NOTE on the housing/bills fields below: the 2 Minute Budget collects those as
+// two rolled-up SLIDERS, not as the per-cost form fields it used to. The wizard
+// splits them back into these fields before posting (HOUSING_SPLIT / BILLS_SPLIT
+// in bb_template.html), so this mapping is unchanged and the budget model still
+// gets its separate rent / utilities / phone / … lines.
 //   inputs.housing              → housing.rent
 //   inputs.housingExtras        → housing.hoa
 //   inputs.utilities            → housing.utilities
@@ -39,7 +48,13 @@ function applyWizardInputsToBudget(inputs) {
 
   // ── Profile ────────────────────────────────────────────────────────────────
   if (inputs.zip) b.profile.zip = String(inputs.zip);
-  b.profile.householdSize = Math.max(1, (parseInt(inputs.dependents) || 0) + 1);
+  // householdSize is what the wizard collects now; dependents is still sent
+  // (household - 1) for anything reading the older field. Prefer the direct one.
+  b.profile.householdSize = inputs.householdSize > 0
+    ? Math.max(1, parseInt(inputs.householdSize))
+    : Math.max(1, (parseInt(inputs.dependents) || 0) + 1);
+  if (inputs.gender) b.profile.gender = String(inputs.gender);
+  if (inputs.age > 0) b.profile.age = parseInt(inputs.age);
   if (inputs.netIncome > 0) {
     b.profile.incomeType = "salary";
     b.profile.earners    = [{ label: "Primary", monthlyNet: Math.round(inputs.netIncome), type: "salary" }];

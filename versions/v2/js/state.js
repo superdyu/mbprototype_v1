@@ -674,6 +674,11 @@ const state = {
     profile: {
       zip: "95126",
       householdSize: 1,
+      // Collected by the 2 Minute Budget for peer segmentation. Nothing branches
+      // on them yet — they're captured so future peer comparisons can segment by
+      // age/gender the way they already segment by income and ZIP.
+      gender: "",
+      age: 0,
       lastUpdated: "2026-02-15",
       // Income model — supports salary, variable (gig), or mixed households
       incomeType: "salary",   // "salary" | "variable" | "mixed"

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Baby Budget v13</title>
+  <title>2 Minute Budget v14</title>
   <style>
 
 
@@ -21,6 +21,20 @@
     .tier-category{margin-bottom:14px}.tier-cat-name{font-size:14px;font-weight:850;margin-bottom:2px}.tier-track{display:flex;align-items:flex-start;margin:10px 0 6px}.tier-dot-wrap{display:flex;flex-direction:column;align-items:center;flex:1;cursor:pointer;padding:4px 0;-webkit-user-select:none;user-select:none}.tier-dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);background:var(--card);transition:all .15s;flex-shrink:0}.tier-dot.active{background:var(--accent);border-color:var(--accent)}.tier-dot-label{font-size:10px;font-weight:850;color:var(--muted);margin-top:5px;white-space:nowrap;text-align:center}.tier-dot-wrap.active .tier-dot-label{color:var(--accent)}.tier-connector{flex:1;height:2px;background:var(--line);margin-top:12px}.tier-connector.filled{background:var(--accent)}.tier-selected-desc{font-size:12px;color:var(--text);line-height:1.45;padding:9px 11px;background:var(--soft);border-radius:10px}
     .budget-item,.debt-item{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px}.budget-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:8px;align-items:start}.budget-name{font-weight:850}.budget-desc{font-size:12px;color:var(--muted);margin-top:3px}.budget-amount{font-weight:850;white-space:nowrap}input[type=range]{padding:0;accent-color:var(--accent)}.amount-row{display:grid;grid-template-columns:1fr 98px;gap:10px;align-items:center;margin-top:8px}.amount-input{font-size:14px;padding:9px}
     .debt-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.debt-title{font-weight:850}.mini-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.mini-grid label{font-size:10px}.mini-grid input{font-size:13px;padding:9px}.add-row{display:flex;gap:10px;margin-top:16px;margin-bottom:16px}.add-row button{width:100%;}.status{padding:13px;border-radius:15px;font-size:13px;line-height:1.35;border:1px solid var(--line);background:var(--soft);margin-bottom:14px}.status.good{color:var(--good);background:var(--good-bg);border-color:var(--good-border)}.status.warn{color:var(--warn);background:var(--warn-bg);border-color:var(--warn-border)}.status.danger{color:var(--danger);background:var(--danger-bg);border-color:var(--danger-border)}.result-row{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}.result-row:last-child{border-bottom:0}.result-name{font-weight:800}.result-sub{color:var(--muted);font-size:11px;margin-top:3px}.result-money{text-align:right;font-weight:850}.hidden{display:none!important}#subP2 select{font-size:13px;padding:9px 12px}#subList{min-height:160px}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}input[type=number]{-moz-appearance:textfield}select{width:100%;padding:12px;border:1px solid var(--line);border-radius:13px;font-size:16px;background:var(--card);color:var(--text);outline:none;cursor:pointer}select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(49,94,251,.12)}.dark-mode .nav{background:linear-gradient(rgba(30,33,40,0),rgba(30,33,40,.96) 22%,rgba(30,33,40,1))}.dark-mode .topbar{background:rgba(30,33,40,.96)}input[type=range]::-webkit-slider-runnable-track{background:var(--bar);height:6px;border-radius:3px}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);margin-top:-7px;border:none}input[type=range]::-moz-range-track{background:var(--bar);height:6px;border-radius:3px}input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--accent);border:none}.budget-amount-wrap{display:flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:10px;padding:3px 8px;background:var(--card)}.budget-amount-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(49,94,251,.12)}.budget-dollar{font-weight:850;font-size:15px;color:var(--text)}.budget-amount-input{font-size:15px;font-weight:850;width:68px;border:none;background:transparent;padding:0;text-align:right;color:var(--text)}.slider-labels{display:flex;justify-content:space-between;margin-top:3px}
+    /* ── 2 Minute Budget: income mode toggle ── */
+    .seg-toggle{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:13px;overflow:hidden;margin-bottom:8px}
+    .seg-btn{padding:9px;font-size:13px;font-weight:850;background:var(--card);color:var(--muted);border:none;border-radius:0;cursor:pointer}
+    .seg-btn.active{background:var(--accent);color:#fff}
+    /* ── 2 Minute Budget: compact slider rows ──
+       Sized so ~5 of these fit the phone screen at once: the include-toggle
+       lives at the far right of the header row instead of on its own line, and
+       the current % sits inline rather than in a trailing row. */
+    .adj-card{padding:11px 12px;margin-bottom:9px}
+    .adj-head{gap:8px;align-items:center;margin-bottom:2px}
+    .adj-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:850;font-size:13px}
+    .adj-pct{font-size:11px;color:var(--muted);font-weight:850;flex-shrink:0;min-width:26px;text-align:right}
+    .adj-info{flex-shrink:0;min-width:0;padding:5px 7px;font-size:10px;border-radius:8px;background:var(--soft);color:var(--muted);border:1px solid var(--line)}
+    .adj-slider{width:100%;margin:7px 0 1px}
 .lifestyle-img-box{width:100%;height:140px;background:var(--progress-bg);border-radius:16px;position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:14px;}.lifestyle-img-section{position:absolute;top:10px;left:14px;font-size:11px;font-weight:850;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}.lifestyle-img-coords{font-size:28px;font-weight:850;color:var(--accent);letter-spacing:.1em;}.lifestyle-img-subprog{position:absolute;bottom:10px;right:14px;font-size:11px;color:var(--muted);}.tier-pill-row{display:flex;gap:8px;margin:12px 0 10px;flex-wrap:wrap;}.tier-pill{flex:1;min-width:60px;text-align:center;padding:9px 6px;border:1.5px solid var(--line);border-radius:10px;cursor:pointer;font-size:12px;font-weight:700;background:var(--card);}.tier-pill.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);}
   
     html,body{width:100%;height:100%;overflow:hidden;background:var(--screen);}
@@ -86,65 +100,73 @@
 <body>
 <div class="page"><div class="phone"><div class="screen">
   <div class="topbar">
-    <div class="statusbar"><span>9:41</span><span>Baby Budget</span></div>
-    <h1 class="title" id="stepTitle">Baby Budget</h1>
-    <p class="subtitle" id="stepSubtitle">Build a starter budget without connecting bank accounts.</p>
+    <div class="statusbar"><span>9:41</span><span>2 Minute Budget</span></div>
+    <h1 class="title" id="stepTitle">2 Minute Budget</h1>
+    <p class="subtitle" id="stepSubtitle">A few figures, then set your sliders.</p>
     <div class="progress" id="progress"></div>
   </div>
   <div class="content">
 
-    <!-- Step 0: Welcome -->
+    <!-- Step 0: Basics — the only form step. Every other number in the budget is
+         a slider on step 1. Fields here are the ones the sliders need to compute
+         peer defaults from: income (the pool), plus gender/age/household/ZIP as
+         segmentation context. -->
     <section class="step" data-step="0">
       <div class="card">
-        <div class="card-title">Create your starter budget</div>
-        <div class="helper">Answer a few questions and we&#39;ll create a first budget you can adjust before saving.</div>
-        <div class="pill-row">
-          <span class="pill">No bank connection</span>
-          <span class="pill">Editable estimate</span>
-          <span class="pill">Estimate-based</span>
+        <div class="card-title">About you</div>
+        <div class="two">
+          <div class="field">
+            <label>Gender</label>
+            <select id="gender">
+              <option value="">Select</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="nonbinary">Non-binary</option>
+              <option value="unspecified">Prefer not to say</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Age</label>
+            <input id="age" type="number" min="18" max="99" inputmode="numeric" placeholder="e.g. 32"/>
+          </div>
+        </div>
+        <div class="two">
+          <div class="field">
+            <label>Household size</label>
+            <select id="householdSize" onchange="onHouseholdChange()">
+              <option value="1">1 (just me)</option>
+              <option value="2">2 people</option>
+              <option value="3">3 people</option>
+              <option value="4">4 people</option>
+              <option value="5">5 people</option>
+              <option value="6">6 people</option>
+              <option value="7">7 people</option>
+              <option value="8">8+ people</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>ZIP code</label>
+            <input id="zip" inputmode="numeric" maxlength="5" value="95126" placeholder="ZIP"/>
+          </div>
         </div>
       </div>
+
       <div class="card">
-        <div class="card-title">What you&#39;ll do</div>
-        <div class="helper">Add income and fixed costs, then adjust flexible spending by category and save.</div>
-      </div>
-    </section>
+        <div class="card-title">Income</div>
 
-    <!-- Step 1: Basic Information -->
-    <section class="step hidden" data-step="1">
-      <div class="card">
-        <div class="card-title">Basic information</div>
-
-        <!-- ZIP code -->
+        <!-- Gross (pre-tax) income with an annual|monthly toggle, default annual.
+             Net is derived (estimateCaTax) and shown as a helper line — the budget
+             model runs on monthly net, but users know their gross salary. -->
         <div class="field">
-          <label>ZIP code</label>
-          <input id="zip" inputmode="numeric" maxlength="5" value="95126" placeholder="Enter ZIP code"/>
-        </div>
-
-        <!-- Income inputs -->
-        <div class="field">
-          <label>Pre-tax monthly income <span style="font-size:10px;color:var(--danger);font-weight:400;">(required)</span></label>
-          <input id="preIncome" type="text" inputmode="decimal" placeholder="e.g. 10,000"
-            oninput="onPreIncomeInput()"
+          <label>Gross income, before taxes <span style="font-size:10px;color:var(--danger);font-weight:400;">(required)</span></label>
+          <div class="seg-toggle">
+            <button type="button" class="seg-btn active" id="modeAnnual" onclick="setIncomeMode('annual')">Annual</button>
+            <button type="button" class="seg-btn" id="modeMonthly" onclick="setIncomeMode('monthly')">Monthly</button>
+          </div>
+          <input id="grossIncome" type="text" inputmode="decimal" placeholder="e.g. 120,000"
+            oninput="onIncomeInput()"
             onfocus="moneyFocus(this)" onblur="moneyBlur(this)"/>
-        </div>
-        <div class="field">
-          <label>Dependents</label>
-          <select id="dependents" onchange="onDependentsChange()">
-            <option value="0">0 dependents</option>
-            <option value="1">1 dependent</option>
-            <option value="2">2 dependents</option>
-            <option value="3">3 dependents</option>
-            <option value="4">4 dependents</option>
-            <option value="5">5 dependents</option>
-            <option value="6">6 dependents</option>
-            <option value="7">7+ dependents</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>After-tax monthly income <span style="font-size:10px;color:var(--muted);font-weight:400;">(estimated &#8212; you can override)</span></label>
-          <input id="netIncome" type="text" inputmode="decimal" placeholder="e.g. 7,500"
-            onfocus="moneyFocus(this)" onblur="moneyBlur(this)"/>
+          <div class="helper" id="netHelper" style="margin-top:7px">Enter your income to estimate take-home pay.</div>
         </div>
 
         <!-- Cost-of-living thermometer + sentence (shown when ZIP matches) -->
@@ -159,148 +181,31 @@
           </div>
           <div id="zipSentence" class="helper" style="margin-top:4px;font-size:11px;line-height:1.45"></div>
         </div>
-
-        <!-- Income vs average thermometer -->
       </div>
     </section>
 
-    <!-- Step 2: Housing -->
-    <section class="step hidden" data-step="2">
-      <div class="card">
-        <div class="card-title">Housing</div>
-        <div class="helper" style="margin-bottom:12px">Add your monthly housing costs first. This usually sets the shape of the whole budget.</div>
-        <div class="field">
-          <label>Rent / mortgage</label>
-          <input id="housing" type="text" inputmode="decimal" value="2600"
-            onfocus="moneyFocus(this)" onblur="moneyBlur(this)"/>
-        </div>
-        <div class="two">
-          <div class="field">
-            <label>HOA / PMI / property fees</label>
-            <input id="housingExtras" type="text" inputmode="decimal" value="0"
-              onfocus="moneyFocus(this)" onblur="moneyBlur(this)"/>
-          </div>
-          <div class="field">
-            <label>Utilities</label>
-            <input id="utilities" type="text" inputmode="decimal" value="250"
-              onfocus="moneyFocus(this)" onblur="moneyBlur(this)"/>
-          </div>
-        </div>
-      </div>
-      <div class="summary-grid">
-        <div class="metric">
-          <div class="metric-label">Housing total</div>
-          <div class="metric-value" id="housingCosts">$0</div>
-          <div class="metric-note" id="housingRate">0% income</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">Left after housing</div>
-          <div class="metric-value" id="afterHousing">$0</div>
-          <div class="metric-note">Before other fixed costs</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Step 3: Bills & Required Costs -->
-    <section class="step hidden" data-step="3">
-      <div class="summary-grid">
-        <div class="metric">
-          <div class="metric-label">Required costs</div>
-          <div class="metric-value" id="fixedCosts">$0</div>
-          <div class="metric-note" id="fixedRate">0% income</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">Available before lifestyle</div>
-          <div class="metric-value" id="remainder">$0</div>
-          <div class="metric-note">After required costs only</div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Bills and required costs</div>
-        <div class="helper" style="margin-bottom:12px">Monthly costs you need to cover before flexible spending.</div>
-        <div class="two">
-          <div class="field">
-            <label>Medical / insurance</label>
-            <input id="medical" type="text" inputmode="decimal" value="250"
-              onfocus="moneyFocus(this)" onblur="moneyBlur(this)"/>
-          </div>
-          <div class="field">
-            <label>Car / transit fixed</label>
-            <input id="transportFixed" type="text" inputmode="decimal" value="350"
-              onfocus="moneyFocus(this)" onblur="moneyBlur(this)"/>
-          </div>
-        </div>
-        <div class="two">
-          <div class="field">
-            <label>Phone plan</label>
-            <input id="phone" type="text" inputmode="decimal" value="85"
-              onfocus="moneyFocus(this)" onblur="moneyBlur(this)"/>
-          </div>
-          <div class="field">
-            <label>Home internet</label>
-            <input id="internet" type="text" inputmode="decimal" value="70"
-              onfocus="moneyFocus(this)" onblur="moneyBlur(this)"/>
-          </div>
-        </div>
-        <div class="field">
-          <label>Other required monthly costs</label>
-          <input id="otherFixed" type="text" inputmode="decimal" value="100"
-            onfocus="moneyFocus(this)" onblur="moneyBlur(this)"/>
-        </div>
-      </div>
-    </section>
-
-    <!-- Step 4: Adjust -->
-    <section class="step hidden" data-step="4">
+    <!-- Step 1: Adjust — all 8 categories as sliders, including the formerly
+         form-entered Housing and Bills. Saving posts straight to the parent;
+         there is no review step (the post-result screen is the review). -->
+    <section class="step hidden" data-step="1">
       <!-- Pinned metrics: stay fixed at top while the category buckets scroll
            underneath. The screen-colored bottom padding is the clean divider. -->
       <div class="adjust-pinned">
         <div class="summary-grid" style="margin:0;">
           <div class="metric">
-            <div class="metric-label">Flexible budget</div>
+            <div class="metric-label">Monthly take-home</div>
             <div class="metric-value" id="finalRemainder">$0</div>
-            <div class="metric-note">After housing + bills</div>
+            <div class="metric-note">After estimated taxes</div>
           </div>
           <div class="metric">
-            <div class="metric-label">Unallocated</div>
+            <div class="metric-label" id="unallocatedLabel">Unallocated</div>
             <div class="metric-value" id="unallocated">$0</div>
             <div class="metric-note" id="unallocatedNote">Remaining</div>
           </div>
         </div>
       </div>
-      <!-- Warning banner (shown on advance attempt if >5% off) -->
-      <div id="adjustWarning" class="warn-card" style="display:none"></div>
       <!-- Scrollable bucket cards -->
       <div id="adjustBuckets"></div>
-    </section>
-
-    <!-- Step 5: Review -->
-    <section class="step hidden" data-step="5">
-      <div class="summary-grid">
-        <div class="metric">
-          <div class="metric-label">Monthly income</div>
-          <div class="metric-value" id="resultIncome">$0</div>
-          <div class="metric-note" id="resultIncomeNote">vs average</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">Budgeted total</div>
-          <div class="metric-value" id="resultAllocated">$0</div>
-          <div class="metric-note" id="resultLeft">$0 left</div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Review your budget</div>
-        <div class="helper" style="margin-bottom:8px">Check the full monthly plan before saving it.</div>
-        <div id="resultRows"></div>
-      </div>
-    </section>
-
-    <!-- Step 6: Saved -->
-    <section class="step hidden" data-step="6">
-      <div class="card">
-        <div class="card-title">Budget saved</div>
-        <div class="helper">Your starter budget is set. Head to Analysis to see the full picture and build from here.</div>
-      </div>
     </section>
 
   </div><!-- /.content -->
@@ -340,35 +245,50 @@ const STATE_TAX_RATES = {
 };
 
 const steps = [
-  ["Baby Budget", "Build a starter budget without connecting bank accounts."],
-  ["Basics",      "Add income, dependents, and local cost context."],
-  ["Housing",     "Start with your largest monthly cost."],
-  ["Bills",       "Add required monthly costs before flexible spending."],
-  ["Adjust",      "Set flexible spending by category."],
-  ["Review",      "Check the plan before saving."],
-  ["Saved",       "Your starter budget is ready."]
+  ["2 Minute Budget", "A few figures, then set your sliders."],
+  ["Adjust",          "Drag each category. We started you at typical spending."]
 ];
 
-// BLS CE Survey — % of flexible (remaining after housing+bills) income by income quintile
+// BLS CE Survey — % of AFTER-TAX income by income quintile. Every row sums to
+// 100%, which is what lets the sliders seed a fully-allocated budget: each
+// bucket takes its share of net income and the last one absorbs the rounding.
+//
+// NOTE the rebase: these used to be "% of the flexible pool left after housing
+// and bills were typed in as fields". Housing and bills are sliders now, so
+// there is no pre-slider pool — percentages are of net income, and the housing
+// and bills rows are new. Lower quintiles carry more housing and less savings.
 const SEG = [
-  { max: 2500,     food: 30, transport: 18, health: 8,  lifestyle: 10, debt: 12, savings:  6 },
-  { max: 4000,     food: 27, transport: 17, health: 9,  lifestyle: 12, debt: 11, savings: 10 },
-  { max: 6500,     food: 25, transport: 16, health: 9,  lifestyle: 13, debt: 10, savings: 13 },
-  { max: 10000,    food: 23, transport: 15, health: 8,  lifestyle: 12, debt:  9, savings: 17 },
-  { max: Infinity, food: 20, transport: 13, health: 7,  lifestyle: 11, debt:  8, savings: 22 }
+  { max: 2500,     housing: 42, bills: 14, food: 16, transport: 10, health: 6, lifestyle:  5, debt: 5, savings:  2 },
+  { max: 4000,     housing: 38, bills: 13, food: 15, transport: 10, health: 7, lifestyle:  6, debt: 6, savings:  5 },
+  { max: 6500,     housing: 34, bills: 12, food: 13, transport:  9, health: 8, lifestyle:  8, debt: 7, savings:  9 },
+  { max: 10000,    housing: 30, bills: 11, food: 12, transport:  9, health: 8, lifestyle:  9, debt: 7, savings: 14 },
+  { max: Infinity, housing: 26, bills: 10, food: 11, transport:  8, health: 7, lifestyle: 10, debt: 6, savings: 22 }
 ];
 
-// Slider range as % of flexible income
+// Slider range as % of net income. Maxima sit well above the SEG default on
+// purpose — that headroom is what lets someone drag to what they ACTUALLY spend
+// and land in overspend, which the totals bar then shows honestly.
 const RANGE = {
-  food:      { min: 8,  max: 45 },
-  transport: { min: 3,  max: 30 },
-  health:    { min: 2,  max: 20 },
-  lifestyle: { min: 2,  max: 30 },
-  debt:      { min: 0,  max: 35 },
-  savings:   { min: 0,  max: 40 }
+  housing:   { min: 0, max: 60 },
+  bills:     { min: 0, max: 30 },
+  food:      { min: 0, max: 30 },
+  transport: { min: 0, max: 25 },
+  health:    { min: 0, max: 20 },
+  lifestyle: { min: 0, max: 25 },
+  debt:      { min: 0, max: 30 },
+  savings:   { min: 0, max: 40 }
+};
+
+// Slider increment, sized to the expense: dragging housing in $10 steps would
+// take 200 drags. Scaled up again for higher incomes — see stepFor().
+const STEP_BASE = {
+  housing: 50, bills: 25, food: 10, transport: 10,
+  health: 10, lifestyle: 10, debt: 25, savings: 25
 };
 
 const SUB = {
+  housing:   ["Rent / Mortgage", "HOA / PMI / Property Fees", "Utilities"],
+  bills:     ["Medical / Insurance", "Car / Transit Fixed", "Phone Plan", "Home Internet", "Other Required Costs"],
   food:      ["Groceries", "Dining Out", "Coffee & Drinks", "Delivery", "Household Supplies"],
   transport: ["Gas & Charging", "Car Maintenance", "Rideshare & Transit", "Parking & Tolls", "Vehicle Registration"],
   health:    ["Medical Copays", "Dental & Vision", "Prescriptions & OTC", "Gym & Fitness", "Education & Tuition", "Books & Courses"],
@@ -378,6 +298,11 @@ const SUB = {
 };
 
 const BUCKETS = [
+  // Housing and Bills were multi-field form steps until the 2 Minute Budget
+  // redesign. They are single rolled-up sliders now; the payload splits them
+  // back into the individual fields the budget model expects (HOUSING_SPLIT).
+  { key: "housing",   label: "Housing",              icon: "\uD83C\uDFE0" },
+  { key: "bills",     label: "Bills & Required",     icon: "\uD83E\uDDFE" },
   { key: "food",      label: "Food & Daily",        icon: "\uD83D\uDED2" },
   { key: "transport", label: "Transportation",       icon: "\uD83D\uDE97" },
   { key: "health",    label: "Health & Education",   icon: "\u2695\uFE0F" },
@@ -389,11 +314,37 @@ const BUCKETS = [
   { key: "savings",   label: "Savings & Future",     icon: "\uD83D\uDCB0" }
 ];
 
+// The rolled-up Housing and Bills sliders are split back into the individual
+// fields wizard-bridge.js maps (it still expects the old per-field payload, and
+// the app's budget model has separate lines for utilities, phone, etc).
+// Ratios are the previous hand-entered defaults' proportions:
+//   housing 2600 / extras 0 / utilities 250                          — of 2850
+//   medical 250 / transport 350 / phone 85 / internet 70 / other 100 — of 855
+// The last key in each list absorbs rounding so the parts re-sum to the whole.
+const HOUSING_SPLIT = [["housing", 0.912], ["housingExtras", 0], ["utilities", 0.088]];
+const BILLS_SPLIT   = [["medical", 0.292], ["transportFixed", 0.409], ["phone", 0.099],
+                       ["internet", 0.082], ["otherFixed", 0.117]];
+
+// Splits one rolled-up slider total into its constituent payload fields.
+function splitBucket(total, split) {
+  var out = {}, allocated = 0;
+  for (var i = 0; i < split.length; i++) {
+    if (i < split.length - 1) {
+      out[split[i][0]] = Math.round(total * split[i][1]);
+      allocated += out[split[i][0]];
+    } else {
+      out[split[i][0]] = Math.max(0, Math.round(total) - allocated);
+    }
+  }
+  return out;
+}
+
 // ── State ──────────────────────────────────────────────────────────────────
 var step = 0;
 var adjustVals = {};
 var adjustExpanded = {};
 var adjustWizardShown = false;
+var incomeMode = "annual";   // "annual" | "monthly" — how grossIncome is entered
 
 // ── Theme bridge + prefill ─────────────────────────────────────────────────
 window.addEventListener("message", function(e) {
@@ -401,21 +352,41 @@ window.addEventListener("message", function(e) {
   if (e.data.type === "bb-theme") {
     document.body.classList.toggle("dark-mode", e.data.colorMode === "dark");
   }
+  // Re-entry from "Edit Budget": restore what the user last saved.
   if (e.data.type === "bb-prefill") {
     var d = e.data.inputs;
     if (!d) return;
-    // Restore plain text / select fields
-    var fields = ["housing","housingExtras","utilities","medical","transportFixed","phone","internet","otherFixed"];
-    if (d.zip && $("zip"))           $("zip").value = d.zip;
-    if ($("dependents") && d.dependents)  $("dependents").value = String(Math.round(d.dependents));
-    if ($("preIncome") && d.preIncome > 0) $("preIncome").value = (+d.preIncome).toLocaleString();
-    if ($("netIncome") && d.netIncome > 0) $("netIncome").value = (+d.netIncome).toLocaleString();
-    fields.forEach(function(id) {
-      var el = $(id);
-      if (el && d[id] != null && +d[id] > 0) el.value = (+d[id]).toLocaleString();
-    });
-    // Restore adjust values so Adjust step is pre-filled too
-    if (d.adjustVals && typeof d.adjustVals === "object") adjustVals = d.adjustVals;
+
+    if (d.zip && $("zip")) $("zip").value = d.zip;
+    if ($("gender") && d.gender) $("gender").value = d.gender;
+    if ($("age") && d.age > 0)   $("age").value = d.age;
+
+    // householdSize is the current field; dependents is what older payloads
+    // carried (household = dependents + 1).
+    var hh = d.householdSize || (d.dependents != null ? +d.dependents + 1 : 0);
+    if ($("householdSize") && hh > 0) $("householdSize").value = String(Math.min(8, Math.max(1, Math.round(hh))));
+
+    // Income was stored as monthly pre-tax; show it in whichever mode was used.
+    if ($("grossIncome") && d.preIncome > 0) {
+      setIncomeMode(d.incomeMode === "monthly" ? "monthly" : "annual");
+      var shown = incomeMode === "annual" ? Math.round(d.preIncome * 12) : Math.round(d.preIncome);
+      $("grossIncome").value = shown.toLocaleString();
+    }
+
+    if (d.adjustVals && typeof d.adjustVals === "object") {
+      adjustVals = JSON.parse(JSON.stringify(d.adjustVals));
+      // Older payloads had no housing/bills sliders — those were separate
+      // fields. Roll them back up so re-entry lands on the 8-slider screen
+      // with the user's real numbers instead of re-seeding from peer averages.
+      if (adjustVals.housing == null) {
+        adjustVals.housing = (+d.housing || 0) + (+d.housingExtras || 0) + (+d.utilities || 0);
+      }
+      if (adjustVals.bills == null) {
+        adjustVals.bills = (+d.medical || 0) + (+d.transportFixed || 0) +
+                           (+d.phone || 0) + (+d.internet || 0) + (+d.otherFixed || 0);
+      }
+    }
+    onIncomeInput();
     renderSummary();
   }
 });
@@ -450,7 +421,61 @@ function moneyBlur(el) {
 }
 
 // ── Income / ZIP helpers ───────────────────────────────────────────────────
-function monthlyIncome() { return num("netIncome"); }
+// Gross is what the user types (annual by default — that's how people know
+// their salary). Everything downstream runs on monthly NET, derived here.
+function grossMonthly() {
+  var v = num("grossIncome");
+  return incomeMode === "annual" ? v / 12 : v;
+}
+
+function monthlyIncome() {
+  var g = grossMonthly();
+  if (g <= 0) return 0;
+  return estimateCaTax(g, dependentsCount());
+}
+
+// The tax estimate still thinks in dependents; household size is the field.
+function dependentsCount() { return Math.max(0, num("householdSize") - 1); }
+
+function setIncomeMode(mode) {
+  var prev = incomeMode;
+  incomeMode = mode === "monthly" ? "monthly" : "annual";
+  if ($("modeAnnual"))  $("modeAnnual").classList.toggle("active", incomeMode === "annual");
+  if ($("modeMonthly")) $("modeMonthly").classList.toggle("active", incomeMode === "monthly");
+  // Convert what's already typed so the figure keeps meaning the same money.
+  var el = $("grossIncome");
+  if (el && prev !== incomeMode) {
+    var v = parseFmt(el.value);
+    if (v > 0) {
+      var converted = incomeMode === "monthly" ? Math.round(v / 12) : Math.round(v * 12);
+      el.value = converted.toLocaleString();
+    }
+  }
+  if (el) el.placeholder = incomeMode === "annual" ? "e.g. 120,000" : "e.g. 10,000";
+  onIncomeInput();
+}
+
+// Shows the derived take-home under the income field. Net is no longer an
+// input — the wizard owns the estimate so there's one less thing to fill in.
+function renderNetHelper() {
+  var el = $("netHelper");
+  if (!el) return;
+  var g = grossMonthly();
+  if (g <= 0) { el.textContent = "Enter your income to estimate take-home pay."; return; }
+  el.textContent = "≈ " + money(monthlyIncome()) + "/mo take-home after estimated taxes";
+}
+
+function onIncomeInput() {
+  renderNetHelper();
+  renderSummary();
+  checkStep0Next();
+}
+
+function onHouseholdChange() {
+  // Household size feeds the tax estimate (dependent deductions), so the
+  // take-home line has to move with it.
+  onIncomeInput();
+}
 
 function estimateCaTax(mg, dependents) {
   var a = mg * 12;  // annual income
@@ -475,41 +500,22 @@ function estimateCaTax(mg, dependents) {
   return Math.round(afterTaxAnnual / 12);
 }
 
-function onPreIncomeInput() {
-  var pre = parseFmt($("preIncome") && $("preIncome").value);
-  if (pre > 0 && $("netIncome")) {
-    var deps = num("dependents") || 0;
-    var net = estimateCaTax(pre, deps);
-    $("netIncome").value = net.toLocaleString();
-    renderSummary();
-  }
-  checkStep1Next();
-}
-
-function onDependentsChange() {
-  var pre = parseFmt($("preIncome") && $("preIncome").value);
-  if (pre > 0 && $("netIncome")) {
-    var deps = num("dependents") || 0;
-    var net = estimateCaTax(pre, deps);
-    $("netIncome").value = net.toLocaleString();
-    renderSummary();
-  }
-}
-
-function checkStep1Next() {
-  if (step !== 1) return;
-  $("nextBtn").disabled = parseFmt($("preIncome").value) <= 0;
+// Income is the only required field — without it there is no pool to slice.
+function checkStep0Next() {
+  if (step !== 0 || !$("nextBtn")) return;
+  $("nextBtn").disabled = grossMonthly() <= 0;
 }
 
 function zipEntry()      { return ($("zip") && $("zip").value || "").trim(); }
 function zipObj()        { return ZIP_DATA[zipEntry()] || null; }
 function zipIndex()      { return (zipObj() && zipObj().index) || 100; }
 function zipMultiplier() { return zipIndex() / 100; }
-function householdMultiplier() { var d = Math.max(0, num("dependents")); return 1 + d * .42; }
+function householdMultiplier() { return 1 + dependentsCount() * .42; }
 
-function housingCosts() { return num("housing") + num("housingExtras") + num("utilities"); }
-function fixedCosts()   { return housingCosts() + num("medical") + num("transportFixed") + num("phone") + num("internet") + num("otherFixed"); }
-function flexiblePool() { return Math.max(0, monthlyIncome() - fixedCosts()); }
+// Housing and Bills are sliders now, so these read from adjustVals rather than
+// from form fields. Kept because renderSummary/results still talk in these terms.
+function housingCosts() { return adjustVals.housing || 0; }
+function fixedCosts()   { return housingCosts() + (adjustVals.bills || 0); }
 function pctDiff(v, b)  { return Math.round(((v - b) / b) * 100); }
 
 function getSegment(net) {
@@ -566,17 +572,10 @@ function updateComparisons() {
   updateThermometer(zi, !!z);
 }
 
+// The housing/bills metric tiles this used to feed were removed along with
+// their form steps — the ZIP thermometer is all that's left on the Basics step.
 function renderSummary() {
-  var inc = monthlyIncome(), housing = housingCosts(), fixed = fixedCosts();
-  var fp = inc > 0 ? fixed / inc : 0, hp = inc > 0 ? housing / inc : 0;
   updateComparisons();
-  var set = function(id, val) { if ($(id)) $(id).textContent = val; };
-  set("housingCosts", money(housing));
-  set("housingRate",  Math.round(hp * 100) + "% income");
-  set("afterHousing", money(inc - housing));
-  set("fixedCosts",   money(fixed));
-  set("fixedRate",    Math.round(fp * 100) + "% income");
-  set("remainder",    money(Math.max(0, inc - fixed)));
 }
 
 // ── Adjust step ────────────────────────────────────────────────────────────
@@ -588,34 +587,46 @@ function showAdjustWizardPopup() {
   card.style.cssText = "background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,0.24)";
 
   card.innerHTML =
-    '<div style="font-size:16px;font-weight:850;margin-bottom:12px;color:var(--text)">This is a best estimate</div>' +
-    '<div style="font-size:12px;line-height:1.45;color:var(--text);margin-bottom:16px">The Lifestyle Wizard will help refine your budget as you go — use it to tune each category over time. For now, these sliders give you a solid starting point.</div>' +
+    '<div style="font-size:16px;font-weight:850;margin-bottom:12px;color:var(--text)">We started you at typical spending</div>' +
+    '<div style="font-size:12px;line-height:1.45;color:var(--text);margin-bottom:16px">Every slider is set to what people at your income level typically spend. Drag them to match your real life — nothing here has to be exact, and you can change it later.</div>' +
     '<button type="button" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:13px;font-size:14px;font-weight:850;cursor:pointer;border:1px solid var(--accent)" onclick="this.parentNode.parentNode.remove()">Got it</button>';
 
   bg.appendChild(card);
   document.body.appendChild(bg);
 }
 
+// Slider increment for a category, scaled up at higher incomes so the drag
+// distance stays sane when the numbers get big.
+function stepFor(key) {
+  var net = monthlyIncome();
+  var mult = net > 12000 ? 4 : (net > 6000 ? 2 : 1);
+  return (STEP_BASE[key] || 10) * mult;
+}
+
 function initAdjustStep() {
   var net = monthlyIncome();
-  var rem = flexiblePool();
   var seg = getSegment(net);
 
-  // Only seed from BLS averages if adjustVals is empty (first visit or no prefill).
-  // If adjustVals already has values (restored via bb-prefill on re-edit), keep them.
+  // Seed every slider at peer spending for this income quintile — SEG rows sum
+  // to 100% of net, so the budget opens fully allocated and balanced, and the
+  // user drags from a sane starting point rather than from zero.
+  //
+  // Deliberately NOT modified by ZIP or household here: multiplying housing by
+  // a 1.45 cost-of-living index would open a brand-new user in overspend before
+  // they touched anything. The ZIP still drives the thermometer and the tax
+  // estimate; zipMultiplier() / householdMultiplier() are available if we later
+  // decide the localized default is worth that first impression.
   if (Object.keys(adjustVals).length === 0) {
-    var scaledRem = Math.round(rem * 0.80);
-    var totalPct = BUCKETS.reduce(function(s, b) { return s + seg[b.key]; }, 0);
     var allocated = 0;
     for (var i = 0; i < BUCKETS.length; i++) {
       var b = BUCKETS[i];
+      var st = stepFor(b.key);
       if (i < BUCKETS.length - 1) {
-        // Round to nearest $10, proportional to BLS weight, using 80% of rem
-        adjustVals[b.key] = Math.round(scaledRem * seg[b.key] / totalPct / 10) * 10;
+        adjustVals[b.key] = Math.round(net * seg[b.key] / 100 / st) * st;
         allocated += adjustVals[b.key];
       } else {
-        // Last bucket absorbs rounding so total == scaledRem (leaving 20% unallocated)
-        adjustVals[b.key] = Math.max(0, scaledRem - allocated);
+        // Savings is last and absorbs the rounding so the total lands on net.
+        adjustVals[b.key] = Math.max(0, Math.round(net - allocated));
       }
     }
   }
@@ -631,28 +642,15 @@ function toggleAdjustExpand(key) {
 
 function renderAdjustBuckets() {
   var net = monthlyIncome();
-  var rem = flexiblePool();
   var seg = getSegment(net);
-  var totalSliders = BUCKETS.reduce(function(s, b) { return s + (adjustVals[b.key] || 0); }, 0);
-  var leftOver = rem - totalSliders;
-
-  // Update metrics
-  if ($("finalRemainder")) $("finalRemainder").textContent = money(rem);
-  if ($("unallocated")) {
-    $("unallocated").textContent = money(Math.abs(leftOver));
-    var isNear = leftOver >= 0 && leftOver <= rem * 0.05;
-    $("unallocated").style.color = leftOver < -1 ? "var(--danger)" : (isNear ? "#22c55e" : (leftOver > rem * 0.05 ? "var(--warn)" : ""));
-  }
-  if ($("unallocatedNote")) {
-    var isNear = leftOver >= 0 && leftOver <= rem * 0.05;
-    $("unallocatedNote").textContent = leftOver < -1 ? "Over budget" : (isNear ? "Fully allocated!" : "Remaining");
-  }
+  updateAdjustHeader();
 
   var html = "";
   BUCKETS.forEach(function(b) {
-    var minAmt    = Math.max(0, Math.round(rem * RANGE[b.key].min / 100 / 10) * 10);
-    var maxAmt    = Math.max(minAmt + 10, Math.round(rem * RANGE[b.key].max / 100 / 10) * 10);
-    var avgAmt    = Math.round(rem * seg[b.key] / 100 / 10) * 10;
+    var st        = stepFor(b.key);
+    var minAmt    = Math.max(0, Math.round(net * RANGE[b.key].min / 100 / st) * st);
+    var maxAmt    = Math.max(minAmt + st, Math.round(net * RANGE[b.key].max / 100 / st) * st);
+    var avgAmt    = Math.round(net * seg[b.key] / 100 / st) * st;
     var curAmt    = adjustVals[b.key] || 0;
     var sliderVal = Math.min(Math.max(curAmt, minAmt), maxAmt);
     var expanded  = !!adjustExpanded[b.key];
@@ -661,18 +659,20 @@ function renderAdjustBuckets() {
     var subItemsHtml = "";
     if (expanded) {
       subItemsHtml =
-        '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">' +
+        '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">' +
         SUB[b.key].map(function(item) {
-          return '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px;color:var(--muted)">' +
-            '<span>' + item + '</span></div>';
+          return '<div style="padding:2px 0;font-size:11px;color:var(--muted)">' + item + '</div>';
         }).join("") + "</div>";
     }
 
+    // Compact row: name + % + $ input + include-toggle all on the header line,
+    // so ~5 sliders fit a screen. The toggle sits at the far right of the row.
     html +=
-      '<div class="card" style="margin-bottom:12px">' +
-        '<div class="budget-head" style="gap:12px;align-items:center">' +
-          '<div style="flex:1;min-width:0;overflow:hidden">' +
-            '<div class="budget-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + b.icon + ' ' + b.label + '</div>' +
+      '<div class="card adj-card">' +
+        '<div class="budget-head adj-head">' +
+          '<div class="adj-name">' + b.icon + ' ' + b.label + '</div>' +
+          '<div class="adj-pct" id="adj-pct-' + b.key + '">' +
+            Math.round((curAmt / (net || 1)) * 100) + '%' +
           '</div>' +
           '<div class="budget-amount-wrap">' +
             '<span class="budget-dollar">$</span>' +
@@ -680,25 +680,20 @@ function renderAdjustBuckets() {
               'onfocus="moneyFocus(this)" ' +
               'onblur="adjustAmtBlur(this,\'' + b.key + '\')" ' +
               'oninput="adjustVals[\'' + b.key + '\']=parseFmt(this.value);syncAdjustSlider(\'' + b.key + '\');updateAdjustBucket(\'' + b.key + '\')" ' +
-              'style="width:72px">' +
+              'style="width:62px">' +
           '</div>' +
-        '</div>' +
-        '<input type="range" id="adj-slider-' + b.key + '" min="' + minAmt + '" max="' + maxAmt + '" step="1" value="' + sliderVal + '" ' +
-          'style="width:100%;margin:10px 0 4px" ' +
-          'oninput="adjustVals[\'' + b.key + '\']=+this.value;syncAdjustInput(\'' + b.key + '\');updateAdjustBucket(\'' + b.key + '\')">' +
-        '<div class="slider-labels" style="font-size:11px;color:var(--muted)">' +
-          '<span>' + money(minAmt) + '</span>' +
-          '<span>avg ' + money(avgAmt) + '</span>' +
-          '<span>' + money(maxAmt) + '</span>' +
-        '</div>' +
-        '<div style="margin-top:10px">' +
-          '<button type="button" onclick="toggleAdjustExpand(\'' + b.key + '\')" ' +
-            'style="font-size:11px;padding:5px 12px;border-color:var(--line);background:var(--soft);color:var(--muted);border-radius:10px">' +
-            (expanded ? "\u25B2 Close" : "\u25BC Things to include") +
+          '<button type="button" class="adj-info" title="Things to include" ' +
+            'onclick="toggleAdjustExpand(\'' + b.key + '\')">' +
+            (expanded ? "\u25B2" : "\u25BC") +
           '</button>' +
         '</div>' +
-        '<div id="adj-pct-' + b.key + '" style="text-align:right;margin-top:8px;font-size:11px;color:var(--muted)">' +
-          Math.round((curAmt / (rem || 1)) * 100) + '% of flexible budget' +
+        '<input type="range" id="adj-slider-' + b.key + '" min="' + minAmt + '" max="' + maxAmt + '" step="' + st + '" value="' + sliderVal + '" ' +
+          'class="adj-slider" ' +
+          'oninput="adjustVals[\'' + b.key + '\']=+this.value;syncAdjustInput(\'' + b.key + '\');updateAdjustBucket(\'' + b.key + '\')">' +
+        '<div class="slider-labels" style="font-size:10px;color:var(--muted)">' +
+          '<span>' + money(minAmt) + '</span>' +
+          '<span>typical ' + money(avgAmt) + '</span>' +
+          '<span>' + money(maxAmt) + '</span>' +
         '</div>' +
         subItemsHtml +
       '</div>';
@@ -709,8 +704,9 @@ function renderAdjustBuckets() {
 
 function adjustAmtBlur(el, key) {
   var v = parseFmt(el.value);
-  adjustVals[key] = Math.round(v / 10) * 10;
-  el.value = v > 0 ? v.toLocaleString() : "0";
+  var st = stepFor(key);
+  adjustVals[key] = Math.round(v / st) * st;
+  el.value = adjustVals[key] > 0 ? adjustVals[key].toLocaleString() : "0";
   renderAdjustBuckets();
 }
 
@@ -731,103 +727,43 @@ function syncAdjustSlider(key) {
 }
 
 function updateAdjustBucket(key) {
-  var rem = flexiblePool();
+  var net = monthlyIncome();
   var pctEl = document.getElementById('adj-pct-' + key);
-  if (pctEl) pctEl.textContent = Math.round((adjustVals[key] || 0) / (rem || 1) * 100) + '% of flexible budget';
+  if (pctEl) pctEl.textContent = Math.round((adjustVals[key] || 0) / (net || 1) * 100) + '%';
   updateAdjustHeader();
 }
 
+// The running totals at the top. Overspending is allowed — the number just
+// flips to "Overspent" in danger red rather than blocking anything.
 function updateAdjustHeader() {
-  var rem = flexiblePool();
-  var allocated = Object.keys(adjustVals).reduce(function(s, k) { return s + (adjustVals[k] || 0); }, 0);
-  var leftOver = rem - allocated;
-  var unaEl = $("unallocated");
-  var noteEl = $("unallocatedNote");
-  var isNear = leftOver >= 0 && leftOver <= rem * 0.05;
-  if ($("finalRemainder")) $("finalRemainder").textContent = money(rem);
-  if (unaEl) {
-    unaEl.textContent = money(Math.abs(leftOver));
-    unaEl.style.color = leftOver < -1 ? "var(--danger)" : (isNear ? "#22c55e" : (leftOver > rem * 0.05 ? "var(--warn)" : ""));
-  }
-  if (noteEl) noteEl.textContent = leftOver < -1 ? "Over budget" : (isNear ? "Fully allocated!" : "Remaining");
-}
-
-// ── Adjust: warning + auto-allocate ───────────────────────────────────────
-function showAdjustWarning(leftOver, rem) {
-  var w = $("adjustWarning");
-  if (!w) return;
-  var isOver = leftOver < 0;
-  var pct    = rem > 0 ? Math.round(Math.abs(leftOver / rem) * 100) : 0;
-  var bg = document.createElement("div");
-  bg.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:999";
-
-  var card = document.createElement("div");
-  card.style.cssText = "background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,0.24)";
-
-  var msg = isOver
-    ? "You're <strong>$" + Math.abs(Math.round(leftOver)).toLocaleString() + " over</strong> budget. Reduce a category before reviewing."
-    : "You still have <strong>$" + Math.round(leftOver).toLocaleString() + " unallocated</strong>. Assign it before moving on \u2014 if it's going toward savings, put it there.";
-
-  card.innerHTML =
-    '<div style="font-size:14px;line-height:1.45;color:var(--text);margin-bottom:16px">' + msg + '</div>' +
-    (isOver ? '' :
-      '<button type="button" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:13px;font-size:13px;font-weight:850;cursor:pointer;margin-bottom:8px" ' +
-        'onclick="autoAllocateToSavings();this.parentNode.parentNode.remove()">Add to Savings & Future</button>'
-    ) +
-    '<button type="button" style="width:100%;padding:12px;background:var(--soft);color:var(--muted);border:1px solid var(--line);border-radius:13px;font-size:13px;font-weight:850;cursor:pointer" ' +
-      'onclick="this.parentNode.parentNode.remove()">Keep Adjusting</button>';
-
-  bg.appendChild(card);
-  document.body.appendChild(bg);
-}
-
-function autoAllocateToSavings() {
-  var rem   = flexiblePool();
-  var total = BUCKETS.reduce(function(s, b) { return s + (adjustVals[b.key] || 0); }, 0);
-  var left  = rem - total;
-  if (left > 0) adjustVals["savings"] = (adjustVals["savings"] || 0) + left;
-  renderAdjustBuckets();
-}
-
-// ── Lifestyle Wizard placeholder ───────────────────────────────────────────
-function lifestyleWizardPrompt() {
-  var card = document.createElement("div");
-  card.style.cssText = "position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--accent-border);border-radius:16px;padding:14px 18px;font-size:12px;line-height:1.45;max-width:300px;box-shadow:0 4px 24px rgba(0,0,0,.18);z-index:999";
-  card.innerHTML =
-    '<div style="font-weight:850;margin-bottom:4px;color:var(--accent)">Lifestyle Wizard</div>' +
-    '<div style="color:var(--text)">A deeper walkthrough &#8212; choose your spending personality for each category. Coming in a future update. The sliders above are the fast path.</div>' +
-    '<button onclick="this.parentNode.remove()" style="margin-top:10px;padding:6px 14px;border-radius:10px;font-size:11px;background:var(--soft);border:1px solid var(--line);color:var(--muted);cursor:pointer;display:block;margin-left:auto">Got it</button>';
-  document.body.appendChild(card);
-  setTimeout(function() { if (card.parentNode) card.remove(); }, 5000);
-}
-
-// ── Results / review ───────────────────────────────────────────────────────
-function renderResults() {
-  var box = $("resultRows");
-  if (!box) return;
-  var inc = monthlyIncome(), fixed = fixedCosts(), rem = flexiblePool();
+  var net = monthlyIncome();
   var allocated = BUCKETS.reduce(function(s, b) { return s + (adjustVals[b.key] || 0); }, 0);
+  var leftOver = net - allocated;
+  var isOver = leftOver < -1;
+  var isNear = leftOver >= 0 && leftOver <= net * 0.02;
 
-  if ($("resultIncome")) $("resultIncome").textContent = money(inc);
-  var iPct = pctDiff(inc, AVG_INCOME);
-  if ($("resultIncomeNote")) $("resultIncomeNote").textContent = Math.abs(iPct) + "% " + (iPct >= 0 ? "above" : "below") + " avg";
-  if ($("resultAllocated")) $("resultAllocated").textContent = money(allocated + fixed);
-  if ($("resultLeft")) $("resultLeft").textContent = money(rem - allocated) + " left";
+  if ($("finalRemainder")) $("finalRemainder").textContent = money(net);
+  if ($("unallocatedLabel")) $("unallocatedLabel").textContent = isOver ? "Overspent" : "Unallocated";
+  if ($("unallocated")) {
+    $("unallocated").textContent = money(Math.abs(leftOver));
+    $("unallocated").style.color = isOver ? "var(--danger)" : (isNear ? "#22c55e" : (leftOver > net * 0.02 ? "var(--warn)" : ""));
+  }
+  if ($("unallocatedNote")) {
+    $("unallocatedNote").textContent = isOver ? "Over your take-home" : (isNear ? "Fully allocated!" : "Left to assign");
+  }
+}
 
-  var rows = [
-    { name: "Housing",          sub: "Rent, utilities, fees",                             amount: housingCosts() },
-    { name: "Bills & Required", sub: "Insurance, transport fixed, phone, internet, other", amount: num("medical") + num("transportFixed") + num("phone") + num("internet") + num("otherFixed") }
-  ];
-  BUCKETS.forEach(function(b) {
-    rows.push({ name: b.icon + " " + b.label, sub: "", amount: adjustVals[b.key] || 0 });
-  });
-
-  box.innerHTML = rows.map(function(r) {
-    return '<div class="result-row">' +
-      '<div><div class="result-name">' + r.name + '</div>' +
-      (r.sub ? '<div class="result-sub">' + r.sub + '</div>' : '') +
-      '</div><div class="result-money">' + money(r.amount) + '</div></div>';
-  }).join("");
+// ── Save-time balancing ────────────────────────────────────────────────────
+// Replaces the old "allocate everything before you can review" modal, which was
+// the only reason the Review step existed as a gate. Now: leftover money
+// silently becomes savings, and overspend is left exactly as the user set it
+// (the totals bar already says so in red). Nothing blocks the save — that is
+// the point of a 2-minute budget.
+function autoAllocateToSavings() {
+  var net   = monthlyIncome();
+  var total = BUCKETS.reduce(function(s, b) { return s + (adjustVals[b.key] || 0); }, 0);
+  var left  = net - total;
+  if (left > 0) adjustVals["savings"] = (adjustVals["savings"] || 0) + Math.round(left);
 }
 
 // ── Progress dots ──────────────────────────────────────────────────────────
@@ -849,74 +785,61 @@ function renderStep() {
   });
   $("stepTitle").textContent    = steps[step][0];
   $("stepSubtitle").textContent = steps[step][1];
-  $("backBtn").classList.toggle("hidden", step === 6);
-  $("nextBtn").textContent =
-    step === 4 ? "Review" :
-    step === 5 ? "Save budget" :
-    step === 6 ? "Restart" : "Next";
-  $("nextBtn").disabled = false;
+  $("nextBtn").textContent      = step === 1 ? "Save budget" : "Next";
+  $("nextBtn").disabled         = false;
   renderProgress();
-  if (step === 1) checkStep1Next();
-  if (step === 4) initAdjustStep();
-  if (step === 5) renderResults();
+  if (step === 0) { renderNetHelper(); checkStep0Next(); }
+  if (step === 1) initAdjustStep();
   renderSummary();
 }
 
 // ── Navigation ─────────────────────────────────────────────────────────────
 function next() {
-  if (step === 6) { restart(); return; }
+  // Basics → Adjust
+  if (step === 0) { step = 1; renderStep(); return; }
 
-  // Guard: warn if adjust budget is unallocated (>1% rounding tolerance) before allowing Review
-  if (step === 4) {
-    var rem = flexiblePool();
-    var total = BUCKETS.reduce(function(s, b) { return s + (adjustVals[b.key] || 0); }, 0);
-    var leftOver = rem - total;
-    if (leftOver > rem * 0.01) { showAdjustWarning(leftOver, rem); return; }
-  }
+  // Adjust → save. No review step and no allocation gate: sweep any leftover
+  // into savings and post. Overspend saves as-is; the post-result screen is
+  // where the user reviews the outcome.
+  autoAllocateToSavings();
 
-  if (step === 5) {
-    step++;
-    renderStep();
-    var wizardInputs = {
-      zip: zipEntry(),
-      preIncome: num("preIncome"),
-      netIncome: num("netIncome"),
-      dependents: num("dependents") || 0,
-      housing: num("housing"),
-      housingExtras: num("housingExtras"),
-      utilities: num("utilities"),
-      medical: num("medical"),
-      transportFixed: num("transportFixed"),
-      phone: num("phone"),
-      internet: num("internet"),
-      otherFixed: num("otherFixed"),
-      adjustVals: JSON.parse(JSON.stringify(adjustVals))
-    };
-    window.parent.postMessage({ type: "bb-complete", debts: [], inputs: wizardInputs }, "*");
-    return;
-  }
+  var housingParts = splitBucket(adjustVals.housing || 0, HOUSING_SPLIT);
+  var billsParts   = splitBucket(adjustVals.bills   || 0, BILLS_SPLIT);
 
-  if (step < steps.length - 1) { step++; renderStep(); }
+  // Payload keeps the field-per-cost shape wizard-bridge.js maps. preIncome is
+  // normalized to MONTHLY gross regardless of which mode was typed in, so the
+  // bridge and any prefill never have to know about the toggle.
+  var wizardInputs = {
+    zip:            zipEntry(),
+    gender:         ($("gender") && $("gender").value) || "",
+    age:            num("age") || 0,
+    householdSize:  Math.max(1, num("householdSize") || 1),
+    dependents:     dependentsCount(),
+    incomeMode:     incomeMode,
+    preIncome:      Math.round(grossMonthly()),
+    netIncome:      Math.round(monthlyIncome()),
+    housing:        housingParts.housing,
+    housingExtras:  housingParts.housingExtras,
+    utilities:      housingParts.utilities,
+    medical:        billsParts.medical,
+    transportFixed: billsParts.transportFixed,
+    phone:          billsParts.phone,
+    internet:       billsParts.internet,
+    otherFixed:     billsParts.otherFixed,
+    adjustVals:     JSON.parse(JSON.stringify(adjustVals))
+  };
+  window.parent.postMessage({ type: "bb-complete", debts: [], inputs: wizardInputs }, "*");
 }
 
 function back() {
-  if (step <= 1) { window.parent.postMessage({ type: "bb-back" }, "*"); return; }
+  // Step 0 is the first screen, so Back there leaves the wizard entirely.
+  if (step <= 0) { window.parent.postMessage({ type: "bb-back" }, "*"); return; }
   step--;
   renderStep();
 }
 
-function restart() {
-  step = 0;
-  adjustVals = {};
-  adjustExpanded = {};
-  renderStep();
-}
-
 // ── Input listeners ────────────────────────────────────────────────────────
-["zip", "dependents", "netIncome", "preIncome",
- "housing", "housingExtras", "utilities",
- "medical", "transportFixed", "phone", "internet", "otherFixed"
-].forEach(function(id) {
+["zip", "gender", "age", "householdSize", "grossIncome"].forEach(function(id) {
   var el = $(id);
   if (!el) return;
   el.addEventListener("input",  function() { renderSummary(); });
@@ -926,14 +849,8 @@ function restart() {
 $("nextBtn").onclick = next;
 $("backBtn").onclick = back;
 
-// Format all pre-filled numeric inputs on first load
-["housing", "housingExtras", "utilities", "medical", "transportFixed", "phone", "internet", "otherFixed"].forEach(function(id) {
-  var el = $(id);
-  if (el) {
-    var v = parseFmt(el.value);
-    if (v > 0) el.value = v.toLocaleString();
-  }
-});
+// (The pre-filled cost inputs this used to format are sliders now — nothing
+// on the Basics step ships with a numeric default.)
 
 renderStep();
 
