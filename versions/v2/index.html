@@ -65,8 +65,10 @@ window.onunhandledrejection = function(e) {
 <script src="js/utils.js"></script>
 <!-- Chat keyword matcher — data/logic only (no DOM); screens/chat.js renders it -->
 <script src="js/chat-router.js"></script>
-<!-- Builder seam: normalized baseline both budget builders write through -->
+<!-- Builder seam: normalized baseline both budget builders write through,
+     plus each builder's adapter (wizard-bridge loads later with core engine) -->
 <script src="js/budget-baseline.js"></script>
+<script src="js/lifestyle-survey-bridge.js"></script>
 
 <!-- 2. Shared components (before screens that use them) -->
 <script src="components/thermometer.js"></script>
@@ -95,6 +97,7 @@ window.onunhandledrejection = function(e) {
 <script src="screens/about-me.js"></script>
 <script src="screens/budget-setup.js"></script>
 <script src="screens/budget-update-confirm.js"></script>
+<script src="screens/lifestyle-survey.js"></script>
 <script src="screens/lifestyle.js"></script>
 <script src="screens/lifestyle-chain.js"></script>
 <script src="screens/account-balances.js"></script>

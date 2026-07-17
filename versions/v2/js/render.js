@@ -39,6 +39,7 @@ function adminSubtitle() {
   if (state.screen === "goalVault")      return "Goals V2 — victory vault. Completed goals and earned medals.";
   if (state.screen === "chat")           return "Chat mock — keyword matching, not AI. Routes listed below.";
   if (state.screen === "budgetUpdateConfirm") return "Old → new budget comparison — gates every builder update.";
+  if (state.screen === "lifestyleSurvey")    return "Lifestyle Survey builder — placeholder questions, real seam.";
   return "Manual controls for this wireframe screen.";
 }
 
@@ -48,6 +49,7 @@ function renderScreen() {
   if (state.screen === "aboutMe")           return renderAboutMe();
   if (state.screen === "budgetSetup")       return renderBudgetSetup();
   if (state.screen === "budgetUpdateConfirm") return renderBudgetUpdateConfirm();
+  if (state.screen === "lifestyleSurvey")    return renderLifestyleSurvey();
   if (state.screen === "babyBudget")        return renderBabyBudget();
   if (state.screen === "myProgress")        return renderMyProgress();
   if (state.screen === "lifestyle")         return renderLifestyle();
@@ -114,7 +116,7 @@ function renderAdmin() {
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
              "goals","learn","topic","lesson","quiz","simulation","marketplace",
              "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
-             "goalCreate","goalTracker","goalVault","chat","budgetUpdateConfirm"].map(s => `
+             "goalCreate","goalTracker","goalVault","chat","budgetUpdateConfirm","lifestyleSurvey"].map(s => `
             <option value="${s}" ${state.screen === s ? "selected" : ""}>${s}</option>
           `).join("")}
         </select>

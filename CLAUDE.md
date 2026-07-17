@@ -81,7 +81,14 @@ otherwise.
   `budgetFmt`.
 - `js/render.js` — `render()`, `renderScreen()`, `renderAdmin()`,
   `adminSubtitle()`, and the admin jump list. `js/navigation.js` — `go(screen)`,
-  history. `js/wizard-bridge.js` — budget-wizard data bridge.
+  history.
+- `js/budget-baseline.js` — **the budget-builder seam**: both builders (2 Minute
+  Budget and Lifestyle Survey) convert their flow into one normalized baseline
+  and save through `submitBudgetBaseline()` — latest save wins, updates gated by
+  the shared old→new confirm screen. Builders never write `state.budget`
+  directly; each has its own adapter (`js/wizard-bridge.js` for the 2MB iframe
+  payload, `js/lifestyle-survey-bridge.js` for survey answers). Keep new
+  builders behind this seam.
 - `components/` — reusable visualizations (`thermometer`, `badge-ring`,
   `sprint-timeline`, `streak-counter`, `nav`). Reuse these; don't re-implement
   charts inline.

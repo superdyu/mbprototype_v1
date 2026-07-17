@@ -839,6 +839,12 @@ const state = {
   // ── Commitments from post-result loop ────────────────────────────────────
   commitments: [],  // [{id, text, createdAt, goalId}]
 
+  // ── Lifestyle Survey (budget builder) session ─────────────────────────────
+  // Step position + answers for the survey flow (screens/lifestyle-survey.js).
+  // Persists across navigation so "Keep editing" on the update-confirm screen
+  // can return with answers intact. Placeholder content — see the screen file.
+  lifestyleSurvey: { step: 0, grossAnnual: "", answers: {} },
+
   // ── Pending budget baseline ───────────────────────────────────────────────
   // Set by submitBudgetBaseline() when a builder saves over an EXISTING budget:
   // the baseline parks here while the shared update-confirm screen shows the
@@ -893,6 +899,7 @@ function resetUserData() {
   state.editingGoalId        = null;
   state.goalsV2              = { clockOffsetDays: 0, goals: [], draft: null, selectedGoalId: null, celebrationDismissedAt: null };
   state.pendingBaseline      = null;
+  state.lifestyleSurvey      = { step: 0, grossAnnual: "", answers: {} };
   state.lessonPlayback       = { sentences: [], index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1 };
   state.chat                 = { messages: [] };
   render();

@@ -16,6 +16,7 @@
 //          home task card "Build your starter budget"
 //          Chat: budget/planning keyword route when a budget already exists
 //   Exit:  ← Budget; 2 Minute Budget card / Edit Budget → babyBudget screen;
+//          Lifestyle Survey card / rebuild link → lifestyleSurvey screen;
 //          See Results → myProgress; Update now → monthly update flow
 //
 // STATES
@@ -87,6 +88,13 @@ function renderBudgetSetup() {
           <button class="button primary" type="button" onclick="launchBabyBudget()">Edit Budget</button>
           <button class="button secondary" type="button" onclick="go('myProgress')">See Results</button>
         </div>
+        <!-- The other builder stays reachable for updates — any builder can
+             rebuild the budget; the update-confirm screen gates the override. -->
+        <p class="helper" style="font-size:11px;margin:10px 0 0;">
+          Or rebuild it a different way:
+          <button type="button" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:700;text-decoration:underline;cursor:pointer;padding:0;"
+                  onclick="startLifestyleSurvey()">Lifestyle Survey</button>
+        </p>
     </div>
     ` : ""}
 
@@ -131,14 +139,9 @@ function renderBudgetSetup() {
 // ─── First-time setup: pick how to build the budget ──────────────────────────
 // Only rendered when status === "empty". Two side-by-side cards so the choice
 // reads as a fork, not a list. Pros/cons are the point — the two paths trade
-// speed against thinking, and the user should see that before picking.
-//
-// LIFESTYLE SURVEY IS A STUB. No from-scratch survey wizard exists yet: the
-// current lifestyle screens (screens/lifestyle.js, lifestyle-chain.js) only
-// MODIFY a budget that already exists — they're guarded to no-op when status is
-// "empty", which is exactly the state this screen renders in. When that wizard
-// is built, swap chooseLifestyleSurvey() for its real launcher and drop the
-// coming-soon badge + note.
+// speed against thinking, and the user should see that before picking. Both
+// builders converge on the same normalized baseline (js/budget-baseline.js) —
+// two doors, one budget.
 function renderBudgetChoice() {
   return `
     <div class="section-title" style="margin:0 0 6px;">How do you want to start?</div>
@@ -146,10 +149,10 @@ function renderBudgetChoice() {
 
     <div style="display:flex;gap:10px;align-items:stretch;margin-bottom:12px;">
 
-      <!-- Lifestyle Survey (stub) -->
-      <div class="card" style="flex:1;margin-bottom:0;display:flex;flex-direction:column;opacity:.75;"
-           onclick="chooseLifestyleSurvey()">
-        <div class="pill" style="align-self:flex-start;font-size:9px;padding:2px 7px;margin-bottom:8px;">Coming soon</div>
+      <!-- Lifestyle Survey (skeleton flow — placeholder questions) -->
+      <div class="card" style="flex:1;margin-bottom:0;display:flex;flex-direction:column;cursor:pointer;"
+           onclick="startLifestyleSurvey()">
+        <div class="pill" style="align-self:flex-start;font-size:9px;padding:2px 7px;margin-bottom:8px;">Guided</div>
         <div class="task-title" style="margin-bottom:6px;">Lifestyle Survey</div>
         <p class="task-desc" style="flex:1;">
           Answer questions about how you live. We turn them into the numbers, so
@@ -171,19 +174,7 @@ function renderBudgetChoice() {
       </div>
 
     </div>
-
-    <p id="lifestyleSurveyNote" class="helper" style="display:none;font-size:11px;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px;">
-      The Lifestyle Survey isn't built yet. For now, the 2 Minute Budget is the
-      way in &mdash; once you have a budget, the Lifestyle screens can fine-tune it.
-    </p>
   `;
-}
-
-// Stub handler: reveals the note instead of navigating. Direct DOM write rather
-// than a state flag + render() — this is a transient hint, not app state.
-function chooseLifestyleSurvey() {
-  const note = document.getElementById("lifestyleSurveyNote");
-  if (note) note.style.display = "block";
 }
 
 function goBackFromBudgetSetup() {
