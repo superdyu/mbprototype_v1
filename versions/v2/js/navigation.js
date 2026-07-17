@@ -314,28 +314,18 @@ window.addEventListener('popstate', function(e) {
 });
 
 // Listen for 2 Minute Budget completion signal (postMessage from the iframe).
-// When received, mark the budget complete and navigate to the dashboard.
+// All consolidation lives behind the builder seam: adapter (wizard-bridge.js)
+// → baseline → submitBudgetBaseline (budget-baseline.js), which owns status,
+// stamps, task completion, and the post-save flow. This listener only ferries
+// the message across the iframe boundary.
 window.addEventListener("message", function(e) {
   if (!e.data) return;
   if (e.data.type === "bb-complete") {
-    const wasComplete = state.budget.status === "complete";
     applyDebtDataFromWizard(e.data.debts);
     if (e.data.inputs) {
-      state.budget.wizardInputs = e.data.inputs;
-      applyWizardInputsToBudget(e.data.inputs);   // wizard is the budget baseline
+      state.budget.wizardInputs = e.data.inputs;   // kept for the admin state inspector
+      submitBudgetBaseline(bbPayloadToBaseline(e.data.inputs));
     }
-    // Re-run scenario: budget rebuilt while lifestyle answers exist — post-result
-    // asks whether to re-apply lifestyle settings or start fresh (wizard-bridge.js)
-    state.wizardRerunPrompt = wasComplete && lifestyleHasAnswers();
-    state.budget.status = "complete";
-    // Mark the "Build your starter budget" daily task done. Joins on destination
-    // — the same field the home task uses to launch the wizard — mirroring the
-    // lesson-completion pattern (t.lessonId === lesson.id) elsewhere in this file.
-    state.tasks.forEach(t => { if (t.destination === "babyBudget") t.completed = true; });
-    state.budget.profile.lastUpdated = new Date().toISOString().slice(0, 10);
-    if (!state.flowOrigin) state.flowOrigin = "aboutMe";
-    state.postResultContext = "budget";
-    go("postResult");
   }
   if (e.data.type === "bb-back") {
     go("budgetSetup");

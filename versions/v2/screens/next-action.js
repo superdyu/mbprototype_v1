@@ -74,5 +74,4 @@ function clearFlowState() {
   state.postResultTheme    = null;
   state.postResultReaction = null;
   state.nextAction         = null;
-  state.wizardRerunPrompt  = false;
 }

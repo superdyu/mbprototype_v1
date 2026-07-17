@@ -53,8 +53,12 @@ function renderBudgetSetup() {
     ${hasBudget ? `
     <!-- Budget summary card (only once a budget exists) -->
     <div class="card" style="margin-bottom:12px;">
-      <div class="section-title" style="margin-bottom:6px;">2 Minute Budget</div>
-      <p class="helper" style="margin-bottom:12px;">Start with estimates. Adjust what feels off.</p>
+      <div class="section-title" style="margin-bottom:6px;">Your Budget</div>
+      ${state.budget.builtWith ? `
+      <p class="helper" style="margin-bottom:12px;">
+        Built with ${h(BUDGET_BUILDER_LABELS[state.budget.builtWith] || state.budget.builtWith)}${state.budget.builtDate ? ` &middot; ${h(state.budget.builtDate)}` : ""}
+      </p>` : `
+      <p class="helper" style="margin-bottom:12px;">Start with estimates. Adjust what feels off.</p>`}
 
         <div style="margin-bottom:14px;">
           <div class="row" style="margin-bottom:6px;">

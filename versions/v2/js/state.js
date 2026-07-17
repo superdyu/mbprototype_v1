@@ -672,6 +672,11 @@ const state = {
     status: "empty",
     inProgressPct: 60,
     wizardInputs: null,
+    // Which builder produced the current budget + when — the source stamp for
+    // latest-wins consolidation (see js/budget-baseline.js). Shown on the
+    // Budget screen as "Built with 2 Minute Budget · date".
+    builtWith: null,   // "2min" | "lifestyleSurvey" | null (never built)
+    builtDate: null,
 
     profile: {
       zip: "95126",
@@ -681,6 +686,10 @@ const state = {
       // age/gender the way they already segment by income and ZIP.
       gender: "",
       age: 0,
+      // Gross income as the user entered it (monthly-normalized) + which mode
+      // they typed it in — lets any builder re-open showing their real income.
+      grossMonthly: 0,
+      incomeMode: "annual",   // "annual" | "monthly"
       lastUpdated: "2026-02-15",
       // Income model — supports salary, variable (gig), or mixed households
       incomeType: "salary",   // "salary" | "variable" | "mixed"
@@ -830,11 +839,13 @@ const state = {
   // ── Commitments from post-result loop ────────────────────────────────────
   commitments: [],  // [{id, text, createdAt, goalId}]
 
-  // ── Wizard re-run prompt ──────────────────────────────────────────────────
-  // Set by the bb-complete handler when the wizard overwrites an existing
-  // budget while lifestyle answers exist. post-result.js shows a choice card:
-  // re-apply lifestyle settings to the new baseline, or start fresh.
-  wizardRerunPrompt: false,
+  // ── Pending budget baseline ───────────────────────────────────────────────
+  // Set by submitBudgetBaseline() when a builder saves over an EXISTING budget:
+  // the baseline parks here while the shared update-confirm screen shows the
+  // old → new comparison. Applied and cleared on confirm; cleared on discard.
+  // A new budget from either builder is a pure override — the old "re-apply
+  // lifestyle answers?" re-run prompt was removed with this seam.
+  pendingBaseline: null,
 
   // ── Goals V2 module ───────────────────────────────────────────────────────
   // Standalone goal-tracking module (see docs/goals-module-plan.md).
@@ -857,7 +868,11 @@ function resetUserData() {
   state.userProfile = { name: "", monthlyIncome: "", housingCost: "", notes: "" };
   state.budget.status        = "empty";
   state.budget.wizardInputs  = null;
-  state.budget.profile.lastUpdated = null;
+  state.budget.builtWith     = null;
+  state.budget.builtDate     = null;
+  state.budget.profile.grossMonthly = 0;
+  state.budget.profile.incomeMode   = "annual";
+  state.budget.profile.lastUpdated  = null;
   state.budget.debts         = [];
   state.selectedDebt         = null;
   state.debtAnalyzerIncluded = {};
@@ -877,7 +892,7 @@ function resetUserData() {
   state.monthlyUpdateGap     = null;
   state.editingGoalId        = null;
   state.goalsV2              = { clockOffsetDays: 0, goals: [], draft: null, selectedGoalId: null, celebrationDismissedAt: null };
-  state.wizardRerunPrompt    = false;
+  state.pendingBaseline      = null;
   state.lessonPlayback       = { sentences: [], index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1 };
   state.chat                 = { messages: [] };
   render();

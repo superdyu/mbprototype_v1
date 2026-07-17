@@ -42,25 +42,6 @@ function renderPostResult() {
         <p class="helper" style="margin:0;">${h(headline.sub)}</p>
       </div>
 
-      ${state.wizardRerunPrompt ? `
-      <!-- Wizard re-run choice: existing lifestyle answers vs fresh baseline.
-           Handlers live in wizard-bridge.js. If the user proceeds without
-           choosing, answers are preserved but not applied (flag cleared). -->
-      <div class="card" style="margin-bottom:12px;border-color:var(--accent);border-width:2px;">
-        <div style="font-weight:850;font-size:14px;margin-bottom:4px;">You rebuilt your budget</div>
-        <p class="helper" style="margin:0 0 10px;">
-          You have lifestyle answers saved from before. Want your new budget to
-          start from those, or start fresh?
-        </p>
-        <button class="button primary full" type="button" onclick="wizardRerunKeepLifestyle()">
-          Use my lifestyle answers
-        </button>
-        <button class="button secondary full" style="margin-top:8px;" type="button" onclick="wizardRerunStartFresh()">
-          Start fresh
-        </button>
-      </div>
-      ` : ""}
-
       ${context === "budget" ? `
       <div class="card" style="margin-bottom:12px;">
         <div class="section-title" style="margin-bottom:8px;">Your budget at a glance</div>
@@ -161,8 +142,6 @@ function lifestyleThemeLabel(themeKey) {
 function selectReaction(sliderValue) {
   const mapping = { 1: "worried", 2: "ok", 3: "good", 4: "excited" };
   state.postResultReaction = mapping[sliderValue] || "ok";
-  // Moving on without answering the re-run prompt = keep answers, don't apply
-  state.wizardRerunPrompt = false;
   go("nextAction");
 }
 
