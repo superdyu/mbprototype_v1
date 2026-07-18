@@ -169,15 +169,15 @@
           <div class="helper" id="netHelper" style="margin-top:7px">Enter your income to estimate take-home pay.</div>
         </div>
 
-        <!-- Cost-of-living thermometer + sentence (shown when ZIP matches) -->
+        <!-- Income-vs-ZIP-average thermometer + sentence (needs ZIP match + income) -->
         <div id="colThermo" style="display:none;margin:14px 0 2px">
           <div class="thermo-wrap">
             <div class="thermo-track"></div>
             <div class="thermo-fill" id="thermoFill"></div>
             <div class="thermo-marker" id="thermoNatl" style="background:var(--muted)"></div>
             <div class="thermo-marker" id="thermoZip" style="background:var(--accent)"></div>
-            <div class="thermo-lbl" id="thermoNatlLabel" style="color:var(--muted)">Baseline</div>
-            <div class="thermo-lbl" id="thermoZipLabel" style="color:var(--accent)">Your ZIP</div>
+            <div class="thermo-lbl" id="thermoNatlLabel" style="color:var(--muted)">ZIP avg</div>
+            <div class="thermo-lbl" id="thermoZipLabel" style="color:var(--accent)">You</div>
           </div>
           <div id="zipSentence" class="helper" style="margin-top:4px;font-size:11px;line-height:1.45"></div>
         </div>
@@ -224,11 +224,13 @@ window.onerror = function(msg, src, line) {
 };
 
 // ── Constants ──────────────────────────────────────────────────────────────
-const AVG_INCOME = 4500;
+// avgIncome = average household GROSS income per month for the ZIP — feeds the
+// Basics-step thermometer (your income vs the average for your ZIP). The cost
+// `index` still drives the slider defaults; the thermometer no longer shows it.
 const ZIP_DATA = {
-  "95126": { label: "95126 San Jose",      index: 145, state: "CA" },
-  "95014": { label: "95014 Cupertino",     index: 170, state: "CA" },
-  "95054": { label: "95054 Santa Clara",   index: 155, state: "CA" }
+  "95126": { label: "95126 San Jose",      index: 145, state: "CA", avgIncome: 11700 },
+  "95014": { label: "95014 Cupertino",     index: 170, state: "CA", avgIncome: 17500 },
+  "95054": { label: "95054 Santa Clara",   index: 155, state: "CA", avgIncome: 12800 }
 };
 
 // Combined federal + state marginal tax rates by bracket and state
@@ -545,54 +547,63 @@ function getSegment(net) {
   return SEG.find(function(s) { return net <= s.max; }) || SEG[SEG.length - 1];
 }
 
-// ── Thermometer ────────────────────────────────────────────────────────────
-// Cost-of-living: Range 70–185 → national 100 sits at ~26% of track
-var THERMO_MIN = 70, THERMO_MAX = 185;
-// Income vs average: Range $2K–$15K/mo → national $4.5K sits at ~20% of track
-var INC_MIN = 2000, INC_MAX = 15000, AVG_INC = 4500;
-
-function updateThermometer(zi, hasValidZip) {
+// ── Thermometer ──────────────────────────────────────────────────────────────
+// YOUR income vs the ZIP's average household income (NOT cost of living —
+// the cost index still shapes the slider defaults, but the comparison the
+// user sees here is "how does my income stack up in my ZIP"). The #thermoNatl
+// marker holds the ZIP-average position, #thermoZip holds the user's — the
+// ids predate the income flip and are left alone to keep the edit surgical.
+function updateThermometer(zipAvg, gross, show) {
   var tDiv = $("colThermo");
   if (!tDiv) return;
 
-  if (!hasValidZip) { tDiv.style.display = "none"; return; }
+  if (!show) { tDiv.style.display = "none"; return; }
   tDiv.style.display = "";
 
-  var barMax = Math.max(zi, 100);
-  var peerPct = (100 / barMax * 100).toFixed(1);
-  var userPct = Math.max(2, Math.min(98, (zi / barMax * 100))).toFixed(1);
+  var barMax  = Math.max(gross, zipAvg);
+  var avgPct  = Math.max(2, Math.min(98, (zipAvg / barMax * 100))).toFixed(1);
+  var userPct = Math.max(2, Math.min(98, (gross / barMax * 100))).toFixed(1);
 
   var nEl = $("thermoNatl"), zEl = $("thermoZip");
   var fEl = $("thermoFill"), nLbl = $("thermoNatlLabel"), zLbl = $("thermoZipLabel");
 
-  if (nEl)  nEl.style.left = peerPct + "%";
+  if (nEl)  nEl.style.left = avgPct + "%";
   if (zEl)  zEl.style.left = userPct + "%";
 
-  var fLeft  = Math.min(+peerPct, +userPct);
-  var fWidth = Math.abs(+userPct - +peerPct);
+  var fLeft  = Math.min(+avgPct, +userPct);
+  var fWidth = Math.abs(+userPct - +avgPct);
+  var diff = pctDiff(gross, zipAvg);
   if (fEl) {
     fEl.style.left  = fLeft + "%";
     fEl.style.width = fWidth + "%";
-    fEl.style.background = zi >= 100 ? "var(--accent)" : "var(--warn)";
+    fEl.style.background = diff >= 0 ? "var(--accent)" : "var(--warn)";
   }
-  if (nLbl) nLbl.style.left = peerPct + "%";
+  if (nLbl) nLbl.style.left = avgPct + "%";
   if (zLbl) {
     zLbl.style.left = userPct + "%";
-    var diff = Math.round(zi - 100);
     zLbl.textContent = diff > 0 ? "+" + diff + "% vs avg" : (diff < 0 ? diff + "% vs avg" : "at avg");
-    zLbl.style.color = zi > 100 ? "var(--accent)" : (zi < 100 ? "var(--warn)" : "var(--muted)");
+    zLbl.style.color = diff > 0 ? "var(--accent)" : (diff < 0 ? "var(--warn)" : "var(--muted)");
   }
 }
 
 
-// ── Summary / comparisons ──────────────────────────────────────────────────
+// ── Summary / comparisons ────────────────────────────────────────────────────
 function updateComparisons() {
-  var z = zipObj(), zi = zipIndex(), zPct = pctDiff(zi, 100);
-  var zipText = z
-    ? z.label + " is estimated " + Math.abs(zPct) + "% " + (zPct > 0 ? "higher" : "lower") + " cost than the national baseline."
-    : "No supported ZIP entered \u2014 using national average cost baseline.";
+  var z = zipObj(), gross = grossMonthly();
+  var zipText;
+  if (z && gross > 0) {
+    var d = pctDiff(gross, z.avgIncome);
+    zipText = "Households in " + z.label + " average about " + money(z.avgIncome) +
+      "/mo before taxes \u2014 your income is " +
+      (d === 0 ? "right at that average." : Math.abs(d) + "% " + (d > 0 ? "above" : "below") + " that.");
+  } else if (z) {
+    zipText = "Households in " + z.label + " average about " + money(z.avgIncome) +
+      "/mo before taxes. Enter your income to see how you compare.";
+  } else {
+    zipText = "No supported ZIP entered \u2014 using national averages.";
+  }
   if ($("zipSentence")) $("zipSentence").textContent = zipText;
-  updateThermometer(zi, !!z);
+  updateThermometer(z ? z.avgIncome : 0, gross, !!z && gross > 0);
 }
 
 // The housing/bills metric tiles this used to feed were removed along with
