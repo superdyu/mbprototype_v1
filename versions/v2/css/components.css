@@ -1169,16 +1169,16 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 
 .chat-chips {
   display: flex;
-  flex-wrap: wrap;
-  align-content: flex-end;
+  flex-direction: column;
   gap: 6px;
   padding-bottom: 10px;
 }
 
 .chat-chip {
-  padding: 7px 12px;
+  width: 100%;
+  padding: 9px 13px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 11px;
   background: var(--soft);
   color: var(--text);
   font-size: 12px;
