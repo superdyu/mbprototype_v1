@@ -1169,21 +1169,21 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 
 .chat-chips {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-bottom: 10px;
+  flex-wrap: wrap;
+  align-content: flex-end;
+  gap: 8px;
+  padding-bottom: 12px;
 }
 
 .chat-chip {
-  width: 100%;
-  padding: 9px 13px;
+  padding: 8px 14px;
   border: 1px solid var(--line);
-  border-radius: 11px;
+  border-radius: 999px;
   background: var(--soft);
   color: var(--text);
   font-size: 12px;
   font-weight: 700;
-  text-align: left;
+  white-space: nowrap; /* a chip never wraps its text — it moves to the next row whole */
   cursor: pointer;
 }
 
