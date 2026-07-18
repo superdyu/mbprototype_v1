@@ -51,6 +51,20 @@
     .bar i { display:block; height:100%; background:var(--accent); }
     .view { display:none; } .view.active { display:block; }
     code { background:var(--soft); border-radius:5px; padding:1px 5px; font-size:11px; }
+    /* Mobile-style scroll indicators (thin rounded thumb, no track/arrows) */
+    ::-webkit-scrollbar { width:5px; height:5px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-button { display:none; width:0; height:0; }
+    ::-webkit-scrollbar-thumb { background:rgba(16,24,40,.28); border-radius:99px; }
+    @media (prefers-color-scheme: dark) {
+      ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.22); }
+    }
+    @supports not selector(::-webkit-scrollbar) {
+      * { scrollbar-width:thin; scrollbar-color:rgba(16,24,40,.28) transparent; }
+      @media (prefers-color-scheme: dark) {
+        * { scrollbar-color:rgba(255,255,255,.22) transparent; }
+      }
+    }
   </style>
 </head>
 <body>

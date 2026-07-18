@@ -235,3 +235,25 @@ body {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ─── Scroll indicators ───────────────────────────────────────────────────────
+   Mobile-app-style overlay look: thin rounded thumb, no track, no arrow
+   buttons. Applies to every scrollable container (phone screen, chat thread,
+   admin panel). Chromium/WebKit takes the pseudo-element rules; Firefox
+   (no ::-webkit-scrollbar support) gets the standard thin-scrollbar props
+   via @supports so the two rule sets never fight in one engine. */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 99px;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) transparent;
+  }
+}
