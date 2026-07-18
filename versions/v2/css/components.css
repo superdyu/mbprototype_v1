@@ -1169,13 +1169,13 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 
 .chat-chips {
   display: flex;
+  flex-wrap: wrap;
+  align-content: flex-end;
   gap: 6px;
-  overflow-x: auto;
   padding-bottom: 10px;
 }
 
 .chat-chip {
-  flex-shrink: 0;
   padding: 7px 12px;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -1183,7 +1183,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   color: var(--text);
   font-size: 12px;
   font-weight: 700;
-  white-space: nowrap;
+  text-align: left;
   cursor: pointer;
 }
 
