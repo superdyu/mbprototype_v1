@@ -289,16 +289,19 @@ function rangeMaxPct(key, seg) {
 // How strongly each category's DEFAULT tracks the ZIP cost-of-living index
 // (the "modifier" in gov+modifier). Housing is fully local; groceries, bills
 // and transport partially; the rest aren't location-priced. Savings has no
-// entry because it's seeded as the residual (net − everything else, floored
-// at 0) — the local premium comes out of savings first, which is also how it
-// works in real life. NOTE: this means a pricey ZIP on a modest income can
-// open the budget already overspent. That is intentional and user-confirmed —
-// the totals bar says "Overspent" honestly rather than pretending balance.
+// entry (zipMod = 1) — it seeds at its plain SEG share.
 // Household size is deliberately NOT a seeding modifier: the SEG quintile
 // percentages are household-level BLS figures already, so multiplying by
 // householdMultiplier() would double-count.
 const ZIP_SENSITIVITY = { housing: 1.0, bills: 0.5, food: 0.5, transport: 0.5,
                           health: 0, lifestyle: 0, debt: 0 };
+
+// Seeding leaves this share of take-home UNALLOCATED by squeezing the
+// discretionary categories proportionally (see initAdjustStep) — a deliberate
+// nudge so the user has to place the last slice themselves. Housing, bills,
+// debt and savings are never auto-squeezed.
+const SEED_UNALLOC_PCT = 0.10;
+const DISCRETIONARY = ["food", "transport", "health", "lifestyle"];
 
 function zipMod(key) {
   return 1 + (zipMultiplier() - 1) * (ZIP_SENSITIVITY[key] || 0);
@@ -622,7 +625,7 @@ function showAdjustWizardPopup() {
 
   card.innerHTML =
     '<div style="font-size:16px;font-weight:850;margin-bottom:12px;color:var(--text)">We started you at typical spending</div>' +
-    '<div style="font-size:12px;line-height:1.45;color:var(--text);margin-bottom:16px">Every slider is set to what people at your income level typically spend. Drag them to match your real life — nothing here has to be exact, and you can change it later.</div>' +
+    '<div style="font-size:12px;line-height:1.45;color:var(--text);margin-bottom:16px">Sliders start near what people like you typically spend, with about 10% of your take-home left unallocated. Drag them to match your real life and put that last slice where it matters.</div>' +
     '<button type="button" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:13px;font-size:14px;font-weight:850;cursor:pointer;border:1px solid var(--accent)" onclick="this.parentNode.parentNode.remove()">Got it</button>';
 
   bg.appendChild(card);
@@ -643,21 +646,30 @@ function initAdjustStep() {
 
   // Seed every slider at gov+modifier peer spending: the BLS quintile share of
   // net income (SEG), scaled by the ZIP cost-of-living index per category
-  // (ZIP_SENSITIVITY). Savings is NOT seeded from its SEG share — it's the
-  // residual (net − everything else, floored at 0), so a pricey ZIP eats
-  // savings first, and once savings hits $0 the budget opens overspent and the
-  // totals bar says so. In a national-average ZIP the modifiers are all 1 and
-  // savings lands exactly on its SEG share (rows sum to 100).
+  // (ZIP_SENSITIVITY). Then squeeze DISCRETIONARY categories proportionally so
+  // ~10% of take-home opens UNALLOCATED (SEED_UNALLOC_PCT) — the user has to
+  // engage with the sliders to place that last slice instead of landing on an
+  // auto-overspent (pricey ZIP) or perfectly-balanced (nothing to do) budget.
+  // Fixed-ish categories (housing, bills, debt) are never auto-squeezed; if
+  // they alone exceed take-home the budget still opens honestly overspent.
   if (Object.keys(adjustVals).length === 0) {
     var allocated = 0;
     for (var i = 0; i < BUCKETS.length; i++) {
       var b = BUCKETS[i];
       var st = stepFor(b.key);
-      if (b.key !== "savings") {
-        adjustVals[b.key] = Math.round(net * seg[b.key] / 100 * zipMod(b.key) / st) * st;
-        allocated += adjustVals[b.key];
-      } else {
-        adjustVals[b.key] = Math.max(0, Math.round(net - allocated));
+      adjustVals[b.key] = Math.round(net * seg[b.key] / 100 * zipMod(b.key) / st) * st;
+      allocated += adjustVals[b.key];
+    }
+    var target = net * (1 - SEED_UNALLOC_PCT);
+    if (allocated > target) {
+      var pool = 0;
+      for (var j = 0; j < DISCRETIONARY.length; j++) pool += adjustVals[DISCRETIONARY[j]] || 0;
+      if (pool > 0) {
+        var factor = Math.max(0, 1 - (allocated - target) / pool);
+        for (var k = 0; k < DISCRETIONARY.length; k++) {
+          var dk = DISCRETIONARY[k], ds = stepFor(dk);
+          adjustVals[dk] = Math.max(0, Math.round((adjustVals[dk] || 0) * factor / ds) * ds);
+        }
       }
     }
   }
