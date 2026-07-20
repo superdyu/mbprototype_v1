@@ -1228,38 +1228,99 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 }
 .ls-header .button { font-size: 12px; padding: 8px 14px; }
 
-/* Stage box — same placeholder treatment as the home screen's stage card */
-.ls-stage {
-  height: 120px;
+/* Question phase: full-height column so the stage grows and the selector pins
+   to the bottom. (Basics/Review still use .ls-wrap normal flow.) */
+.ls-q-layout {
+  min-height: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  font-weight: 850;
-  letter-spacing: -.03em;
-  color: var(--muted);
-  margin-bottom: 14px;
+  flex-direction: column;
+  padding-top: 6px;
 }
 
-/* 4-notch slider: dots mark the discrete stops beneath the range track */
-.ls-track-wrap { position: relative; padding: 6px 2px 0; }
-.ls-track-dots {
-  position: absolute;
-  top: 14px;
-  left: 10px;
-  right: 10px;
+/* Large stage — the star of the screen; describes the current selection (or the
+   typical reference before a pick) in real-world terms. Grows to fill space. */
+.ls-q-stage {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  border-radius: 20px;
+  padding: 22px 20px;
+  margin-bottom: 16px;
   display: flex;
-  justify-content: space-between;
-  pointer-events: none;
+  flex-direction: column;
+  justify-content: center;
 }
-.ls-dot {
-  width: 14px;
-  height: 14px;
+.ls-stage-eyebrow {
+  font-size: 21px;
+  font-weight: 850;
+  letter-spacing: -.02em;
+  line-height: 1.2;
+  margin-bottom: 14px;
+}
+.ls-stage-ref,
+.ls-stage-figure { font-size: 15px; line-height: 1.5; margin: 0 0 12px; }
+.ls-stage-ref strong,
+.ls-stage-figure strong { font-weight: 850; }
+.ls-stage-lead {
+  font-size: 24px;
+  font-weight: 850;
+  letter-spacing: -.02em;
+  line-height: 1.15;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ls-stage-pct { font-size: 12px; font-weight: 850; }
+.ls-stage-desc { font-size: 14px; line-height: 1.6; color: var(--text); margin: 0 0 12px; }
+.ls-stage-desc:last-child { margin-bottom: 0; }
+.ls-stage-prompt { font-size: 15px; font-weight: 800; color: var(--muted); margin: 0; }
+
+/* Bottom selector: tappable 4-notch scale (all labels shown, hollow until
+   tapped — no misleading fill) + Next. */
+.ls-q-selector { flex: 0 0 auto; padding-bottom: 4px; }
+.ls-notches {
+  position: relative;
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.ls-notches::before {
+  content: "";
+  position: absolute;
+  top: 9px;
+  left: 12.5%;
+  right: 12.5%;
+  height: 2px;
+  background: var(--line);
+}
+.ls-notch {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.ls-notch-dot {
+  position: relative;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: var(--card);
   border: 2px solid var(--line);
+  transition: background .12s, border-color .12s, transform .12s;
 }
-.ls-dot.active { background: var(--accent); border-color: var(--accent); }
+.ls-notch.active .ls-notch-dot { background: var(--accent); border-color: var(--accent); transform: scale(1.12); }
+.ls-notch-label { font-size: 10px; font-weight: 700; color: var(--muted); text-align: center; line-height: 1.2; }
+.ls-notch.active .ls-notch-label { color: var(--accent); }
+
+/* Slider used by the Review step (kept from the original ls- section). */
 .ls-slider {
   width: 100%;
   position: relative;
@@ -1267,19 +1328,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   padding: 0;
   accent-color: var(--accent);
   background: transparent;
-}
-.ls-track-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  color: var(--muted);
-  margin-top: 4px;
-}
-
-.ls-notch-detail {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
 }
 
 /* Income mode toggle (twin of the wizard's seg-toggle) */

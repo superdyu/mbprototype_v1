@@ -178,91 +178,106 @@ function lsRenderQuestion(ls) {
       <button class="button secondary" type="button" onclick="lsSkipTap()">Skip</button>
     </div>`;
 
-  const body = stepQ.kind === "base"
+  const parts = stepQ.kind === "base"
     ? lsRenderBaseQuestion(stepQ, ls, ctx)
     : lsRenderFollowup(stepQ, ls, ctx);
 
+  // Full-height column: header at top, a large stage that grows to fill the
+  // space, and the selector pinned at the bottom (the room the survey has spare).
   return `
-    <div class="ls-wrap">
+    <div class="ls-q-layout">
       ${header}
-      ${body}
+      <div class="ls-q-stage">${parts.stage}</div>
+      <div class="ls-q-selector">${parts.selector}</div>
       ${ls.skipPromptOpen ? lsRenderSkipModal() : ""}
     </div>
   `;
 }
 
+// Friendly lowercase noun for the "most people spend … on {noun}" reference.
+const LS_CAT_NOUN = {
+  housing:   "housing",
+  food:      "food & groceries",
+  transport: "getting around",
+  lifestyle: "fun & extras",
+  bills:     "fixed bills",
+  debt:      "debt payments",
+  health:    "health & learning"
+};
+
+// Base spending question → { stage, selector } for the question shell.
+// No pre-pick: until a notch is tapped the stage shows the typical figure as a
+// reference and Next stays disabled (the no-center, always-lean rule).
 function lsRenderBaseQuestion(stepQ, ls, ctx) {
   const q = LS_BASE_QUESTIONS.find(x => x.cat === stepQ.cat);
   const notch = ls.answers.base[q.cat];
   const answered = typeof notch === "number";
   const sel = answered ? q.notches[notch - 1] : null;
   const range = answered ? lsNotchRange(q.cat, notch, ctx) : null;
+  const baseline = Math.round(lsBaselineFor(q.cat, ctx));
+  const noun = LS_CAT_NOUN[q.cat] || "this";
 
-  return `
-    <div class="card ls-stage">${h(q.stageLabel)}</div>
-    <h2 class="title" style="font-size:19px;">${h(q.title)}</h2>
-    <p class="subtitle" style="margin-bottom:14px;">${h(q.sub)}</p>
-
-    <div class="card">
-      <!-- 4-notch discrete slider. onchange (fires on release), never oninput:
-           a full re-render mid-drag would destroy the thumb being dragged. -->
-      <div class="ls-track-wrap">
-        <div class="ls-track-dots">${[1,2,3,4].map(n => `
-          <span class="ls-dot ${answered && notch === n ? "active" : ""}"></span>`).join("")}
-        </div>
-        <input type="range" class="ls-slider" min="1" max="4" step="1"
-               value="${answered ? notch : 2}" ${answered ? "" : 'data-unset="1"'}
-               onchange="lsSetNotch('${h(q.cat)}', +this.value)">
-      </div>
-      <div class="ls-track-labels">
-        <span>${h(q.notches[0].label)}</span><span>${h(q.notches[3].label)}</span>
-      </div>
-
-      ${answered ? `
-      <div class="ls-notch-detail">
-        <div class="row" style="margin-bottom:6px;">
-          <span style="font-weight:850;">${h(sel.label)}</span>
-          <span style="font-weight:850;color:${sel.pct >= 0 ? "var(--accent)" : "var(--good)"};">
-            ${sel.pct >= 0 ? "+" : "−"}${Math.round(Math.abs(sel.pct) * 100)}% vs most people
-          </span>
-        </div>
-        <p class="helper" style="margin:0 0 8px;line-height:1.5;">${h(sel.desc)}</p>
-        <p class="helper" style="margin:0;font-weight:700;">
-          For you that looks like ≈ ${budgetFmt(range[0])}–${budgetFmt(range[1])}/mo
-        </p>
-      </div>` : `
-      <p class="helper" style="margin-top:10px;">Slide to where you honestly land — or Skip to use the average for your area.</p>`}
+  const stage = answered ? `
+    <div class="ls-stage-eyebrow">${h(q.title)}</div>
+    <div class="ls-stage-lead" style="color:${sel.pct >= 0 ? "var(--accent)" : "var(--good)"};">
+      ${h(sel.label)}
+      <span class="ls-stage-pct">${sel.pct >= 0 ? "+" : "−"}${Math.round(Math.abs(sel.pct) * 100)}% vs most people like you</span>
     </div>
+    <p class="ls-stage-desc">${h(sel.desc)}</p>
+    <p class="ls-stage-figure">For you, that's about <strong>${budgetFmt(range[0])}–${budgetFmt(range[1])}</strong>/mo.</p>
+  ` : `
+    <div class="ls-stage-eyebrow">${h(q.title)}</div>
+    <p class="ls-stage-ref">Most people like you spend about <strong>${budgetFmt(baseline)}</strong>/mo on ${h(noun)}.</p>
+    <p class="ls-stage-desc">${h(q.sub)}</p>
+    <p class="ls-stage-prompt">Where do you honestly land?</p>
+  `;
 
+  const selector = `
+    <div class="ls-notches">
+      ${q.notches.map((nn, i) => `
+        <button type="button" class="ls-notch${answered && notch === i + 1 ? " active" : ""}"
+                onclick="lsSetNotch('${h(q.cat)}', ${i + 1})">
+          <span class="ls-notch-dot"></span>
+          <span class="ls-notch-label">${h(nn.label)}</span>
+        </button>`).join("")}
+    </div>
     <button class="button primary full" type="button" ${answered ? "" : "disabled"}
             onclick="lsNext()">Next</button>
   `;
+
+  return { stage, selector };
 }
 
+// Follow-up: 3-option "this / that / neither" → { stage, selector }. Same shell:
+// prompt in the stage, options pinned at the bottom, picked option's real-world
+// description fills the stage.
 function lsRenderFollowup(stepQ, ls, ctx) {
   const fu = LS_FOLLOWUPS.find(x => x.id === stepQ.id);
   const chosen = ls.answers.followups[fu.id];
+  const answered = typeof chosen === "number";
 
-  return `
-    <div class="card ls-stage">Lifestyle Stage</div>
-    <h2 class="title" style="font-size:19px;">${h(fu.title)}</h2>
-    <p class="subtitle" style="margin-bottom:14px;">One more on this — it moves real dollars.</p>
+  const stage = answered ? `
+    <div class="ls-stage-eyebrow">${h(fu.title)}</div>
+    <div class="ls-stage-lead">${h(fu.options[chosen].label)}</div>
+    <p class="ls-stage-desc">${h(fu.options[chosen].desc)}</p>
+  ` : `
+    <div class="ls-stage-eyebrow">${h(fu.title)}</div>
+    <p class="ls-stage-ref">One more on this — it moves real dollars.</p>
+    <p class="ls-stage-prompt">Which fits best?</p>
+  `;
 
-    <div class="card">
-      ${fu.options.map((opt, i) => `
-        <button class="button ${chosen === i ? "primary" : "secondary"} full"
-                style="margin-bottom:8px;text-align:left;"
-                type="button" onclick="lsSetFollowup('${h(fu.id)}', ${i})">
-          ${h(opt.label)}
-        </button>
-      `).join("")}
-      ${typeof chosen === "number" ? `
-      <p class="helper" style="margin:6px 0 0;line-height:1.5;">${h(fu.options[chosen].desc)}</p>` : ""}
-    </div>
-
-    <button class="button primary full" type="button" ${typeof chosen === "number" ? "" : "disabled"}
+  const selector = `
+    ${fu.options.map((opt, i) => `
+      <button class="button ${chosen === i ? "primary" : "secondary"} full"
+              style="margin-bottom:8px;text-align:left;"
+              type="button" onclick="lsSetFollowup('${h(fu.id)}', ${i})">
+        ${h(opt.label)}
+      </button>`).join("")}
+    <button class="button primary full" type="button" ${answered ? "" : "disabled"}
             onclick="lsNext()">Next</button>
   `;
+
+  return { stage, selector };
 }
 
 function lsSetNotch(cat, notch) {
