@@ -155,6 +155,45 @@ const LP_SCRIPTS = {
 // Consolidated there so navigation resets them cleanly and render.js doesn't
 // need to read globals from lesson.js.
 
+// ─── Timing model ─────────────────────────────────────────────────────────────
+// Playback runs on a virtual elapsed-time clock (seconds) against a per-line
+// CUE map — cues[i] = the second at which subtitle line i starts — plus a
+// TOTAL track length. Lessons with real narration timing get an LP_TIMINGS
+// entry; every other lesson synthesizes an even LP_DEFAULT_LINE_SEC-per-line
+// cadence, so ONE engine drives them all and every lesson gets the continuous
+// bar. When the real audio is embedded later, swap the virtual clock for an
+// <audio> element (elapsed ← currentTime, total ← duration, play/pause/seek/
+// rate → the element) — the cue→line and elapsed→bar derivation below is
+// unchanged.
+const LP_DEFAULT_LINE_SEC = 10;
+
+const LP_TIMINGS = {
+  // APR lesson ("How Interest Builds") — TurboScribe cue times from the real
+  // narration, one per LP_SCRIPTS line. `total` is a PLACEHOLDER (last cue +
+  // ~7s tail); replace it with the audio's true duration once the file lands.
+  "interest-builds": { cues: [0, 6, 11, 20, 26, 35, 41, 46], total: 53 }
+};
+
+// Returns { cues, total } for a lesson. Uses the authored timing when it exists
+// and matches the line count; otherwise synthesizes even cues so the continuous
+// engine still applies (preserving today's ~10s/line pace).
+function lpTimingFor(lessonId, lineCount) {
+  const t = LP_TIMINGS[lessonId];
+  if (t && t.cues && t.cues.length === lineCount) return t;
+  const cues = [];
+  for (let i = 0; i < lineCount; i++) cues.push(i * LP_DEFAULT_LINE_SEC);
+  return { cues, total: Math.max(1, lineCount) * LP_DEFAULT_LINE_SEC };
+}
+
+// Index of the line currently being spoken: the last cue whose start ≤ elapsed.
+function lpIndexForElapsed(elapsed, cues) {
+  let idx = 0;
+  for (let i = 0; i < cues.length; i++) {
+    if (elapsed >= cues[i]) idx = i; else break;
+  }
+  return idx;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function lpFmtTime(sec) {
   const m = Math.floor(sec / 60);
@@ -172,16 +211,15 @@ function lpHighlight(index) {
 }
 
 function lpUpdateProgress() {
-  // Normalize so index 0 = 0% and last index = 100%
-  const last = Math.max(1, state.lessonPlayback.sentences.length - 1);
-  const pct  = (state.lessonPlayback.index / last) * 100;
-  const bar  = document.getElementById("lp-bar");
-  if (bar) bar.style.width = Math.min(100, pct).toFixed(1) + "%";
+  // Bar + time come from the real elapsed clock, so both move continuously
+  // rather than jumping once per line.
+  const lp  = state.lessonPlayback;
+  const pct = lp.total > 0 ? (lp.elapsed / lp.total) * 100 : 0;
+  const bar = document.getElementById("lp-bar");
+  if (bar) bar.style.width = Math.max(0, Math.min(100, pct)).toFixed(2) + "%";
 
-  const total   = state.lessonPlayback.sentences.length * 10; // total seconds at 1×
-  const elapsed = Math.round((state.lessonPlayback.index / last) * total);
-  const timeEl  = document.getElementById("lp-time");
-  if (timeEl) timeEl.textContent = lpFmtTime(elapsed);
+  const timeEl = document.getElementById("lp-time");
+  if (timeEl) timeEl.textContent = lpFmtTime(Math.round(lp.elapsed));
 }
 
 function lpUpdatePlayBtn() {
@@ -204,42 +242,68 @@ function lpLockNext() {
 }
 
 // ─── Playback controls ────────────────────────────────────────────────────────
-function lpAdvance() {
-  if (state.lessonPlayback.index < state.lessonPlayback.sentences.length - 1) {
-    state.lessonPlayback.index++;
-    lpHighlight(state.lessonPlayback.index);
-    lpUpdateProgress();
-  } else {
-    // Reached end: snap to 100%, unlock Next, switch to replay icon
-    state.lessonPlayback.ended = true;
-    lpPause();
-    const bar = document.getElementById("lp-bar");
-    if (bar) bar.style.width = "100%";
-    const timeEl = document.getElementById("lp-time");
-    if (timeEl) timeEl.textContent = lpFmtTime(Math.round(state.lessonPlayback.sentences.length * 10 / state.lessonPlayback.speed));
-    lpUnlockNext();
-    lpUpdatePlayBtn();
+// The ticker fires ~10×/sec, advancing the virtual clock by real elapsed time ×
+// speed. Subtitle line and bar are both derived from `elapsed` each tick, so the
+// bar creeps continuously and the line flips exactly at its cue.
+const LP_TICK_MS = 100;
+
+function lpTick() {
+  const lp = state.lessonPlayback;
+  const now = Date.now();
+  const dt  = (now - lp.lastTick) / 1000;
+  lp.lastTick = now;
+  lp.elapsed += dt * lp.speed;
+
+  if (lp.elapsed >= lp.total) {
+    lpEnd();
+    return;
   }
+  const idx = lpIndexForElapsed(lp.elapsed, lp.cues);
+  if (idx !== lp.index) {
+    lp.index = idx;
+    lpHighlight(idx);
+  }
+  lpUpdateProgress();
+}
+
+// Reached the end: snap to 100%, unlock Next, switch to replay icon.
+function lpEnd() {
+  const lp = state.lessonPlayback;
+  lp.elapsed = lp.total;
+  lp.index   = lp.sentences.length - 1;
+  lp.ended   = true;
+  lpHighlight(lp.index);
+  lpPause();
+  const bar = document.getElementById("lp-bar");
+  if (bar) bar.style.width = "100%";
+  const timeEl = document.getElementById("lp-time");
+  if (timeEl) timeEl.textContent = lpFmtTime(Math.round(lp.total));
+  lpUnlockNext();
+  lpUpdatePlayBtn();
 }
 
 function lpPlay() {
-  if (state.lessonPlayback.playing || state.lessonPlayback.ended) return;
-  state.lessonPlayback.playing = true;
-  state.lessonPlayback.timer = setInterval(lpAdvance, Math.round(10000 / state.lessonPlayback.speed));
+  const lp = state.lessonPlayback;
+  if (lp.playing || lp.ended) return;
+  lp.playing  = true;
+  lp.lastTick = Date.now();
+  lp.timer    = setInterval(lpTick, LP_TICK_MS);
   lpUpdatePlayBtn();
 }
 
 function lpPause() {
-  state.lessonPlayback.playing = false;
-  if (state.lessonPlayback.timer) { clearInterval(state.lessonPlayback.timer); state.lessonPlayback.timer = null; }
+  const lp = state.lessonPlayback;
+  lp.playing = false;
+  if (lp.timer) { clearInterval(lp.timer); lp.timer = null; }
   lpUpdatePlayBtn();
 }
 
-// Stops playback and clears the interval. Called by render.js before destroying
-// the lesson DOM so the timer doesn't fire against stale element references.
+// Stops playback and clears the ticker. Called by render.js before destroying
+// the lesson DOM so the ticker doesn't fire against stale element references.
 function lpStopPlayback() {
-  state.lessonPlayback.playing = false;
-  if (state.lessonPlayback.timer) { clearInterval(state.lessonPlayback.timer); state.lessonPlayback.timer = null; }
+  const lp = state.lessonPlayback;
+  lp.playing = false;
+  if (lp.timer) { clearInterval(lp.timer); lp.timer = null; }
 }
 
 function lpTogglePlay() {
@@ -252,39 +316,39 @@ function lpPlayAction() {
 }
 
 function lpRestart() {
-  state.lessonPlayback.index  = 0;
-  state.lessonPlayback.ended  = false;
+  const lp = state.lessonPlayback;
+  lp.index   = 0;
+  lp.elapsed = 0;
+  lp.ended   = false;
   lpLockNext();
   lpHighlight(0);
   lpUpdateProgress();
   lpPlay();
 }
 
-// ±1 sentence per skip (10s at 1×)
+// ±1 line per skip: seek the clock to the prev/next line's cue time.
 function lpSkip(delta) {
-  if (state.lessonPlayback.ended && delta < 0) {
+  const lp = state.lessonPlayback;
+  if (lp.ended && delta < 0) {
     // Allow seeking backward after end — clears ended state
-    state.lessonPlayback.ended = false;
+    lp.ended = false;
     lpLockNext();
   }
-  state.lessonPlayback.index = Math.max(0, Math.min(state.lessonPlayback.sentences.length - 1, state.lessonPlayback.index + delta));
-  lpHighlight(state.lessonPlayback.index);
+  lp.index   = Math.max(0, Math.min(lp.sentences.length - 1, lp.index + delta));
+  lp.elapsed = lp.cues[lp.index] || 0;
+  lpHighlight(lp.index);
   lpUpdateProgress();
   lpUpdatePlayBtn();
-  if (state.lessonPlayback.playing) {
-    clearInterval(state.lessonPlayback.timer);
-    state.lessonPlayback.timer = setInterval(lpAdvance, Math.round(10000 / state.lessonPlayback.speed));
-  }
+  // Ticker keeps running; reset lastTick so the jump isn't counted as elapsed.
+  if (lp.playing) lp.lastTick = Date.now();
 }
 
 function lpSetSpeed(s) {
-  state.lessonPlayback.speed = s;
+  const lp = state.lessonPlayback;
+  lp.speed = s;
   const btn = document.getElementById("lp-speed");
   if (btn) btn.textContent = s + "×";
-  if (state.lessonPlayback.playing) {
-    clearInterval(state.lessonPlayback.timer);
-    state.lessonPlayback.timer = setInterval(lpAdvance, Math.round(10000 / state.lessonPlayback.speed));
-  }
+  // The ticker reads lp.speed live each tick — no interval reset needed.
 }
 
 function lpCycleSpeed() {
@@ -300,12 +364,15 @@ function lpMountHook(wasPlaying) {
 }
 
 function lpSeekTo(index) {
-  state.lessonPlayback.index = Math.max(0, Math.min(state.lessonPlayback.sentences.length - 1, parseInt(index) || 0));
-  state.lessonPlayback.ended = false;
+  const lp = state.lessonPlayback;
+  lp.index   = Math.max(0, Math.min(lp.sentences.length - 1, parseInt(index) || 0));
+  lp.elapsed = lp.cues[lp.index] || 0;
+  lp.ended   = false;
   lpLockNext();
-  lpHighlight(state.lessonPlayback.index);
+  lpHighlight(lp.index);
   lpUpdateProgress();
   lpUpdatePlayBtn();
+  if (lp.playing) lp.lastTick = Date.now();
 }
 
 // ─── Renderer ─────────────────────────────────────────────────────────────────
@@ -327,25 +394,29 @@ function renderLesson() {
   // Reset state only when a different lesson is opened. Same-lesson re-renders
   // (e.g. admin stage-style toggle, debouncedRender) preserve playback position.
   if (state.lessonPlayback.currentLessonId !== lesson.id) {
-    state.lessonPlayback.currentLessonId = lesson.id;
-    state.lessonPlayback.sentences       = LP_SCRIPTS[lesson.id] || [
+    const lp = state.lessonPlayback;
+    lp.currentLessonId = lesson.id;
+    lp.sentences       = LP_SCRIPTS[lesson.id] || [
       "This lesson's content will be added soon.",
       "Tap Next to proceed to the quiz."
     ];
-    state.lessonPlayback.index           = 0;
-    state.lessonPlayback.playing         = false;
-    state.lessonPlayback.ended           = false;
-    state.lessonPlayback.completed       = false;
-    state.lessonPlayback.speed           = 1;
-    state.lessonPlayback.pendingAutoPlay = true;
-    if (state.lessonPlayback.timer) { clearInterval(state.lessonPlayback.timer); state.lessonPlayback.timer = null; }
+    const timing       = lpTimingFor(lesson.id, lp.sentences.length);
+    lp.cues            = timing.cues;
+    lp.total           = timing.total;
+    lp.index           = 0;
+    lp.elapsed         = 0;
+    lp.playing         = false;
+    lp.ended           = false;
+    lp.completed       = false;
+    lp.speed           = 1;
+    lp.pendingAutoPlay = true;
+    if (lp.timer) { clearInterval(lp.timer); lp.timer = null; }
   }
 
   const isWaveform  = state.lpStageStyle !== "clean";
-  const totalTime   = lpFmtTime(Math.round(state.lessonPlayback.sentences.length * 10));
-  const last        = Math.max(1, state.lessonPlayback.sentences.length - 1);
-  const barPct      = (state.lessonPlayback.index / last * 100).toFixed(1);
-  const elapsed     = lpFmtTime(Math.round((state.lessonPlayback.index / last) * state.lessonPlayback.sentences.length * 10));
+  const totalTime   = lpFmtTime(Math.round(state.lessonPlayback.total));
+  const barPct      = (state.lessonPlayback.total > 0 ? state.lessonPlayback.elapsed / state.lessonPlayback.total * 100 : 0).toFixed(2);
+  const elapsed     = lpFmtTime(Math.round(state.lessonPlayback.elapsed));
   const playLabel   = state.lessonPlayback.ended ? "↻" : (state.lessonPlayback.playing ? "⏸" : "▶");
   const waveClass   = `lp-wave${isWaveform ? "" : " lp-wave-hidden"}${state.lessonPlayback.playing && !state.lessonPlayback.ended ? " playing" : ""}`;
 
@@ -414,7 +485,7 @@ function renderLessonAdmin() {
                oninput="lpSeekTo(this.value)">
       </div>
       <p class="helper" style="margin-top:6px;">
-        ${state.lessonPlayback.sentences.length} sentences · ~${lpFmtTime(Math.round(state.lessonPlayback.sentences.length * 10))} at 1×
+        ${state.lessonPlayback.sentences.length} sentences · ${lpFmtTime(Math.round(state.lessonPlayback.total))} total
       </p>
     </div>
   `;

@@ -327,7 +327,9 @@
   height: 100%;
   background: var(--accent);
   border-radius: 999px;
-  transition: width 0.4s linear;
+  /* Short linear transition interpolates between the ~100ms clock ticks so the
+     bar reads as continuous motion rather than 10 discrete steps per second. */
+  transition: width 0.12s linear;
 }
 
 /* Cards */

@@ -51,6 +51,10 @@ const state = {
   // and render.js doesn't need to import globals from lesson.js.
   lessonPlayback: {
     sentences:       [],
+    cues:            [],      // start second of each subtitle line (set on lesson open)
+    total:           0,       // track length in seconds
+    elapsed:         0,       // virtual playback clock in seconds
+    lastTick:        0,       // Date.now() of the last ticker fire, for dt
     index:           0,
     playing:         false,
     ended:           false,
@@ -902,7 +906,7 @@ function resetUserData() {
   state.goalsV2              = { clockOffsetDays: 0, goals: [], draft: null, selectedGoalId: null, celebrationDismissedAt: null };
   state.pendingBaseline      = null;
   state.lifestyleSurvey      = { phase: "basics", qIndex: 0, basics: { gender: "", age: "", householdSize: 1, zip: "", incomeMode: "annual", grossIncome: "" }, answers: { base: {}, followups: {} }, tweaks: {}, skipPromptSeen: false, skipPromptOpen: false };
-  state.lessonPlayback       = { sentences: [], index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1 };
+  state.lessonPlayback       = { sentences: [], cues: [], total: 0, elapsed: 0, lastTick: 0, index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1 };
   state.chat                 = { messages: [] };
   render();
 }
