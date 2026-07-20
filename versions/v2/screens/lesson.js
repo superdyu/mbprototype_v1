@@ -161,18 +161,33 @@ const LP_SCRIPTS = {
 // TOTAL track length. Lessons with real narration timing get an LP_TIMINGS
 // entry; every other lesson synthesizes an even LP_DEFAULT_LINE_SEC-per-line
 // cadence, so ONE engine drives them all and every lesson gets the continuous
-// bar. When the real audio is embedded later, swap the virtual clock for an
-// <audio> element (elapsed ← currentTime, total ← duration, play/pause/seek/
-// rate → the element) — the cue→line and elapsed→bar derivation below is
-// unchanged.
+// bar. Lessons in LP_AUDIO additionally drive the clock off a real <audio>
+// element (elapsed ← currentTime, total ← duration, play/pause/seek/rate → the
+// element); the cue→line and elapsed→bar derivation below is unchanged.
 const LP_DEFAULT_LINE_SEC = 10;
 
 const LP_TIMINGS = {
   // APR lesson ("How Interest Builds") — TurboScribe cue times from the real
-  // narration, one per LP_SCRIPTS line. `total` is a PLACEHOLDER (last cue +
-  // ~7s tail); replace it with the audio's true duration once the file lands.
-  "interest-builds": { cues: [0, 6, 11, 20, 26, 35, 41, 46], total: 53 }
+  // narration, one per LP_SCRIPTS line. `total` is a fallback for the first
+  // render frame; the true length comes from audio.duration once metadata
+  // loads (the WAV decodes to ~51.24s).
+  "interest-builds": { cues: [0, 6, 11, 20, 26, 35, 41, 46], total: 51.2 }
 };
+
+// Lessons with a narration audio file. The src resolves relative to the app
+// document (versions/<name>/index.html). When present, playback is driven by
+// the real audio element instead of the virtual clock; absent → virtual clock.
+const LP_AUDIO = {
+  "interest-builds": "assets/audio/interest-builds.wav"
+};
+
+function lpHasAudio() {
+  return !!LP_AUDIO[state.lessonPlayback.currentLessonId];
+}
+
+function lpAudioEl() {
+  return document.getElementById("lp-audio");
+}
 
 // Returns { cues, total } for a lesson. Uses the authored timing when it exists
 // and matches the line count; otherwise synthesizes even cues so the continuous
@@ -249,10 +264,17 @@ const LP_TICK_MS = 100;
 
 function lpTick() {
   const lp = state.lessonPlayback;
-  const now = Date.now();
-  const dt  = (now - lp.lastTick) / 1000;
-  lp.lastTick = now;
-  lp.elapsed += dt * lp.speed;
+  const audio = lpHasAudio() ? lpAudioEl() : null;
+  if (audio) {
+    // Audio mode: the element IS the clock. Read its playhead each tick so the
+    // bar stays smooth (timeupdate alone fires too coarsely).
+    lp.elapsed = audio.currentTime;
+  } else {
+    const now = Date.now();
+    const dt  = (now - lp.lastTick) / 1000;
+    lp.lastTick = now;
+    lp.elapsed += dt * lp.speed;
+  }
 
   if (lp.elapsed >= lp.total) {
     lpEnd();
@@ -285,6 +307,15 @@ function lpEnd() {
 function lpPlay() {
   const lp = state.lessonPlayback;
   if (lp.playing || lp.ended) return;
+  const audio = lpHasAudio() ? lpAudioEl() : null;
+  if (audio) {
+    const p = audio.play();
+    // Browsers block autoplay without a user gesture; if play() rejects, fall
+    // back to a paused/▶ state so the user's next tap starts it cleanly.
+    if (p && typeof p.catch === "function") {
+      p.catch(function() { lpPause(); });
+    }
+  }
   lp.playing  = true;
   lp.lastTick = Date.now();
   lp.timer    = setInterval(lpTick, LP_TICK_MS);
@@ -294,6 +325,8 @@ function lpPlay() {
 function lpPause() {
   const lp = state.lessonPlayback;
   lp.playing = false;
+  const audio = lpHasAudio() ? lpAudioEl() : null;
+  if (audio) audio.pause();
   if (lp.timer) { clearInterval(lp.timer); lp.timer = null; }
   lpUpdatePlayBtn();
 }
@@ -303,6 +336,8 @@ function lpPause() {
 function lpStopPlayback() {
   const lp = state.lessonPlayback;
   lp.playing = false;
+  const audio = lpHasAudio() ? lpAudioEl() : null;
+  if (audio) audio.pause();
   if (lp.timer) { clearInterval(lp.timer); lp.timer = null; }
 }
 
@@ -320,6 +355,8 @@ function lpRestart() {
   lp.index   = 0;
   lp.elapsed = 0;
   lp.ended   = false;
+  const audio = lpHasAudio() ? lpAudioEl() : null;
+  if (audio) audio.currentTime = 0;
   lpLockNext();
   lpHighlight(0);
   lpUpdateProgress();
@@ -336,6 +373,8 @@ function lpSkip(delta) {
   }
   lp.index   = Math.max(0, Math.min(lp.sentences.length - 1, lp.index + delta));
   lp.elapsed = lp.cues[lp.index] || 0;
+  const audio = lpHasAudio() ? lpAudioEl() : null;
+  if (audio) audio.currentTime = lp.elapsed;
   lpHighlight(lp.index);
   lpUpdateProgress();
   lpUpdatePlayBtn();
@@ -348,7 +387,9 @@ function lpSetSpeed(s) {
   lp.speed = s;
   const btn = document.getElementById("lp-speed");
   if (btn) btn.textContent = s + "×";
-  // The ticker reads lp.speed live each tick — no interval reset needed.
+  const audio = lpHasAudio() ? lpAudioEl() : null;
+  if (audio) audio.playbackRate = s;
+  // Virtual mode: the ticker reads lp.speed live each tick — nothing more to do.
 }
 
 function lpCycleSpeed() {
@@ -358,8 +399,29 @@ function lpCycleSpeed() {
 
 // Called by render.js after lesson screen HTML is written to DOM.
 // Auto-starts fresh loads; resumes playback interrupted by a mid-play re-render.
+// For audio lessons, wires the freshly-created <audio> element (it's recreated
+// on every render) to the elapsed clock before (re)starting playback.
 function lpMountHook(wasPlaying) {
-  if (state.lessonPlayback.pendingAutoPlay) { state.lessonPlayback.pendingAutoPlay = false; lpPlay(); }
+  const lp = state.lessonPlayback;
+  const audio = lpHasAudio() ? lpAudioEl() : null;
+  if (audio) {
+    audio.playbackRate = lp.speed;
+    const applyPosition = function() { try { audio.currentTime = lp.elapsed || 0; } catch (e) {} };
+    // audio.duration is authoritative; refresh total + bar/label once it's in.
+    audio.addEventListener("loadedmetadata", function() {
+      if (isFinite(audio.duration) && audio.duration > 0) {
+        lp.total = audio.duration;
+        const t = document.getElementById("lp-total");
+        if (t) t.textContent = lpFmtTime(Math.round(lp.total));
+        lpUpdateProgress();
+      }
+      applyPosition();
+    });
+    audio.addEventListener("ended", function() { if (!lp.ended) lpEnd(); });
+    // Metadata may already be cached (re-render): apply the saved position now.
+    if (audio.readyState >= 1) applyPosition();
+  }
+  if (lp.pendingAutoPlay) { lp.pendingAutoPlay = false; lpPlay(); }
   else if (wasPlaying)    { lpPlay(); }
 }
 
@@ -368,6 +430,8 @@ function lpSeekTo(index) {
   lp.index   = Math.max(0, Math.min(lp.sentences.length - 1, parseInt(index) || 0));
   lp.elapsed = lp.cues[lp.index] || 0;
   lp.ended   = false;
+  const audio = lpHasAudio() ? lpAudioEl() : null;
+  if (audio) audio.currentTime = lp.elapsed;
   lpLockNext();
   lpHighlight(lp.index);
   lpUpdateProgress();
@@ -420,8 +484,11 @@ function renderLesson() {
   const playLabel   = state.lessonPlayback.ended ? "↻" : (state.lessonPlayback.playing ? "⏸" : "▶");
   const waveClass   = `lp-wave${isWaveform ? "" : " lp-wave-hidden"}${state.lessonPlayback.playing && !state.lessonPlayback.ended ? " playing" : ""}`;
 
+  const audioSrc = LP_AUDIO[lesson.id] || "";
+
   return `
     <div class="lp-layout">
+      ${audioSrc ? `<audio id="lp-audio" src="${h(audioSrc)}" preload="auto"></audio>` : ""}
 
       <!-- TOP: staging area — accent bg, waveform, title, back button -->
       <div class="lp-stage">
@@ -458,7 +525,7 @@ function renderLesson() {
           <div class="lp-progress">
             <div class="lp-progress-fill" id="lp-bar" style="width:${barPct}%;"></div>
           </div>
-          <span class="lp-time-label">${totalTime}</span>
+          <span id="lp-total" class="lp-time-label">${totalTime}</span>
         </div>
         <button class="button full" id="lp-next-btn" type="button" onclick="go('quiz')" ${(state.lessonPlayback.ended || state.lessonPlayback.completed) ? "" : "disabled"}>Next</button>
       </div>
