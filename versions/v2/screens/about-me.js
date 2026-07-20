@@ -44,7 +44,9 @@ function renderAboutMe() {
   const acctLast = acctEntries.length > 0 ? acctEntries[acctEntries.length - 1].date : null;
   const debtLast = debtEntries.length > 0 ? debtEntries[debtEntries.length - 1].date : null;
 
-  const showBudgetPrompt = budgetStatus === "empty";
+  // No budget yet → show the empty square-grid "promise" view with the builder
+  // choice, instead of the input hub (which needs a budget to be useful).
+  if (budgetStatus === "empty") return renderAboutMeEmpty();
 
   return `
     <div class="home-header">
@@ -108,33 +110,39 @@ function renderAboutMe() {
       </div>
       <div class="helper" style="font-size:18px;">›</div>
     </div>
-
-    ${showBudgetPrompt ? `
-    <!-- Budget prompt overlay (shown when budget empty) -->
-    <div id="aboutMeBudgetOverlay" style="position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;">
-      <div class="card" style="max-width:340px;width:100%;padding:24px;">
-        <div style="font-weight:850;font-size:17px;margin-bottom:8px;">Let's get started</div>
-        <p class="helper" style="margin-bottom:18px;">Build your budget so Money Buddy can estimate your monthly plan — or jump straight into setting a goal.</p>
-        <!-- Routes to budgetSetup, not straight into the wizard: with no budget
-             yet, that screen shows the Lifestyle Survey vs 2 Minute Budget
-             choice, and launchBabyBudget() there owns the flow context. -->
-        <button class="button primary full" type="button" style="margin-bottom:10px;"
-                onclick="dismissAboutMeOverlay(); go('budgetSetup');">
-          Build my budget →
-        </button>
-        <button class="button secondary full" type="button"
-                onclick="dismissAboutMeOverlay(); goGoalsEntry();">
-          Set up a goal
-        </button>
-      </div>
-    </div>
-    ` : ""}
   `;
 }
 
-function dismissAboutMeOverlay() {
-  var el = document.getElementById('aboutMeBudgetOverlay');
-  if (el) el.remove();
+// Empty-budget view: the square-grid budget breakdown, ghosted (a preview of
+// what building a budget produces), with the 2 Minute Budget vs Lifestyle
+// Survey choice floating over it. renderBudgetChoice() and renderBudgetTileGhost()
+// live in budget-setup.js (shared global namespace).
+function renderAboutMeEmpty() {
+  const cats = state.budget.categories;
+  return `
+    <div class="home-header">
+      <div>
+        <h1 class="title">Budget</h1>
+        <p class="subtitle">Build your budget to see your monthly picture.</p>
+      </div>
+    </div>
+
+    <div class="budget-ghost-wrap">
+      <div class="budget-tile-grid" style="opacity:.22;pointer-events:none;filter:blur(2px);">
+        ${cats.map(cat => renderBudgetTileGhost(cat)).join("")}
+      </div>
+      <div class="budget-ghost-overlay">
+        <div class="budget-ghost-card" style="max-width:340px;">
+          ${renderBudgetChoice()}
+          <p class="helper" style="text-align:center;font-size:11px;margin:2px 0 0;">
+            or
+            <button type="button" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:700;text-decoration:underline;cursor:pointer;padding:0;"
+                    onclick="goGoalsEntry()">set up a goal instead</button>
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 // Persistent entry into the Goals V2 flow (popup button + Goals card both route

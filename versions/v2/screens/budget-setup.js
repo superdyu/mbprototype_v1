@@ -215,6 +215,23 @@ function renderBudgetTile(cat, income) {
   `;
 }
 
+// Non-interactive placeholder tile for the empty-budget "promise" grid — the
+// square-grid layout, no real numbers yet. Reused by the Budget tab empty state.
+function renderBudgetTileGhost(cat) {
+  const isFull = cat.key === "savings";
+  return `
+    <div class="budget-tile${isFull ? " budget-tile-full" : ""}">
+      <div class="budget-tile-top">
+        <span class="budget-tile-icon">${cat.icon}</span>
+        <span class="budget-tile-name">${h(cat.name)}</span>
+      </div>
+      <div class="budget-tile-amount">$—</div>
+      <div class="budget-signal-pill on-track">On track</div>
+      <div class="budget-tile-delta muted">vs peers</div>
+    </div>
+  `;
+}
+
 function renderBudgetGoalsMini() {
   const milestones = (state.milestones || []).slice(0, 2);
   if (!milestones.length) return "";
