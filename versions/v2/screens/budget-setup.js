@@ -54,7 +54,8 @@ function renderBudgetSetup() {
 // signal pills, Savings & Goals with milestone mini-rows. Adapted to the
 // current flows: builtWith stamp, launchBabyBudget(), the Lifestyle Survey
 // rebuild link, and the monthly-update entry; hex colors → theme tokens.
-function renderBudgetDashboard(status) {
+function renderBudgetDashboard(status, opts) {
+  const asTab  = !!(opts && opts.asTab);   // hosted as the Budget tab → no back button
   const b      = state.budget;
   const income = budgetMonthlyIncome();
   const trend  = budgetMonthlyNetSpend();
@@ -82,16 +83,17 @@ function renderBudgetDashboard(status) {
 
     <!-- Header -->
     <div class="card" style="margin-bottom:14px;">
-      <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:12px;"
-              type="button" onclick="goBackFromBudgetSetup()">← ${state.flowOrigin === 'myProgress' ? 'My Progress' : 'Budget'}</button>
-      <div class="row" style="margin-bottom:2px;">
+      ${asTab ? "" : `<button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:12px;"
+              type="button" onclick="goBackFromBudgetSetup()">← ${state.flowOrigin === 'myProgress' ? 'My Progress' : 'Budget'}</button>`}
+      <div class="row" style="margin-bottom:2px;align-items:center;">
         <h1 class="title" style="margin:0;font-size:20px;">Monthly Budget</h1>
-        <span class="helper">${h(b.profile.zip)} · ${b.profile.householdSize} person${b.profile.householdSize > 1 ? "s" : ""}</span>
+        <!-- Rebuild the whole budget from scratch (gated by the update-confirm flow). -->
+        <button class="button secondary" style="font-size:11px;padding:6px 12px;" type="button"
+                onclick="launchBabyBudget()">Edit&nbsp;✎</button>
       </div>
-      ${b.builtWith ? `
       <p class="helper" style="margin:2px 0 0;font-size:11px;">
-        Built with ${h(BUDGET_BUILDER_LABELS[b.builtWith] || b.builtWith)}${b.builtDate ? ` &middot; ${h(b.builtDate)}` : ""}
-      </p>` : ""}
+        ${h(b.profile.zip)} · ${b.profile.householdSize} person${b.profile.householdSize > 1 ? "s" : ""}${b.builtWith ? ` · Built with ${h(BUDGET_BUILDER_LABELS[b.builtWith] || b.builtWith)}${b.builtDate ? ` (${h(b.builtDate)})` : ""}` : ""}
+      </p>
 
       <!-- Income / Plan / Remaining -->
       <div class="budget-header-grid">
@@ -166,24 +168,50 @@ function renderBudgetDashboard(status) {
     </div>
     ` : ""}
 
-    <!-- Footer actions -->
+    <!-- Footer actions (whole-budget Edit lives in the header; these are the
+         adjacent flows: results, monthly logging, alt rebuild, lifestyle). -->
     <div style="padding-bottom:8px;">
       <div class="row" style="gap:10px;margin-bottom:10px;">
-        <button class="button primary" type="button" onclick="launchBabyBudget()">Edit Budget</button>
-        <button class="button secondary" type="button" onclick="go('myProgress')">See Results</button>
+        <button class="button primary" type="button" onclick="go('myProgress')">See Results</button>
+        <button class="button secondary" type="button" onclick="startMonthlyUpdate()">Update Now</button>
       </div>
-      <!-- The other builder stays reachable for updates — any builder can
-           rebuild the budget; the update-confirm screen gates the override. -->
       <p class="helper" style="font-size:11px;margin:0 0 6px;">
-        Or rebuild it a different way:
+        Rebuild a different way:
         <button type="button" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:700;text-decoration:underline;cursor:pointer;padding:0;"
                 onclick="startLifestyleSurvey()">Lifestyle Survey</button>
       </p>
       <p class="helper" style="margin:0;font-size:11px;">
-        Tip: Log your balances each month to see if your plan still fits.
-        <button class="button secondary small" style="margin-left:6px;"
-                type="button" onclick="startMonthlyUpdate()">Update now</button>
+        <button type="button" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:700;text-decoration:underline;cursor:pointer;padding:0;"
+                onclick="go('lifestyle')">Lifestyle profile</button>
+        — small answers sharpen your budget (${lifestyleCompletedCount()}/5).
       </p>
+    </div>
+  `;
+}
+
+// Ghosted header for the empty-budget "promise" view — the same income / plan /
+// remaining layout as the live dashboard, but unpopulated ($—, empty bar).
+function renderBudgetGhostHeader() {
+  const metrics = [["Income", "/month"], ["Plan", "budgeted"], ["Remaining", "vs income"]];
+  return `
+    <div class="card" style="margin-bottom:14px;">
+      <div class="row" style="margin-bottom:2px;">
+        <h1 class="title" style="margin:0;font-size:20px;">Monthly Budget</h1>
+      </div>
+      <div class="budget-header-grid">
+        ${metrics.map(([label, sub]) => `
+        <div class="budget-header-metric">
+          <div class="budget-header-label">${label}</div>
+          <div class="budget-header-value">$—</div>
+          <div class="budget-header-sub">${sub}</div>
+        </div>`).join("")}
+      </div>
+      <div style="margin-top:10px;">
+        <div class="progress" style="height:8px;border-radius:99px;overflow:hidden;background:var(--bar);">
+          <div class="progress-fill" style="width:0%;background:var(--accent);border-radius:99px;height:100%;"></div>
+        </div>
+        <div class="helper" style="margin-top:4px;text-align:right;">— of income allocated</div>
+      </div>
     </div>
   `;
 }
