@@ -8,10 +8,45 @@ over abstraction, but keep the file structure clean (see Architecture).
 
 The repo root is a **passcode + version-selector gate** (`index.html`, `gate/`),
 not the app itself. Each major iteration is a fully self-contained, independently
-runnable copy of the app under `versions/<name>/` (currently `versions/v1/` and
-`versions/v2/`). `versions/v1/` is a frozen milestone — don't edit it. New work
-happens in the newest version folder (currently `versions/v2/`) unless told
-otherwise.
+runnable copy of the app under `versions/<name>/` (currently `versions/v1/`,
+`versions/v2/`, and `versions/v3/`). New work happens in the newest version
+folder (currently `versions/v3/`) unless told otherwise.
+
+**Versions are test variants, not a migration path.** Each is a separate thing a
+tester can pick at the gate; none supersedes another. So `versions/v1/` and
+`versions/v2/` are both **frozen — don't edit them.** Nothing in v3 needs to stay
+backward-compatible with either.
+
+### ⚠ v3 is being built and differs from v1/v2 in ways that matter
+
+If you are working in `versions/v3/`, **read these three before touching code**:
+
+| File | What it is |
+|---|---|
+| `plan.md` (repo root) | **Locked decisions L1–L19** in §0 — do not re-litigate them. Plus the rationale, spec contradictions, and review logs |
+| `versions/v3/docs/architecture.md` | Cross-cutting contracts: data loading, the 12-category taxonomy, nav/back-stack, top bar, audio pipeline, standing rules |
+| `versions/v3/PROGRESS.md` | The build checklist. Start at `Current state:`, work the first unchecked item |
+
+The v3 spec is at `v3 Files/spec/` (unpacked, read-only). Its
+`docs/DECISIONS.md` beats every other spec doc; `plan.md` §0 beats *that* where
+they conflict — several spec decisions are deliberately overridden.
+
+**How v3 diverges from the descriptions further down this file:**
+
+- **`data/*.json` + generated `data/*.js`** — v3 loads real seed data. v1/v2 have
+  none (all data inline in `state.js`). The app runs on `file://`, so `fetch()`
+  is blocked; JSON ships wrapped in a `<script>`-loadable assignment (L13).
+- **Flat 12-category budget taxonomy** replaces v2's 5 nested buckets. It's the
+  join key across four data files — see `architecture.md` §4.
+- **Both v2 budget builders are gone** (2 Minute Budget iframe + Lifestyle
+  Survey), replaced by one 6-question wizard. The `budget-baseline.js` seam
+  survives as its only adapter (L6).
+- **Goals V2 is not in v3** — rebuilt to a much simpler model (L3). The
+  `js/goals/` module and `docs/goals-module-plan.md` describe **v2 only**.
+- **Nav is 5 tabs + a shared top bar** with a contextual home/back slot and
+  per-stack history (L5). v2's `activeTabFor` inverts.
+- **`docs/goals-module-plan.md` and the "Goals V2 module" section below apply to
+  `versions/v2/` only.**
 
 - **`versions/v1/` is enforced-locked, not just documented.** Every file and
   directory under it is chmod'd read-only (`a-w`), and a local
@@ -30,9 +65,10 @@ otherwise.
   intentionally-not-secure speed bump — don't add real auth here.
 - **Adding a new major version:** copy the newest `versions/<name>/` folder to
   `versions/<next>/`, then add one entry to the `VERSIONS` array in
-  `gate/gate.js`. Also update the "currently `versions/v1/` and `versions/v2/`"
-  / "newest version folder (currently `versions/v2/`)" prose above and in "How
-  to run / preview" below — they name specific folders and go stale otherwise.
+  `gate/gate.js`. Also update the folder-naming prose above and in "How to run /
+  preview" below — it names specific folders and goes stale otherwise. (If the
+  target folder already exists, use `cp -R versions/<name>/. versions/<next>/`
+  — the trailing dot copies *contents*; without it you get a nested folder.)
 - Everything below this section (Architecture, hard conventions, Goals V2,
   Testing) describes the structure **inside a single version folder** — paths
   like `css/variables.css` or `js/state.js` are relative to whichever
@@ -44,9 +80,13 @@ otherwise.
 - Preview the gate: open the repo-root `index.html` (passcode `1337`), then pick
   a version.
 - Preview a specific version directly (skip the gate): open
-  `versions/v1/index.html` or `versions/v2/index.html`. The app renders into a
-  phone frame on the left and an **Admin Tools** panel on the right (manual
-  controls + time travel + state inspector for the active screen).
+  `versions/v1/index.html`, `versions/v2/index.html`, or
+  `versions/v3/index.html`. The app renders into a phone frame on the left and an
+  **Admin Tools** panel on the right (manual controls + time travel + state
+  inspector for the active screen).
+- **The app is opened as a `file://` page — there is no dev server.** `fetch()`
+  and `XMLHttpRequest` are blocked against local files. Any data a version needs
+  at runtime must load via a `<script>` tag, not a network call.
 - In a headless environment with no browser, you cannot visually QA. Instead:
   - Syntax-check any file you touch: `node --check path/to/file.js`
   - For logic, write a temporary DOM-stubbed Node smoke harness that loads the
@@ -63,11 +103,13 @@ otherwise.
   browser (no modules/imports). Function and `const` names share one global
   namespace, so keep names unique and prefixed by feature (e.g. `goals*`, `gc*`,
   `gt*`).
-- **Load order matters** and is fixed in `index.html`: dev error-catcher → data
-  (`state`, `utils`) → shared components → Goals V2 module → screen renderers →
-  shared UI (`badge-ring`, `nav`) → core engine (`wizard-bridge`, `render`,
-  `navigation`). A file may only call things defined in earlier `<script>` tags
-  at load time (calls inside functions are fine — they run after full load).
+- **Load order matters** and is fixed in `index.html`. v1/v2: dev error-catcher →
+  data (`state`, `utils`) → shared components → Goals V2 module → screen
+  renderers → shared UI (`badge-ring`, `nav`) → core engine (`wizard-bridge`,
+  `render`, `navigation`). v3 drops the Goals V2 and `wizard-bridge` blocks and
+  adds a **seed-data block first** (`config.js` → `data/*.js`), since everything
+  else reads from it. A file may only call things defined in earlier `<script>`
+  tags at load time (calls inside functions are fine — they run after full load).
 
 ### File map
 - `css/variables.css` — theme tokens with **light AND dark** scopes:
@@ -82,20 +124,23 @@ otherwise.
 - `js/render.js` — `render()`, `renderScreen()`, `renderAdmin()`,
   `adminSubtitle()`, and the admin jump list. `js/navigation.js` — `go(screen)`,
   history.
-- `js/budget-baseline.js` — **the budget-builder seam**: both builders (2 Minute
-  Budget and Lifestyle Survey) convert their flow into one normalized baseline
-  and save through `submitBudgetBaseline()` — latest save wins, updates gated by
-  the shared old→new confirm screen. Builders never write `state.budget`
-  directly; each has its own adapter (`js/wizard-bridge.js` for the 2MB iframe
-  payload, `js/lifestyle-survey-bridge.js` for survey answers). Keep new
+- `js/budget-baseline.js` — **the budget-builder seam**: a builder converts its
+  flow into one normalized baseline and saves through `submitBudgetBaseline()` —
+  latest save wins, updates gated by the shared old→new confirm screen. Builders
+  never write `state.budget` directly; each has its own adapter. Keep new
   builders behind this seam.
+  *(v2 has two builders — 2 Minute Budget via `js/wizard-bridge.js` and Lifestyle
+  Survey via `js/lifestyle-survey-bridge.js`. v3 has one: the 6-question
+  lifestyle wizard. The seam is identical in both.)*
 - `components/` — reusable visualizations (`thermometer`, `badge-ring`,
   `sprint-timeline`, `streak-counter`, `nav`). Reuse these; don't re-implement
   charts inline.
 - `screens/` — one file per screen, each exporting a `render<Screen>()` and an
   optional `render<Screen>Admin()`.
-- `js/goals/` — the **Goals V2** module (see below). `docs/goals-module-plan.md`
-  is its authoritative spec.
+- `js/goals/` — the **Goals V2** module (see below), **v2 only**.
+  `docs/goals-module-plan.md` is its authoritative spec. v3 has no such folder.
+- **v3 only:** `data/` (spec JSON + generated `.js` wrappers), `js/config.js`
+  (`SKIP_ONBOARDING`), `docs/` (architecture + spec-coverage), `PROGRESS.md`.
 
 ### Adding a new screen (wiring checklist)
 1. `screens/<name>.js` with `render<Name>()`.
@@ -120,10 +165,11 @@ otherwise.
   `debouncedRender()`.)
 - **Always `h()`-escape** any string interpolated into an HTML template literal.
 
-## Goals V2 module (`js/goals/` + `screens/goal-*.js`)
+## Goals V2 module — **`versions/v2/` only**
 
-A gamified goal-setting system. Spec: `docs/goals-module-plan.md` (authoritative —
-follow it for any module change). Core model:
+`js/goals/` + `screens/goal-*.js`. A gamified goal-setting system. Spec:
+`docs/goals-module-plan.md` (authoritative for v2). **Not present in v3** — see
+`plan.md` L3 for the simpler v3 goals model that replaces it. Core model:
 
 - A goal = a **frozen `baseline`** + an **append-only `events[]`** array. Sprints,
   pace, cohort standings, achievements are all **derived by pure functions at
@@ -159,3 +205,8 @@ analogies when teaching, but default to task-first execution. Direct feedback, n
 filler. **Commit and push are one action** (always `git push` right after a
 commit). Flag L/XL-scope changes before starting and include one suggested scope
 reduction. Linux/WSL only — never touch `/mnt/c/Windows` or Program Files paths.
+
+When a decision changes, update **both** the decision record and the prose that
+references it. Two review passes on the v3 planning docs found that every stale
+statement was a paragraph that had been correct when written and was never
+revisited after a later decision landed. Grep for the decision's id.
