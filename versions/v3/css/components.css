@@ -1020,7 +1020,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 }
 
 /* ─── Lifestyle question chain ────────────────────────────────────────────────
-   Ported from bb_template.html. Used by lifestyle-chain.js.
+   Ported from the retired 2MB wizard. Used by lifestyle-chain.js.
 */
 .lifestyle-img-box {
   width: 100%;
@@ -1381,4 +1381,14 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   justify-content: center;
   padding: 24px;
   z-index: 100;
+}
+
+
+/* ─── Disabled nav tab (D33) ──────────────────────────────────────────────────
+   Marketplace is visible in the nav but does nothing in the prototype. Greyed
+   and non-interactive rather than hidden — the tab is meant to be SEEN. */
+.tab-disabled {
+  opacity: .38;
+  cursor: not-allowed;
+  pointer-events: none;
 }

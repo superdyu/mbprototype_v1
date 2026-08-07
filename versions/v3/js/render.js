@@ -34,12 +34,8 @@ function adminSubtitle() {
   if (state.screen === "reward")         return "Last reward output (read-only).";
   if (state.screen === "myDebts")        return "Manage debt instruments, add or remove entries.";
   if (state.screen === "debtAnalyzer")   return "Adjust extra payment, toggle debts in/out of simulation.";
-  if (state.screen === "goalCreate")     return "Goals V2 — creation wizard. Clock + navigate in the panel below.";
-  if (state.screen === "goalTracker")    return "Goals V2 — active tracker. Time-travel and simulate engagement.";
-  if (state.screen === "goalVault")      return "Goals V2 — victory vault. Completed goals and earned medals.";
   if (state.screen === "chat")           return "Chat mock — keyword matching, not AI. Routes listed below.";
   if (state.screen === "budgetUpdateConfirm") return "Old → new budget comparison — gates every builder update.";
-  if (state.screen === "lifestyleSurvey")    return "Lifestyle Survey builder — placeholder questions, real seam.";
   return "Manual controls for this wireframe screen.";
 }
 
@@ -49,8 +45,6 @@ function renderScreen() {
   if (state.screen === "aboutMe")           return renderAboutMe();
   if (state.screen === "budgetSetup")       return renderBudgetSetup();
   if (state.screen === "budgetUpdateConfirm") return renderBudgetUpdateConfirm();
-  if (state.screen === "lifestyleSurvey")    return renderLifestyleSurvey();
-  if (state.screen === "babyBudget")        return renderBabyBudget();
   if (state.screen === "myProgress")        return renderMyProgress();
   if (state.screen === "lifestyle")         return renderLifestyle();
   if (state.screen === "lifestyleChain")    return renderLifestyleChain();
@@ -76,9 +70,6 @@ function renderScreen() {
   if (state.screen === "chat")              return renderChat();
   if (state.screen === "myDebts")           return renderMyDebts();
   if (state.screen === "debtAnalyzer")      return renderDebtAnalyzer();
-  if (state.screen === "goalCreate")        return renderGoalCreate();
-  if (state.screen === "goalTracker")       return renderGoalTracker();
-  if (state.screen === "goalVault")         return renderGoalVault();
   console.warn("[MoneyBuddy] renderScreen: unknown screen →", state.screen);
   return renderHome();
 }
@@ -96,15 +87,10 @@ function renderAdmin() {
   if (state.screen === "aboutMe")       return renderAboutMeAdmin();
   if (state.screen === "analysis")      return renderAboutMeAdmin();   // legacy history redirect
   if (state.screen === "budgetSetup")   return renderBudgetAdmin();
-  if (state.screen === "babyBudget")    return renderBabyBudgetAdmin();
   if (state.screen === "budgetCategory") return renderBudgetCategoryAdmin();
   if (state.screen === "myDebts")       return renderMyDebtsAdmin();
   if (state.screen === "debtAnalyzer")  return renderDebtAnalyzerAdmin();
-  if (state.screen === "goalCreate")    return renderGoalCreateAdmin();
-  if (state.screen === "goalTracker")   return renderGoalTrackerAdmin();
-  if (state.screen === "goalVault")     return renderGoalVaultAdmin();
   if (state.screen === "chat")          return renderChatAdmin();
-  if (state.screen === "lifestyleSurvey") return renderLifestyleSurveyAdmin();
 
   return `
     <div class="admin-card">
@@ -113,11 +99,11 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="go(this.value)">
-          ${["streak","home","aboutMe","budgetSetup","babyBudget","myProgress","lifestyle","lifestyleChain",
+          ${["streak","home","aboutMe","budgetSetup","myProgress","lifestyle","lifestyleChain",
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
              "goals","learn","topic","lesson","quiz","simulation","marketplace",
              "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
-             "goalCreate","goalTracker","goalVault","chat","budgetUpdateConfirm","lifestyleSurvey"].map(s => `
+             "chat","budgetUpdateConfirm"].map(s => `
             <option value="${s}" ${state.screen === s ? "selected" : ""}>${s}</option>
           `).join("")}
         </select>
@@ -135,7 +121,6 @@ function render() {
   const lpWasPlaying = state.lessonPlayback.playing;
   lpStopPlayback();
 
-  screenRoot.classList.toggle("baby-budget-mode", state.screen === "babyBudget");
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");
   screenRoot.classList.toggle("streak-mode",      state.screen === "streak");
   screenRoot.classList.toggle("chat-mode",        state.screen === "chat");
@@ -146,7 +131,7 @@ function render() {
   navRoot.innerHTML     = renderNav();
   const hasNav = !!navRoot.innerHTML;
   // Hide navRoot and clear the 78px bottom reservation when no nav is shown.
-  // screenRoot's CSS default is bottom:78px; lesson-mode and baby-budget-mode
+  // screenRoot's CSS default is bottom:78px; lesson-mode and streak-mode
   // override it via class; all other no-nav screens need the inline reset.
   navRoot.style.display  = hasNav ? "" : "none";
   screenRoot.style.bottom = hasNav ? "" : "0";
@@ -163,13 +148,6 @@ function render() {
   const expandTab = document.getElementById("adminExpandTab");
   if (expandTab) expandTab.style.display = state.adminCollapsed ? "flex" : "none";
 
-  if (state.screen === "babyBudget") mountBabyBudget();
-
-  // Send current theme to BB iframe on every render (live toggle while wizard is open)
-  const bbLive = document.getElementById("babyBudgetFrame");
-  if (bbLive && bbLive.dataset.loaded === "true") {
-    try { bbLive.contentWindow.postMessage({ type: "bb-theme", colorMode: state.settings.colorMode }, "*"); } catch(e) {}
-  }
   if (state.screen === "reward")     initRewardAnimations();
 
   // Restore search input focus after render so typing mid-search doesn't lose cursor.

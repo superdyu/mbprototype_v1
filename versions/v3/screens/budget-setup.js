@@ -15,8 +15,7 @@
 //   Entry: Budget tab → Budget card; Budget tab empty-state overlay;
 //          home task card "Build your starter budget"
 //          Chat: budget/planning keyword route when a budget already exists
-//   Exit:  ← Budget; 2 Minute Budget card / Edit Budget → babyBudget screen;
-//          Lifestyle Survey card / rebuild link → lifestyleSurvey screen;
+//   Exit:  ← Budget; "Build my budget" → startBudgetBuilder() (Phase 2 wizard);
 //          See Results → myProgress; Update now → monthly update flow
 //
 // STATES
@@ -52,8 +51,8 @@ function renderBudgetSetup() {
 // budget.js renderBudgetComplete/renderBudgetTile): header metrics, allocation
 // bar, plan-vs-trend gap signal, category tile grid with peer-comparison
 // signal pills, Savings & Goals with milestone mini-rows. Adapted to the
-// current flows: builtWith stamp, launchBabyBudget(), the Lifestyle Survey
-// rebuild link, and the monthly-update entry; hex colors → theme tokens.
+// current flows: builtWith stamp, startBudgetBuilder(), and the monthly-update
+// entry; hex colors → theme tokens.
 function renderBudgetDashboard(status, opts) {
   const asTab  = !!(opts && opts.asTab);   // hosted as the Budget tab → no back button
   const b      = state.budget;
@@ -70,14 +69,14 @@ function renderBudgetDashboard(status, opts) {
       <div class="card" style="background:var(--warn-bg);border-color:var(--warn-border);margin-bottom:14px;">
         <p style="font-size:13px;font-weight:850;margin:0 0 3px;">Your budget may be outdated</p>
         <p class="helper" style="margin:0 0 10px;">Last updated ${h(b.profile.lastUpdated || "a while ago")}. Enter updated balances to refresh your picture.</p>
-        <button class="button secondary" type="button" onclick="launchBabyBudget()">Update Now</button>
+        <button class="button secondary" type="button" onclick="startBudgetBuilder()">Update Now</button>
       </div>
     ` : ""}
     ${status === "checkup" ? `
       <div class="card" style="background:var(--accent-soft);border-color:var(--accent-border);margin-bottom:14px;">
         <p style="font-size:13px;font-weight:850;margin:0 0 3px;">Time for a spending check-in</p>
         <p class="helper" style="margin:0 0 10px;">Compare your actual spending to your budget plan — takes 2 minutes.</p>
-        <button class="button secondary" type="button" onclick="launchBabyBudget()">Start Check-in</button>
+        <button class="button secondary" type="button" onclick="startBudgetBuilder()">Start Check-in</button>
       </div>
     ` : ""}
 
@@ -89,7 +88,7 @@ function renderBudgetDashboard(status, opts) {
         <h1 class="title" style="margin:0;font-size:20px;">Monthly Budget</h1>
         <!-- Rebuild the whole budget from scratch (gated by the update-confirm flow). -->
         <button class="button secondary" style="font-size:11px;padding:6px 12px;" type="button"
-                onclick="launchBabyBudget()">Edit&nbsp;✎</button>
+                onclick="startBudgetBuilder()">Edit&nbsp;✎</button>
       </div>
       <p class="helper" style="margin:2px 0 0;font-size:11px;">
         ${h(b.profile.zip)} · ${b.profile.householdSize} person${b.profile.householdSize > 1 ? "s" : ""}${b.builtWith ? ` · Built with ${h(BUDGET_BUILDER_LABELS[b.builtWith] || b.builtWith)}${b.builtDate ? ` (${h(b.builtDate)})` : ""}` : ""}
@@ -175,11 +174,6 @@ function renderBudgetDashboard(status, opts) {
         <button class="button primary" type="button" onclick="go('myProgress')">See Results</button>
         <button class="button secondary" type="button" onclick="startMonthlyUpdate()">Update Now</button>
       </div>
-      <p class="helper" style="font-size:11px;margin:0 0 6px;">
-        Rebuild a different way:
-        <button type="button" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:700;text-decoration:underline;cursor:pointer;padding:0;"
-                onclick="startLifestyleSurvey()">Lifestyle Survey</button>
-      </p>
       <p class="helper" style="margin:0;font-size:11px;">
         <button type="button" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:700;text-decoration:underline;cursor:pointer;padding:0;"
                 onclick="go('lifestyle')">Lifestyle profile</button>
@@ -275,43 +269,26 @@ function renderBudgetGoalsMini() {
   `;
 }
 
-// ─── First-time setup: pick how to build the budget ──────────────────────────
-// Only rendered when status === "empty". Two side-by-side cards so the choice
-// reads as a fork, not a list. Pros/cons are the point — the two paths trade
-// speed against thinking, and the user should see that before picking. Both
-// builders converge on the same normalized baseline (js/budget-baseline.js) —
-// two doors, one budget.
+// ─── First-time setup: start the budget ──────────────────────────────────────
+// Was a two-card fork (2 Minute Budget vs Lifestyle Survey). L6 retired both in
+// favour of one 6-question lifestyle wizard, so there is no longer a choice to
+// present — a picker with one option is just a button. Phase 2 builds the wizard
+// and points startBudgetBuilder() at it; until then this opens the manual setup
+// below, which still produces a budget.
 function renderBudgetChoice() {
   return `
-    <div class="section-title" style="margin:0 0 6px;">How do you want to start?</div>
-    <p class="helper" style="margin-bottom:12px;">Two ways to the same place. Neither one is wrong.</p>
+    <div class="section-title" style="margin:0 0 6px;">Let's build your budget</div>
+    <p class="helper" style="margin-bottom:12px;">A few questions about how you live. No figures to guess at.</p>
 
-    <div style="display:flex;gap:10px;align-items:stretch;margin-bottom:12px;">
-
-      <!-- Lifestyle Survey (skeleton flow — placeholder questions) -->
-      <div class="card" style="flex:1;margin-bottom:0;display:flex;flex-direction:column;cursor:pointer;"
-           onclick="startLifestyleSurvey()">
-        <div class="pill" style="align-self:flex-start;font-size:9px;padding:2px 7px;margin-bottom:8px;">Guided</div>
-        <div class="task-title" style="margin-bottom:6px;">Lifestyle Survey</div>
-        <p class="task-desc" style="flex:1;">
-          Answer questions about how you live. We turn them into the numbers, so
-          you never have to guess at a figure.
-        </p>
-        <p class="helper" style="font-size:10px;margin:10px 0 0;">Slower &bull; No figures needed</p>
-      </div>
-
-      <!-- 2 Minute Budget -->
-      <div class="card" style="flex:1;margin-bottom:0;display:flex;flex-direction:column;cursor:pointer;border-color:var(--accent);"
-           onclick="launchBabyBudget()">
-        <div class="pill" style="align-self:flex-start;font-size:9px;padding:2px 7px;margin-bottom:8px;background:var(--accent);color:#fff;border-color:var(--accent);">Fastest</div>
-        <div class="task-title" style="margin-bottom:6px;">2 Minute Budget</div>
-        <p class="task-desc" style="flex:1;">
-          Know your rough numbers? Enter a few figures, drag the sliders, done.
-          Estimates are fine &mdash; you can change them later.
-        </p>
-        <p class="helper" style="font-size:10px;margin:10px 0 0;">~2 minutes &bull; Rough figures</p>
-      </div>
-
+    <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;cursor:pointer;border-color:var(--accent);"
+         onclick="startBudgetBuilder()">
+      <div class="pill" style="align-self:flex-start;font-size:9px;padding:2px 7px;margin-bottom:8px;background:var(--accent);color:#fff;border-color:var(--accent);">Guided</div>
+      <div class="task-title" style="margin-bottom:6px;">Build my budget</div>
+      <p class="task-desc" style="flex:1;">
+        Answer questions about how you live. We turn them into the numbers, so
+        you never have to guess at a figure.
+      </p>
+      <p class="helper" style="font-size:10px;margin:10px 0 0;">~2 minutes &bull; No figures needed</p>
     </div>
   `;
 }
@@ -326,10 +303,13 @@ function goBackFromBudgetSetup() {
   }
 }
 
-function launchBabyBudget() {
+// Phase 2 repoints this at the 6-question lifestyle wizard (L6). It must keep
+// writing through submitBudgetBaseline() — the seam survives, only the builder
+// behind it changed.
+function startBudgetBuilder() {
   state.flowOrigin        = state.flowOrigin || "aboutMe";
   state.postResultContext = "budget";
-  go("babyBudget");
+  go("budgetSetup");
 }
 
 function startMonthlyUpdate() {

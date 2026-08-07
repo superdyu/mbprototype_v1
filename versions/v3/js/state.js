@@ -19,7 +19,6 @@ const destinations = [
   ["streak",         "Streak Splash"],
   ["aboutMe",        "Budget"],
   ["budgetSetup",    "Budget Setup"],
-  ["babyBudget",     "2 Minute Budget"],
   ["myProgress",     "My Progress"],
   ["lifestyle",      "Lifestyle"],
   ["learn",          "Learn"],
@@ -29,10 +28,7 @@ const destinations = [
   ["quiz",           "Quiz"],
   ["simulation",     "Simulation"],
   ["marketplace",    "Marketplace"],
-  ["reward",         "Reward"],
-  ["goalCreate",     "Goal: Create"],
-  ["goalTracker",    "Goal: Tracker"],
-  ["goalVault",      "Goal: Victory Vault"]
+  ["reward",         "Reward"]
 ];
 
 const state = {
@@ -69,7 +65,6 @@ const state = {
   settings: { colorMode: "light" },
 
   // UI interaction state
-  babyStep: 0,
   selectedBadge: "Credit Cards",
   selectedOffer: "Cashback Credit Card",
 
@@ -83,8 +78,7 @@ const state = {
       description: "Create a rough first budget without connecting accounts.",
       cta: "Start",
       tab: "aboutMe",
-      // budgetSetup, not babyBudget: first-timers land on the setup choice
-      // (Lifestyle Survey vs 2 Minute Budget) rather than skipping into the wizard.
+      // budgetSetup is the budget hub; Phase 2's lifestyle wizard hangs off it.
       destination: "budgetSetup",
       completed: false
     },
@@ -679,7 +673,7 @@ const state = {
     // Which builder produced the current budget + when — the source stamp for
     // latest-wins consolidation (see js/budget-baseline.js). Shown on the
     // Budget screen as "Built with 2 Minute Budget · date".
-    builtWith: null,   // "2min" | "lifestyleSurvey" | null (never built)
+    builtWith: null,   // builder source id | null (never built). Phase 2 sets this
     builtDate: null,
 
     profile: {
@@ -843,14 +837,6 @@ const state = {
   // ── Commitments from post-result loop ────────────────────────────────────
   commitments: [],  // [{id, text, createdAt, goalId}]
 
-  // ── Lifestyle Survey (budget builder) session ─────────────────────────────
-  // Step position + answers for the survey flow (screens/lifestyle-survey.js).
-  // Persists across navigation so "Keep editing" on the update-confirm screen
-  // can return with answers intact. Placeholder content — see the screen file.
-  lifestyleSurvey: { phase: "basics", qIndex: 0,
-    basics: { gender: "", age: "", householdSize: 1, zip: "", incomeMode: "annual", grossIncome: "" },
-    answers: { base: {}, followups: {} }, tweaks: {}, skipPromptSeen: false, skipPromptOpen: false },
-
   // ── Pending budget baseline ───────────────────────────────────────────────
   // Set by submitBudgetBaseline() when a builder saves over an EXISTING budget:
   // the baseline parks here while the shared update-confirm screen shows the
@@ -859,20 +845,6 @@ const state = {
   // lifestyle answers?" re-run prompt was removed with this seam.
   pendingBaseline: null,
 
-  // ── Goals V2 module ───────────────────────────────────────────────────────
-  // Standalone goal-tracking module (see docs/goals-module-plan.md).
-  // A goal = frozen `baseline` + append-only `events[]`; sprints, cohort
-  // standings, pace, and achievements are all DERIVED at render time. The
-  // module reads host state only through js/goals/goals-bridge.js and never
-  // writes to budget/debts. clockOffsetDays drives the module's simulated
-  // clock (goalsTodayISO) — host screens keep real time.
-  goalsV2: {
-    clockOffsetDays: 0,        // sim-time offset, days (admin time travel)
-    goals: [],                 // GoalV2[] — single list, all statuses
-    draft: null,               // creation-wizard scratch; discarded on cancel
-    selectedGoalId: null,      // tracker's current goal id
-    celebrationDismissedAt: null
-  }
 };
 
 // Wipes user-entered profile data and re-renders. Called from admin panel.
@@ -903,9 +875,7 @@ function resetUserData() {
   state.nextAction           = null;
   state.monthlyUpdateGap     = null;
   state.editingGoalId        = null;
-  state.goalsV2              = { clockOffsetDays: 0, goals: [], draft: null, selectedGoalId: null, celebrationDismissedAt: null };
   state.pendingBaseline      = null;
-  state.lifestyleSurvey      = { phase: "basics", qIndex: 0, basics: { gender: "", age: "", householdSize: 1, zip: "", incomeMode: "annual", grossIncome: "" }, answers: { base: {}, followups: {} }, tweaks: {}, skipPromptSeen: false, skipPromptOpen: false };
   state.lessonPlayback       = { sentences: [], cues: [], total: 0, elapsed: 0, lastTick: 0, index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1 };
   state.chat                 = { messages: [] };
   render();

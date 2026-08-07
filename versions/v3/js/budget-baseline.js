@@ -13,7 +13,7 @@
 //
 // BASELINE SHAPE (the common profile — same values regardless of builder):
 //   {
-//     source:  "2min" | "lifestyleSurvey",
+//     source:  builder id (Phase 2: the lifestyle wizard),
 //     profile: { zip, gender, age, householdSize, incomeMode,
 //                grossMonthly, netMonthly },
 //     amounts: { housing, bills, food, transport, health, lifestyle,
@@ -26,7 +26,7 @@
 // and the canonical splits below are applied. `amounts` is always required.
 
 // Canonical rolled-up → per-cost splits. The 2 Minute Budget template carries
-// its own copy (HOUSING_SPLIT / BILLS_SPLIT in bb_template.html) because the
+// its own copy (the retired 2MB wizard had HOUSING_SPLIT / BILLS_SPLIT) because the
 // iframe can't reach these — the ratios are "literally the same" shared
 // knowledge and MUST stay in sync (old field defaults' proportions:
 // 2600/0/250 of 2850 and 250/350/85/70/100 of 855).
@@ -34,10 +34,10 @@ const BASELINE_HOUSING_SPLIT = [["housing", 0.912], ["housingExtras", 0], ["util
 const BASELINE_BILLS_SPLIT   = [["medical", 0.292], ["transportFixed", 0.409], ["phone", 0.099],
                                 ["internet", 0.082], ["otherFixed", 0.117]];
 
-const BUDGET_BUILDER_LABELS = {
-  "2min":            "2 Minute Budget",
-  "lifestyleSurvey": "Lifestyle Survey"
-};
+// Display label per builder source id, shown as "Built with X" on the budget
+// dashboard. Both v2 builders were retired in 0b (L6); Phase 2's lifestyle
+// wizard adds its own id here.
+const BUDGET_BUILDER_LABELS = {};
 
 // Display names for the 8 baseline amounts (host-side twin of the wizard's
 // BUCKETS labels — the iframe can't share code with us). Order matters: it's
@@ -143,7 +143,7 @@ function applyBudgetBaseline(baseline) {
   b.profile.lastUpdated = todayISO();
   // Home task joins on destination — budgetSetup is where the task now lands.
   state.tasks.forEach(t => {
-    if (t.destination === "budgetSetup" || t.destination === "babyBudget") t.completed = true;
+    if (t.destination === "budgetSetup") t.completed = true;
   });
 }
 

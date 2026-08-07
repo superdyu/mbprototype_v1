@@ -78,29 +78,14 @@ window.onunhandledrejection = function(e) {
 <script src="js/utils.js"></script>
 <!-- Chat keyword matcher — data/logic only (no DOM); screens/chat.js renders it -->
 <script src="js/chat-router.js"></script>
-<!-- Builder seam: normalized baseline both budget builders write through,
-     plus each builder's adapter (wizard-bridge loads later with core engine) -->
+<!-- Builder seam: the normalized baseline every budget builder writes through.
+     Phase 2's lifestyle wizard becomes its only adapter (L6). -->
 <script src="js/budget-baseline.js"></script>
-<!-- Survey content table must load before the bridge that reads it -->
-<script src="js/lifestyle-survey-content.js"></script>
-<script src="js/lifestyle-survey-bridge.js"></script>
 
 <!-- 2. Shared components (before screens that use them) -->
 <script src="components/thermometer.js"></script>
 <script src="components/streak-counter.js"></script>
 
-<!-- 2b. Goals V2 module (load order: tuning → time → bridge → autofill → catalog → engine → sprints → cohort → achievements → admin) -->
-<script src="js/goals/goals-tuning.js"></script>
-<script src="js/goals/goals-time.js"></script>
-<script src="js/goals/goals-bridge.js"></script>
-<script src="js/goals/goals-autofill.js"></script>
-<script src="js/goals/goals-catalog.js"></script>
-<script src="js/goals/goals-engine.js"></script>
-<script src="js/goals/goals-sprints.js"></script>
-<script src="js/goals/goals-cohort.js"></script>
-<script src="js/goals/goals-achievements.js"></script>
-<script src="js/goals/goals-admin.js"></script>
-<script src="components/sprint-timeline.js"></script>
 
 <!-- 3. Screen renderers -->
 <script src="screens/streak.js"></script>
@@ -108,11 +93,9 @@ window.onunhandledrejection = function(e) {
 <script src="screens/budget-utils.js"></script>
 <script src="screens/budget.js"></script>
 <script src="screens/budget-category.js"></script>
-<script src="screens/baby-budget.js"></script>
 <script src="screens/about-me.js"></script>
 <script src="screens/budget-setup.js"></script>
 <script src="screens/budget-update-confirm.js"></script>
-<script src="screens/lifestyle-survey.js"></script>
 <script src="screens/lifestyle.js"></script>
 <script src="screens/lifestyle-chain.js"></script>
 <script src="screens/account-balances.js"></script>
@@ -136,16 +119,12 @@ window.onunhandledrejection = function(e) {
 <script src="screens/chat.js"></script>
 <script src="screens/my-debts.js"></script>
 <script src="screens/debt-analyzer.js"></script>
-<script src="screens/goal-create.js"></script>
-<script src="screens/goal-tracker.js"></script>
-<script src="screens/goal-vault.js"></script>
 
 <!-- 3. Shared UI components -->
 <script src="components/badge-ring.js"></script>
 <script src="components/nav.js"></script>
 
 <!-- 4. Core engine -->
-<script src="js/wizard-bridge.js"></script>
 <script src="js/render.js"></script>
 <script src="js/navigation.js"></script>
 

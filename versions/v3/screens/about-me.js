@@ -64,14 +64,13 @@ function renderAboutMeEmpty() {
   `;
 }
 
-// Persistent entry into the Goals V2 flow (popup button + Goals card both route
-// here): straight to the creation wizard if there are no goals yet, otherwise to
-// the tracker on the most recent goal.
+// Persistent entry into goals (popup button + Goals card both route here).
+// Goals V2 was removed in Phase 0b (L3); Phase 5 rebuilds goals to the v3 model
+// — one strategic goal plus several tactical ones, with pace rather than raw
+// figures. Until then this routes to the surviving simple goals editor so the
+// path stays alive instead of dead-ending.
 function goGoalsEntry() {
-  var goals = state.goalsV2.goals || [];
-  if (goals.length === 0) { go('goalCreate'); return; }
-  state.goalsV2.selectedGoalId = goals[goals.length - 1].id;
-  go('goalTracker');
+  go('goals');
 }
 
 function lifestyleCompletedCount() {

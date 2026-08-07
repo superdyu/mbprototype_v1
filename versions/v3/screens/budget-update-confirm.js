@@ -109,10 +109,10 @@ function budgetUpdateConfirmApply() {
 
 // Back into whichever builder produced the pending baseline. Pending is KEPT —
 // the 2MB's prefill prefers it over the applied budget, so the user's slider
-// state survives the round trip (see mountBabyBudget in baby-budget.js).
+// state survives the round trip.
 function budgetUpdateKeepEditing() {
   const source = state.pendingBaseline && state.pendingBaseline.source;
-  go(source === "lifestyleSurvey" ? "lifestyleSurvey" : "babyBudget");
+  go("budgetSetup");   // single builder since L6; Phase 2 points this at the wizard
 }
 
 function budgetUpdateDiscard() {

@@ -1,9 +1,9 @@
 # v3 Build Progress
 
-**Current state:** **Phase 0a complete.** v3 forked from v2 (69 files,
-byte-identical), gate entry added, both `CLAUDE.md` files written, checkpoint
-verified. Nothing stripped yet — v3 is still a working clone of v2.
-Next action: **Phase 0b, strip.** — *updated 2026-08-07*
+**Current state:** **Phase 0b complete.** Both builders + Goals V2 retired
+(4,733 lines out; 61 JS files → 41). App boots clean in a DOM harness, all 29
+screens render. `lifestyle-chain.js` was **kept** — it is not a builder (see
+divergence). Next action: **Phase 0c, data.** — *updated 2026-08-07*
 
 > **Read before touching anything:**
 > 1. `plan.md` §0 — locked decisions **L1–L19**. Do not re-litigate them.
@@ -41,17 +41,23 @@ Next action: **Phase 0b, strip.** — *updated 2026-08-07*
 
 ## Phase 0b — Strip
 
-- [ ] Retire 2 Minute Budget (L6): `bb_template.html`, `build_bb.py`, `js/wizard-bridge.js`, `screens/baby-budget.js`, the `bb-complete`/`bb-back` listener in `navigation.js`, `.baby-budget-mode` CSS
-- [ ] Retire Lifestyle Survey (L6): `screens/lifestyle-survey.js`, `js/lifestyle-survey-bridge.js`, `js/lifestyle-survey-content.js`, `screens/lifestyle-chain.js`, `explorer/` + `survey-explorer.html`
-- [ ] Remove Goals V2 (L3): `js/goals/` (10 files), `screens/goal-create.js`, `goal-tracker.js`, `goal-vault.js`, `components/sprint-timeline.js`, `state.goalsV2`, goals admin routing
-- [ ] **Keep** `js/budget-baseline.js` — the `submitBudgetBaseline()` seam survives; the new wizard becomes its only adapter
-- [ ] Marketplace → visibly greyed out, inert (D33). `marketplaceDetail` stays admin-only (L14)
-- [ ] The ~18 unmentioned v2 screens (L14): left in place and in `destinations[]`, but removed from tab and daily-task routing
-- [ ] **Rewire `screens/about-me.js`** — `goGoalsEntry()` routes to `goalCreate`/`goalTracker` and reads `state.goalsV2`. The Budget tab is the entry point to goals, so this is a rewire to the v3 model, not a delete
-- [ ] **Collapse `screens/budget-setup.js`** — `renderBudgetChoice()` is a two-card "which builder?" picker. With one builder (L6) it has nothing to choose; same for the Budget empty-state builder popup
-- [ ] Prune `index.html` `<script>` tags and `render.js` switches for everything removed
-- [ ] Sweep the reference maps: Goals V2 is touched by 6 files outside `js/goals/`; the builders by 11 outside their own (`nav.js`, `utils.js`, `state.js`, `render.js`, `navigation.js`, `home.js`, `lifestyle.js`, `budget-setup.js`, `budget-update-confirm.js`, `budget-baseline.js`)
-- [ ] **Checkpoint:** app opens, no console errors, admin jump list still reaches every surviving screen
+- [x] Retire 2 Minute Budget (L6): `bb_template.html`, `build_bb.py`, `js/wizard-bridge.js`, `screens/baby-budget.js`, the `bb-complete`/`bb-back` listener in `navigation.js`, `.baby-budget-mode` CSS
+- [x] Retire Lifestyle Survey (L6): `screens/lifestyle-survey.js`, `js/lifestyle-survey-bridge.js`, `js/lifestyle-survey-content.js`, `explorer/` + `survey-explorer.html`
+      ↳ **`screens/lifestyle-chain.js` NOT deleted** — see divergence below
+- [x] Remove Goals V2 (L3): `js/goals/` (10 files), `screens/goal-create.js`, `goal-tracker.js`, `goal-vault.js`, `components/sprint-timeline.js`, `state.goalsV2`, goals admin routing
+- [x] **Keep** `js/budget-baseline.js` — the `submitBudgetBaseline()` seam survives; the new wizard becomes its only adapter
+      ↳ `BUDGET_BUILDER_LABELS` emptied — both source ids were dead. Phase 2 adds the wizard's
+- [x] Marketplace → visibly greyed out, inert (D33). `marketplaceDetail` stays admin-only (L14)
+      ↳ the *tab* is disabled (`.tab-disabled`), not the screen — admin jump still reaches it
+- [~] The ~18 unmentioned v2 screens (L14): left in place and in `destinations[]`, but removed from tab and daily-task routing
+      ↳ **partially deferred.** Kept and reachable, but the Budget hub still links several of them. Removing those links now would break the app before Phase 2 builds the replacement — lands in 0e (nav) and 2 (budget)
+- [x] **Rewire `screens/about-me.js`** — `goGoalsEntry()` now routes to the surviving simple `goals` editor until Phase 5 builds the v3 goals model
+- [x] **Collapse `screens/budget-setup.js`** — two-card picker → one "Build my budget" CTA calling `startBudgetBuilder()`, which Phase 2 repoints at the wizard
+      ↳ the plan named only `renderBudgetChoice()`; the sweep found **3 more live `launchBabyBudget()` handlers and a `startLifestyleSurvey()` link**
+- [x] Prune `index.html` `<script>` tags and `render.js` switches for everything removed
+- [x] Sweep the reference maps: Goals V2 is touched by 6 files outside `js/goals/`; the builders by 11 outside their own
+- [x] **Checkpoint:** app opens, no console errors, admin jump list still reaches every surviving screen
+      ↳ verified: 41/41 JS parse · 41/41 script tags resolve · every `renderScreen()` target defined · every `destinations[]` and jump-list screen routes · **DOM-stubbed boot harness loaded all 41 scripts and rendered all 29 screens with 0 throws** (harness deleted, not committed)
 
 ## Phase 0c — Data (L13)
 
@@ -249,6 +255,22 @@ Verified by clicking through, not by inspection.
 ## Divergence log
 
 One line per item that landed differently than specified, with the why.
+
+**0b — `lifestyle-chain.js` is not a budget builder; it was kept.** The 0b item
+listed it under "Retire Lifestyle Survey (L6)". Reading it first showed that is
+wrong: its entry point is `lifestyle.js → startLifestyleChain(themeKey)`, it
+writes to `state.lifestyleSubSliders`, and it never touches
+`submitBudgetBaseline()`. It is the lifestyle *theme-refinement* flow — a
+separate v2 feature, so **L14 keeps it**, not L6 deletes it. `plan.md` §6 hedged
+with "likely `screens/lifestyle-chain.js`"; the hedge was right to be there and
+the answer is no. Retired total is therefore 4,733 lines, not the ~2,400 the plan
+estimated — the Goals V2 module was bigger than the builders.
+
+**0b — the strip had more live call sites than the plan found.** `budget-setup.js`
+held three further `launchBabyBudget()` onclick handlers and a
+`startLifestyleSurvey()` rebuild link beyond the `renderBudgetChoice()` picker
+the plan named. All four would have thrown at runtime. Found by sweeping for
+dangling references *after* deleting, not by reading the plan.
 
 **0a — `node` does not exist on this machine.** Both `CLAUDE.md` files instructed
 `node --check` as "the only automated gate," but there is no node on PATH, no

@@ -48,12 +48,12 @@ function go(screen) {
 
 // Flow entry points that should return to Home when complete.
 // Set flowOrigin so the finish screen knows where to send the user back.
-const FLOW_ENTRY_SCREENS = ["babyBudget", "budgetSetup", "lifestyle", "lifestyleChain", "accountBalances", "debtBalances"];
+const FLOW_ENTRY_SCREENS = ["budgetSetup", "lifestyle", "lifestyleChain", "accountBalances", "debtBalances"];
 
 function taskGo(destination) {
   if (FLOW_ENTRY_SCREENS.includes(destination)) {
     state.flowOrigin = "home";
-    if (["babyBudget", "budgetSetup"].includes(destination)) {
+    if (destination === "budgetSetup") {
       state.postResultContext = "budget";
     }
   }
@@ -98,21 +98,6 @@ function goDebtAnalyzer() {
   go("debtAnalyzer");
 }
 
-function applyDebtDataFromWizard(rawDebts) {
-  // The current wizard build always sends debts: [] (it no longer collects
-  // debt instruments). An empty array must NOT wipe debts the user entered
-  // via My Debts — only a non-empty wizard payload replaces the debt list.
-  if (!Array.isArray(rawDebts) || rawDebts.length === 0) return;
-  var ts = Date.now();
-  state.budget.debts = rawDebts.map(function(d, i) {
-    return Object.assign({}, d, { id: "d_" + ts + "_" + i, expanded: false });
-  });
-  // Keep "Debt Minimum Payments" fixed-overhead line in sync
-  var minLine = state.budget.fixedOverhead.find(function(f) { return f.name === "Debt Minimum Payments"; });
-  if (minLine) minLine.amount = debtTotalMinPayment();
-  // Reset analyzer inclusion for new debt set
-  state.debtAnalyzerIncluded = {};
-}
 
 function selectOffer(name) {
   state.selectedOffer = name;
@@ -270,14 +255,14 @@ function completeLesson() {
 //
 // Tab → screens mapping (activeTabFor() in utils.js):
 //   home        → home
-//   aboutMe     → aboutMe, budgetSetup, babyBudget, budgetCategory, myDebts, debtAnalyzer,
+//   aboutMe     → aboutMe, budgetSetup, budgetCategory, myDebts, debtAnalyzer,
 //                 lifestyle, lifestyleChain, accountBalances, debtBalances, goals
 //   myProgress  → myProgress
 //   learn       → learn, topic, reward-preview, lesson, quiz, simulation
 //   marketplace → marketplace, marketplaceDetail
 //
 // Post-result flow (no tab active, no nav bar):
-//   2 Minute Budget complete / lifestyle save / monthly update complete
+//   budget save / lifestyle save / monthly update complete
 //     → postResult → nextAction → commit → finish → myProgress
 //   "Adjust it" path: nextAction → budgetSetup (mid-loop exit)
 //   "Compare more" path: nextAction → myProgress (mid-loop exit)
@@ -285,8 +270,7 @@ function completeLesson() {
 //   "Accept" / "Review later": nextAction → finish → myProgress (or flowOrigin)
 //
 // Screens with no nav bar (intentionally excluded from NAV_VISIBLE_SCREENS):
-//   babyBudget    — full-height iframe overrides layout; nav would conflict visually
-//   lesson        — full-height audiobook player; same CSS constraint as babyBudget
+//   lesson        — full-height audiobook player; full-bleed, no tab context
 //   quiz          — full-screen question flow; no tab context needed mid-quiz
 //   reward-preview — pre-lesson interstitial; no nav keeps focus on the preview
 //   reward        — post-quiz celebration overlay; nav bar would break the moment
@@ -313,21 +297,3 @@ window.addEventListener('popstate', function(e) {
   render();
 });
 
-// Listen for 2 Minute Budget completion signal (postMessage from the iframe).
-// All consolidation lives behind the builder seam: adapter (wizard-bridge.js)
-// → baseline → submitBudgetBaseline (budget-baseline.js), which owns status,
-// stamps, task completion, and the post-save flow. This listener only ferries
-// the message across the iframe boundary.
-window.addEventListener("message", function(e) {
-  if (!e.data) return;
-  if (e.data.type === "bb-complete") {
-    applyDebtDataFromWizard(e.data.debts);
-    if (e.data.inputs) {
-      state.budget.wizardInputs = e.data.inputs;   // kept for the admin state inspector
-      submitBudgetBaseline(bbPayloadToBaseline(e.data.inputs));
-    }
-  }
-  if (e.data.type === "bb-back") {
-    go("budgetSetup");
-  }
-});
