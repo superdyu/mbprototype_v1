@@ -1,0 +1,125 @@
+# Money Buddy v3
+
+Auto-loads whenever you work in `versions/v3/`. Everything here binds even if
+nobody opens another doc.
+
+## Read first
+
+| File | Why |
+|---|---|
+| `plan.md` §0 (repo root) | **19 locked decisions, L1–L19. Do not re-litigate them.** They were settled across eight rounds with the repo owner |
+| `versions/v3/PROGRESS.md` | Start at `Current state:`, work the first unchecked item, tick as you go |
+| `versions/v3/docs/architecture.md` | Cross-cutting contracts — data loading, taxonomy, nav, top bar, audio |
+| `versions/v3/docs/spec-coverage.md` | Where each of the 53 spec items lands |
+
+The spec is at `v3 Files/spec/` — **read-only reference, never edit it.**
+Its `docs/DECISIONS.md` beats every other spec doc; `plan.md` §0 beats *that*
+where they conflict. Several spec decisions are deliberately overridden
+(A1, D04, D39, D40 — see §0).
+
+**v3 is a delta over v2 (D37).** Where the spec is silent, v2 governs — carry
+forward what v2 did rather than inventing.
+
+## Traps that fail silently
+
+Each of these produces a plausible-looking wrong result rather than an error.
+All verified against the raw JSON on 2026-08-07.
+
+- **`base[cat][band]` is a 4-element ARRAY indexed by `householdSize − 1`.**
+  Household 2 → index **1**. `4+` clamps to index 3. Reading `[householdSize]`
+  returns the next household's figure.
+- **Cost of living is a two-step lookup** — `zipPrefixes[zip3]` gives a tier
+  *name*, then `tiers[name][cat]` gives the multiplier.
+- **Lifestyle is a product across six dimensions**, not one lookup.
+- **`paysRent` keys are the strings `"true"` / `"false"`**, not booleans.
+  **`commute`'s key for "mostly walk" is `none`.** A missed key silently
+  contributes 1.0.
+- **`_note` keys sit alongside real data** in `monthToDateActuals`,
+  `PEER_BENCHMARKS.base`, `zipPrefixes`, and `lifestyleModifiers`.
+  **Always iterate `CATEGORIES`, never `Object.keys(data)`.**
+- **Lesson framing options key on `tag`, singular.** A `.tags` lookup collects
+  nothing and plays the fallback variant every time.
+- **The self-reported layer is `monthToDateActuals`** ($429 dining), *not* the
+  sum of `journalHistory` (~$168). Getting it backwards breaks every observation.
+
+Self-test for the benchmark model: Dining out, b3, household 2, ZIP 900, foodie
+moderate + cooks sometimes → `275 × 1.34 × 1.0 = 368.5` → **370**.
+
+## Hard rules
+
+**Runtime**
+- **No live LLM, no API keys, no network at runtime** (D02). Chat is a keyword
+  matcher; benchmarks are static; the journal is structured.
+- **No backend, no database, no localStorage** (D03). State is in-memory and
+  resets on refresh. This is intentional.
+- **The app runs on `file://`** — `fetch()` and XHR are blocked and there is no
+  dev server. Data loads via `<script>` tags (`data/*.js`), never a network call.
+
+**Code**
+- Vanilla JS, everything global, plain `<script>` tags. Keep names unique and
+  feature-prefixed. Load order in `index.html` matters.
+- One global `state`; mutate it then call `render()`. No partial updates.
+- **Always `h()`-escape** anything interpolated into an HTML template literal.
+- **Inputs use `onchange`, not `oninput`** — a full re-render mid-keystroke
+  destroys focus. Admin sliders are the exception, paired with `debouncedRender()`.
+- **`.item-card` is `display:block`, not flex.** Fix trailing children with
+  scoped inline flex; never change the global rule.
+- Style with CSS variables only, never hardcoded hex. Light **and** dark must work.
+- **Surgical edits.** Change only what you're fixing. Never collapse files.
+
+**Copy** — applies to every surface
+- **No financial advice. Ever. Anywhere** (D26). Surface the number and the gap;
+  never prescribe the action.
+- **Frame flags as questions, not instructions.** "Haven't heard about Hulu in a
+  while" — not "cancel Hulu."
+- No exclamation marks in financial observations. Warm, plain, second person,
+  sentence case.
+- Tip banner is a hard **90-character** limit.
+- **"Peers", never "average users"** — the data is an external mathematical
+  aggregate, never real user data (D23).
+- Fixed vocabulary: Buddy · Money Journal (never "expense tracker") · Kibble ·
+  Streak · Peers · Observation.
+
+**Quality floor**
+- **No screen renders empty** (D19). Fabricate a plausible value rather than
+  showing a blank. Design for it; it can't be retrofitted cheaply.
+- `prefers-reduced-motion` respected. Tap targets ≥44px. Keyboard focus visible.
+- Mobile first — the phone frame is 390px.
+
+## Adding a screen — 5-point wiring
+
+A screen is **not done** until all five are complete, or the admin panel
+silently degrades to its generic fallback:
+
+1. `screens/<name>.js` → `render<Name>()` (+ optional `render<Name>Admin()`)
+2. `<script>` tag in `index.html`, screens block
+3. `js/render.js` → `renderScreen()` · `adminSubtitle()` · `renderAdmin()` · jump list
+4. `js/utils.js` → `activeTabFor` (the nav stack is the real source of truth —
+   see architecture §7; keep this as the admin-jump fallback)
+5. `js/state.js` → `destinations[]`
+
+Plus a **full-bleed mode class** if the screen hides the nav, zeroing *both* the
+top-bar and nav offsets.
+
+## Verifying
+
+No browser here — you cannot visually QA. **There is no `node` on this machine**
+either; the substitute is macOS's built-in JavaScriptCore.
+- `bash scripts/check-syntax.sh <path>` on everything you touch (no args = all
+  v3 + gate JS). It's the only automated gate.
+- For logic, write a temporary DOM-stubbed harness that concatenates the needed
+  files into **one** script, then run it with `jsc harness.js`. Concatenating
+  matters: separately-evaluated scripts don't share top-level `const` bindings,
+  but a browser's `<script>` tags do. **Delete it before committing.**
+- Ask the repo owner to eyeball anything visual — say so plainly rather than
+  claiming it renders.
+
+## Don't
+
+- Don't edit `versions/v1/` or `versions/v2/` — both frozen. Versions are test
+  variants a tester picks at the gate, not a migration path.
+- Don't build sprite-sheet `background-position` cropping — there is no buddy
+  art and never will be (L15).
+- Don't add variants to "cover" unmatched lesson tags — falling through to the
+  fallback is the design.
+- Don't paraphrase `data/*.json` numbers into JS literals. Load them.

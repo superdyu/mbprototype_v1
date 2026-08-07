@@ -15,7 +15,8 @@ var GATE_SESSION_KEY = "mb_gate_unlocked";
 // Add a version here (and only here) to make it selectable — no markup changes.
 var VERSIONS = [
   { id: "v1", label: "v1", path: "versions/v1/index.html" },
-  { id: "v2", label: "v2 (beta)", path: "versions/v2/index.html" }
+  { id: "v2", label: "v2 (beta)", path: "versions/v2/index.html" },
+  { id: "v3", label: "v3 (alpha)", path: "versions/v3/index.html" }
 ];
 
 function gateShowSelector() {

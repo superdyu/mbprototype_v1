@@ -88,7 +88,11 @@ they conflict — several spec decisions are deliberately overridden.
   and `XMLHttpRequest` are blocked against local files. Any data a version needs
   at runtime must load via a `<script>` tag, not a network call.
 - In a headless environment with no browser, you cannot visually QA. Instead:
-  - Syntax-check any file you touch: `node --check path/to/file.js`
+  - Syntax-check any file you touch: `bash scripts/check-syntax.sh <path>`
+    (no args = all v3 + gate JS). **There is no `node` on this machine** — no
+    PATH entry, no nvm, no homebrew install — so `node --check` does not work.
+    The script uses macOS's built-in JavaScriptCore (`jsc checkSyntax`), which
+    was validated against both a positive and a negative control.
   - For logic, write a temporary DOM-stubbed Node smoke harness that loads the
     relevant files, exercises the functions, asserts, prints results — **then
     delete it** (don't commit harnesses). See "Testing" below.
@@ -192,11 +196,13 @@ they conflict — several spec decisions are deliberately overridden.
 
 ## Testing (headless)
 
-No browser/test runner is wired up. To verify logic, build a one-off Node harness
-that stubs `document`/`window`, concatenates the needed files into a single script
-(separate `vm.runInContext` calls do **not** share top-level `const` bindings —
-browsers do, so concatenate into one script and run once), exercises the functions,
-and asserts. Delete the harness before committing.
+No browser/test runner is wired up, and **there is no `node`** — use macOS's
+built-in `jsc` (see `scripts/check-syntax.sh` for the path). To verify logic,
+build a one-off harness that stubs `document`/`window`, concatenates the needed
+files into a **single** script, exercises the functions, and asserts, then run it
+with `jsc harness.js`. Concatenating matters: separately-evaluated scripts do not
+share top-level `const` bindings, but a browser's `<script>` tags do. Delete the
+harness before committing.
 
 ## Working with the repo owner
 

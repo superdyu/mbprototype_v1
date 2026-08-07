@@ -1,8 +1,9 @@
 # v3 Build Progress
 
-**Current state:** Planning complete and verified (plan.md pass 7). Nothing
-built — `versions/v3/` holds only `docs/` + this file. Next action: **Phase 0a,
-fork v2.** — *updated 2026-08-07*
+**Current state:** **Phase 0a complete.** v3 forked from v2 (69 files,
+byte-identical), gate entry added, both `CLAUDE.md` files written, checkpoint
+verified. Nothing stripped yet — v3 is still a working clone of v2.
+Next action: **Phase 0b, strip.** — *updated 2026-08-07*
 
 > **Read before touching anything:**
 > 1. `plan.md` §0 — locked decisions **L1–L19**. Do not re-litigate them.
@@ -27,12 +28,16 @@ fork v2.** — *updated 2026-08-07*
 
 ## Phase 0a — Fork
 
-- [ ] v2 confirmed present (D37) — `versions/v2/`, 61 JS files. Stop and report if absent
-- [ ] `cp -R versions/v2/. versions/v3/` — **trailing dot**; `versions/v3/` already exists (holds `docs/`)
-- [ ] `gate/gate.js` — add `{ id: "v3", label: "v3 (alpha)", path: "versions/v3/index.html" }` to `VERSIONS`
-- [ ] Root `CLAUDE.md` — update the version prose (it names v1/v2 explicitly and says to)
-- [ ] `versions/v3/CLAUDE.md` — new, auto-loads in this folder; carries architecture §12 standing rules
-- [ ] **Checkpoint:** gate → v3 opens and renders identically to v2, before anything is stripped
+- [x] v2 confirmed present (D37) — `versions/v2/`, 61 JS files. Stop and report if absent
+- [x] `cp -R versions/v2/. versions/v3/` — **trailing dot**; `versions/v3/` already exists (holds `docs/`)
+      ↳ verified: `diff -rq versions/v2 versions/v3` reports only the v3-extras. All 69 files byte-identical
+- [x] `gate/gate.js` — add `{ id: "v3", label: "v3 (alpha)", path: "versions/v3/index.html" }` to `VERSIONS`
+- [x] Root `CLAUDE.md` — update the version prose (it names v1/v2 explicitly and says to)
+      ↳ done in the planning commit d958826, ahead of this phase
+- [x] `versions/v3/CLAUDE.md` — new, auto-loads in this folder; carries architecture §12 standing rules
+- [x] **Checkpoint:** gate → v3 opens and renders identically to v2, before anything is stripped
+      ↳ verified structurally: 62/62 JS files parse, all 60 `<script src>` tags resolve, `versions/v3/index.html` present, v3 still byte-identical to v2. **Visual confirmation is the owner's** — no browser here
+- [x] **Unplanned:** `scripts/check-syntax.sh` added — see divergence log
 
 ## Phase 0b — Strip
 
@@ -244,4 +249,12 @@ Verified by clicking through, not by inspection.
 ## Divergence log
 
 One line per item that landed differently than specified, with the why.
-Empty until the build starts.
+
+**0a — `node` does not exist on this machine.** Both `CLAUDE.md` files instructed
+`node --check` as "the only automated gate," but there is no node on PATH, no
+`~/.nvm`, and no homebrew install. Added `scripts/check-syntax.sh` using macOS's
+built-in JavaScriptCore (`jsc checkSyntax`), validated against a positive *and* a
+negative control before being trusted. Both `CLAUDE.md` files updated, including
+the Testing section's `vm.runInContext` note, which is also node-specific.
+*Why it matters:* a broken verification instruction in an auto-loading file would
+have cost every future session the same rediscovery.
