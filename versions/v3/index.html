@@ -88,6 +88,10 @@ window.onunhandledrejection = function(e) {
 
 <!-- 2. Data -->
 <script src="js/state.js"></script>
+<!-- The 12-category taxonomy and the peer model read the data above; boot()
+     reads both, so all three load in this order. -->
+<script src="js/taxonomy.js"></script>
+<script src="js/benchmarks.js"></script>
 <!-- Seeds state from the data globals above; called from navigation.js at boot -->
 <script src="js/boot.js"></script>
 <script src="js/utils.js"></script>

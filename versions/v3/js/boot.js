@@ -8,18 +8,15 @@
 // In-memory only (D03). No localStorage, no backend. A refresh returns to the
 // gate, which re-boots this from scratch — that IS the reset.
 //
-// ── What 0c deliberately does NOT seed ───────────────────────────────────────
-// Three slots collide with v2 code that is still live. Overwriting them now
-// would break the app before its replacement exists, so each is seeded by the
-// phase that also rewires its consumer:
+// ── Slots that collide with live v2 code ─────────────────────────────────────
+// Three v2 slot names are still owned by running v2 code, so the v3 data is
+// parked under distinct names and the phase that rewires the consumer swaps it:
 //
-//   state.budget  ← SEED_STATE.budget.monthly   Phase 0d (taxonomy rewrite)
-//   state.tasks   ← SEED_STATE.dailyTasks.today Phase 3  (home screen)
-//   state.goals   ← PERSONA.goals               Phase 5  (v3 goals model)
-//
-// The v3-shaped data for the latter two is loaded now under distinct names
-// (state.dailyTasks, state.strategicGoal/tacticalGoals) so it is available and
-// inspectable; the owning phase swaps the consumer over and drops the v2 slot.
+//   v2 state.budget (5 buckets)  → v3 seeds `state.plan` (12 categories) below.
+//                                  Phase 2 retires the v2 budget screens.
+//   v2 state.tasks  (task cards) → v3 parks `state.dailyTasks`. Phase 3.
+//   v2 state.goals  (flat array) → v3 parks `state.strategicGoal` +
+//                                  `state.tacticalGoals`. Phase 5.
 
 function v3Clone(o) {
   return o == null ? o : JSON.parse(JSON.stringify(o));
@@ -45,6 +42,15 @@ function bootV3() {
     : PERSONA.state.streakDaysIfOnboarded;  // 1 — after onboarding
 
   // ── The three spend layers (architecture §5) ───────────────────────────────
+  // Plan layer, keyed by the 12-category taxonomy. This is v3's budget — it is
+  // NOT v2's state.budget (5 nested buckets), which still backs the v2 budget
+  // screens until Phase 2 replaces them. Two models coexist deliberately; see
+  // the 0d divergence note in PROGRESS.md.
+  state.plan = {};
+  CATEGORIES.forEach(c => { state.plan[c] = catValue(SEED_STATE.budget.monthly, c); });
+  state.planTotal = catTotal(state.plan);
+  state.monthlyIncomeNet = SEED_STATE.budget.monthlyIncomeNet;
+
   // Self-reported = monthToDateActuals, NOT the sum of journalHistory. Six days
   // of journal detail (~$168 dining) sits inside fabricated month-to-date totals
   // ($429 dining) per D19. Getting this backwards breaks every observation.

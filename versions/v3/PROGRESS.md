@@ -1,10 +1,10 @@
 # v3 Build Progress
 
-**Current state:** **Phase 0c complete.** All 7 spec JSONs load as script-wrapped
-globals; `bootV3()` seeds 16 state slots and applies the L11 reframe. Verified by
-harness: 21 value assertions + globals-not-mutated + all 29 screens render.
-`state.budget/tasks/goals` deliberately NOT seeded yet — they collide with live
-v2 code (see divergence). Next action: **Phase 0d, taxonomy.**
+**Current state:** **Phase 0d complete.** `CATEGORIES` + `state.plan` (12-cat
+plan layer) + the peer benchmark engine, with all three formula traps handled and
+asserted. 45 harness assertions pass incl. the `→ 370` self-test. v2's 5-bucket
+`state.budget` still stands — the two models coexist until Phase 2 retires the v2
+budget screens (see divergence). Next action: **Phase 0e, shell.**
 — *updated 2026-08-07*
 
 > **Read before touching anything:**
@@ -80,18 +80,24 @@ v2 code (see divergence). Next action: **Phase 0d, taxonomy.**
 
 ## Phase 0d — Taxonomy (do before Phase 1)
 
-- [ ] `CATEGORIES` const — 12, ordered, keys used **verbatim** including `"Dining out"`. No slugifying
-- [ ] Rewrite `state.budget` to the flat 12; v2's 5×3 nested buckets removed. **No Savings category** — saving is a goal
-- [ ] Port `budget.js`, `budget-category.js`, `budget-utils.js` to the flat 12
-- [ ] Benchmark model per architecture §5. **The spec's one-liner is wrong in all three terms** — do not implement from it:
-      - [ ] `base[cat][band]` is a **4-element array indexed by `householdSize − 1`** (hh2 → index 1; `4+` clamps to index 3)
-      - [ ] Cost of living is **two steps**: `zipPrefixes[zip3]` → tier *name* → `tiers[name][cat]`
-      - [ ] Lifestyle is a **product across 6 dimensions** (only Dining out and Groceries ever get more than one)
-- [ ] Answer-key traps: `paysRent` keys are the **strings** `"true"`/`"false"`, not booleans; `commute` key for "mostly walk" is **`none`**. A missed key silently contributes 1.0
-- [ ] `incomeBand` from annual income: b1 ≤35k · b2 35–60k · b3 60–90k · b4 90–140k · b5 140k+
-- [ ] Unlisted ZIP prefix → `moderate` fallback, never a failure
-- [ ] **Self-test passes:** Dining out, b3, household 2, ZIP 900, foodie moderate + cooks sometimes → 275 × 1.34 × 1.0 = **370**
-- [ ] All category iteration driven from `CATEGORIES`, never `Object.keys(data)` — `_note` keys are present in 4 objects
+- [x] `CATEGORIES` const — 12, ordered, keys used **verbatim** including `"Dining out"`. No slugifying
+      ↳ `js/taxonomy.js`, with `catTotal` / `catValue` / `catRows` / `isCategory` so nobody has to remember the `_note` trap
+- [x] Seed the flat-12 plan layer. **No Savings category** — saving is a goal
+      ↳ **as `state.plan`, not `state.budget`** — see divergence. Total 4060 = spec `totalMonthly`
+- [~] Port `budget.js`, `budget-category.js`, `budget-utils.js` to the flat 12
+      ↳ **deferred to Phase 2**, which owns the budget screens. See divergence
+- [x] Benchmark model per architecture §5. **The spec's one-liner is wrong in all three terms** — do not implement from it:
+      - [x] `base[cat][band]` is a **4-element array indexed by `householdSize − 1`** (hh2 → index 1; `4+` clamps to index 3)
+      - [x] Cost of living is **two steps**: `zipPrefixes[zip3]` → tier *name* → `tiers[name][cat]`
+      - [x] Lifestyle is a **product across 6 dimensions** (only Dining out and Groceries ever get more than one)
+- [x] Answer-key traps: `paysRent` keys are the **strings** `"true"`/`"false"`, not booleans; `commute` key for "mostly walk" is **`none`**. A missed key silently contributes 1.0
+      ↳ `benchLifestyleKey()` normalises both, plus `yes`/`no` and `walk`
+- [x] `incomeBand` from annual income: b1 ≤35k · b2 35–60k · b3 60–90k · b4 90–140k · b5 140k+
+- [x] Unlisted ZIP prefix → `moderate` fallback, never a failure
+      ↳ also guards the `_note` key inside `zipPrefixes`, and null/empty ZIPs
+- [x] **Self-test passes:** Dining out, b3, household 2, ZIP 900, foodie moderate + cooks sometimes → 275 × 1.34 × 1.0 = **370**
+      ↳ `benchSelfTest()`. But see its own caveat: the persona is hh2 with all modifiers at 1.0, so several WRONG readings also yield 370. The harness asserts the *shape* separately
+- [x] All category iteration driven from `CATEGORIES`, never `Object.keys(data)` — `_note` keys are present in 4 objects
 
 ## Phase 0e — Shell
 
@@ -264,6 +270,26 @@ Verified by clicking through, not by inspection.
 ## Divergence log
 
 One line per item that landed differently than specified, with the why.
+
+**0d — the flat 12 landed as `state.plan`, not by rewriting `state.budget`.**
+The item said "rewrite `state.budget` to the flat 12; v2's 5×3 nested buckets
+removed". Surveying first showed that is a Phase 2 job, not an 0d job: v2's
+nested model has consumers in **11 v3 files**, with `lifestyle-chain.js` and
+`budget-category.js` referencing it 17 times each. Replacing the shape under
+them would break screens Phase 2 is going to delete anyway.
+
+Nothing downstream needs v2's budget gone. Phase 1's journal writes against
+`CATEGORIES` + `state.plan` + `state.mtd`, none of which touch it. So the two
+models coexist deliberately and briefly:
+
+| model | backs | retired |
+|---|---|---|
+| `state.plan` (12 flat) | v3 — journal, comparison, benchmarks | — it is the survivor |
+| `state.budget` (5×3 nested) | v2's budget screens, `lifestyle-chain` | **Phase 2**, with those screens |
+
+Porting `budget.js` / `budget-category.js` / `budget-utils.js` moves to Phase 2
+for the same reason. **0d's real deliverable was the benchmark engine**, which is
+complete and asserted.
 
 **0c — three state slots were deliberately not seeded.** architecture §2 maps
 `state.budget`, `state.tasks` and `state.goals` from the data, but all three
