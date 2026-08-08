@@ -19,6 +19,8 @@ const destinations = [
   ["streak",         "Streak Splash"],
   ["onboarding",     "Onboarding"],
   ["login",          "Login Scene"],
+  ["dailyUpdate",    "Daily Update"],
+  ["dailySummary",   "Daily: Summary"],
   ["home",           "Home"],
   ["journalEntry",   "Money Journal"],
   ["journalConfirm", "Journal: Confirm"],
@@ -78,6 +80,10 @@ const state = {
   dailyPromptNoticeShown: false,
   onboarding: null,
   trialAccepted: null,
+
+  // ── Daily update (Phase 4) ────────────────────────────────────────────────
+  // One audio file per segment, so `index` IS the position — no playhead maths.
+  du: { scriptId: null, index: 0, playing: false, timer: null, finished: false },
 
   // ── Money Journal ─────────────────────────────────────────────────────────
   // journalSession:   the in-flight entry (null when not writing one)

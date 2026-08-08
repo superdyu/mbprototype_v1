@@ -1,12 +1,12 @@
 # v3 Build Progress
 
-**Current state:** **Phase 3 COMPLETE (3a + 3b).** Both entry paths work:
-`SKIP_ONBOARDING=false` runs all 8 onboarding steps → 1-day streak → home;
-`true` goes login → home with the 6-day streak. Chat now runs off
-`BUDDY_RESPONSES` with D26's advice guardrail enforced ahead of scoring.
-52 assertions pass. Only Phase 3 item left is the streak registering at the end
-of the share flow — that IS Phase 4. **Next action: Phase 4, daily update and
-share.** — *updated 2026-08-07*
+**Current state:** **Phase 4a COMPLETE** (Phase 4 split — XL). 4a = real
+narration + the animated sequence + the summary. 21 `.wav` files generated with
+macOS `say`, durations measured and written to `data/daily-timings.js`. All 8
+cue types render; all 3 variants selectable. 34 assertions pass, 36 screens in
+both modes. **Next action: Phase 4b** — share sheet, anonymization preview
+(A11's trust mechanic), and the streak registering at the end of that flow.
+— *updated 2026-08-07*
 
 > **Read before touching anything:**
 > 1. `plan.md` §0 — locked decisions **L1–L19**. Do not re-litigate them.
@@ -248,18 +248,23 @@ palette rather than converted.
 
 ## Phase 4 — Daily update and share
 
-- [ ] `scripts/gen-audio.sh` — `say` → `afconvert` → `afinfo`, **one file per segment**
-- [ ] Generate audio for all 3 variants
-- [ ] Extract durations, write timings back into `daily-scripts.json`
-- [ ] Playback: `<audio>` element is the clock. **Static timings are primary** — boundary events don't fire for recorded audio (L10)
-- [ ] Segment text and timings never share an object; timings keyed by segment id
-- [ ] Visual cues reference **segment ids, never timestamps**
-- [ ] Missing timing → estimate from word count at **165 wpm**
-- [ ] 8 cue types. Check reuse first: `goal_ring` → `badge-ring.js`, `streak_flame` → `streak-counter.js`, `bar_compare` → `thermometer.js`
-      ↳ note: `number_reveal` is declared but unused by all 3 shipped scripts. Build it; don't hunt for its trigger
-- [ ] Scripts stay generalized; **visuals carry the numbers** (D30)
-- [ ] All 3 engagement variants selectable
-- [ ] Completion summary — observations stacked, plain language
+### 4a — Narration and sequence
+- [x] `scripts/gen-audio.sh` — `say` → `afconvert` → `afinfo`, **one file per segment**
+- [x] Generate audio for all 3 variants — 21 `.wav` files, 2.7 MB
+- [x] Extract durations, write timings back
+      ↳ **to a separate generated `data/daily-timings.js`, not into `daily-scripts.json`** — that stays the byte-identical spec copy (L13). Three-tier lookup: measured → spec → 165 wpm
+      ↳ the measurements differ from the spec's static block (s1 is 3650ms, not 3400ms), which is exactly why extraction is not optional
+- [x] Playback: `<audio>` element is the clock. One file per segment, so the index is exact rather than inferred from a playhead
+- [x] Segment text and timings never share an object; timings keyed by segment id
+- [x] Visual cues reference **segment ids, never timestamps**
+- [x] Missing timing → estimate from word count at **165 wpm**
+- [x] 8 cue types. Reuse checked: `streak_flame` → `streak-counter.js` ✓, `bar_compare` → `thermometer.js` ✓, `goal_ring` → **not** `badge-ring.js` (it is badge-semantic — tiers, bonus dots — not a pace dial)
+- [x] Scripts stay generalized; **visuals carry the numbers** (D30)
+      ↳ asserted: no script contains a `$` figure or a `%`. **`renderThermometer` draws positions but prints no numbers**, so the bar_compare cue states 429 and 370 alongside it — without that, D30 was not actually satisfied
+- [x] All 3 engagement variants selectable
+- [x] Completion summary — observations stacked, plain language
+
+### 4b — Share
 - [ ] Share sheet: copy link + inert platform buttons. **Anonymization on by default**
 - [ ] Anonymization preview — expandable, shows exactly what would post, every figure anonymized. This is the trust mechanic; build it properly (A11)
 - [ ] Done → streak registers → home

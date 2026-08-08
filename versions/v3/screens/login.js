@@ -73,10 +73,11 @@ function loginAnswer(watch) {
   state.dailyPromptAnswered = true;
   state.dailyPromptWatch = watch;
 
-  // The daily update is Phase 4. Until it exists, both answers land on home so
-  // the loop is walkable end to end. navBack() rather than navGoTab: login sits
-  // ON TOP of the home root, so answering pops it and it cannot be returned to.
+  // Login sits ON TOP of the home root, so popping it means it cannot be
+  // returned to. "Yes" then pushes the daily update on top of home, so its
+  // Skip/Done still land on home.
   navBack();
+  if (watch) duStart();
 }
 
 function renderLoginAdmin() {

@@ -1723,3 +1723,63 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 }
 .onb-swatch.picked { border-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
 .onb-trial-list { margin: 0 0 14px; padding-left: 18px; font-size: 13px; line-height: 1.7; color: var(--text); }
+
+/* ─── Daily update ────────────────────────────────────────────────────────────
+   09-design-system: "the one place motion is orchestrated rather than ambient.
+   Let it be the memorable moment; keep everything else quiet." */
+.du-shell {
+  min-height: 100%;
+  padding: calc(var(--topbar-h) + 8px) 18px 18px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.du-stage {
+  flex: 1; min-height: 250px;
+  display: flex; align-items: center; justify-content: center;
+}
+.du-cue { width: 100%; text-align: center; }
+.du-cue-label { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+.du-figure {
+  margin: 0; font-family: var(--font-display); font-size: 42px; font-weight: 850;
+  color: var(--text); line-height: 1.1;
+}
+.du-figure-sm { font-size: 28px; }
+
+.du-caption { min-height: 66px; }
+.du-text {
+  margin: 0; font-family: var(--font-display);
+  font-size: 16px; line-height: 1.5; text-align: center; color: var(--text);
+}
+
+.du-controls { flex-shrink: 0; }
+.du-progress { height: 4px; border-radius: 99px; background: var(--progress-bg); overflow: hidden; }
+.du-progress > span { display: block; height: 100%; background: var(--accent); transition: width var(--dur) var(--ease); }
+.du-segs { display: flex; gap: 5px; margin: 10px 0 12px; }
+.du-seg { flex: 1; height: 22px; border: 0; background: transparent; cursor: pointer; padding: 0; }
+.du-seg::after { content: ""; display: block; height: 3px; border-radius: 99px; background: var(--bar); opacity: .5; }
+.du-seg.on::after { background: var(--accent); opacity: 1; }
+.du-buttons { display: flex; gap: 8px; }
+.du-buttons .button { flex: 1; }
+
+.du-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.du-tile {
+  padding: 10px 6px; border-radius: var(--radius-card);
+  background: var(--soft); font-size: 9px; color: var(--muted);
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.du-tile.on { background: var(--warn-bg); color: var(--warn); font-weight: 850; }
+
+.du-bill { max-width: 260px; margin: 0 auto; }
+.du-stack { display: flex; flex-direction: column; gap: 8px; }
+.du-stack-card { margin: 0; animation: duStackIn var(--dur) var(--ease) backwards; animation-delay: calc(var(--i) * 90ms); }
+
+@keyframes duStackIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes duPulse   { 0%,100% { transform: scale(1); } 45% { transform: scale(1.07); } }
+@keyframes duSlideIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes duCountUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.du-pulse    { animation: duPulse 900ms var(--ease); }
+.du-slide-in { animation: duSlideIn var(--dur) var(--ease); }
+.du-countup  { animation: duCountUp 420ms var(--ease); }
+.du-compare { display: flex; gap: 14px; justify-content: center; margin-bottom: 4px; }
+.du-compare-side { flex: 1; max-width: 130px; }
+.du-figure-muted { color: var(--muted); }
