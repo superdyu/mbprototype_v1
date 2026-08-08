@@ -12,10 +12,15 @@
 //   Coming Soon placeholder — no functional settings implemented yet.
 //
 // PRODUCTION NOTES
-//   Intended for: notification preferences, color mode toggle (currently
-//   dev-only in admin panel), linked accounts, data export, profile editing.
-//   Color mode persists in state.settings.colorMode — the toggle mechanism
-//   exists; it just needs a visible UI surface here instead of the admin panel.
+//   Intended for: notification preferences, theme picker (currently dev-only in
+//   the admin panel), linked accounts, data export, profile editing.
+//   The theme lives in state.settings.colorMode and the four options in THEMES
+//   (js/theme.js, L21) — the mechanism exists; it just needs a surface here
+//   instead of the admin panel. A user-facing version would likely expose only
+//   Natural Light / Natural Dark: the v2 pair is a comparison tool for testing,
+//   not a product choice.
+//   Note it survives Reset User Data on purpose — a viewing preference is not
+//   user data, and having the screen repaint on reset would be a jarring tell.
 
 function renderSettings() {
   return `

@@ -1,16 +1,14 @@
 # v3 Build Progress
 
-**Current state:** **Phase 5a + 5b + 5c-i COMPLETE.** Goals rebuilt; My
-Progress on A3's six sections; and D38's two gaps are filled — framing decision
-trees, tag-driven variant matching, and **all 15 script bodies written** (105
-lines, asserted advice-free). 108 assertions across the three.
+**Current state:** **v3 IS BUILT — phases 0 → 6 complete**, plus the four-theme
+change (L21) that landed after the sweep.
 **Next action: the owner's click-through.** `bash scripts/sweep.sh` passes
-36/36 with 0 warnings, but six Phase 6 items are not machine-checkable and the
+**44/44 with 0 warnings**, but seven items are not machine-checkable and the
 sweep prints them explicitly rather than passing them silently — see below.
 — *updated 2026-08-07*
 
 > **Read before touching anything:**
-> 1. `plan.md` §0 — locked decisions **L1–L19**. Do not re-litigate them.
+> 1. `plan.md` §0 — locked decisions **L1–L21**. Do not re-litigate them.
 > 2. `versions/v3/docs/architecture.md` — cross-cutting contracts.
 > 3. `plan.md` §13 — the session-start protocol.
 >
@@ -341,6 +339,21 @@ The sweep prints these rather than passing them silently:
 - [ ] `prefers-reduced-motion` actually stilling the buddy idle and the daily update
 - [ ] Narration audio lining up with the visuals it is cued to
 - [ ] Whether the repaint reads as "not a bank"
+- [ ] The four themes side by side (L21) — the contract and contrast are checked; whether Light/Dark actually *look* like v2, and whether the frame and admin panel hold still while switching, are not
+
+---
+
+## Post-Phase-6 — four themes (L21)
+
+Added after the build was complete and swept. Full rationale in `plan.md` §17;
+the contract is `docs/architecture.md` §14.
+
+- [x] Four themes — Light + Dark (v2's palette), Natural Light + Natural Dark (D36). **Dark is the default**
+- [x] `THEMES` in `js/theme.js` is the single source; `render()` calls `themeApply()`; the class lands on `.screen` only
+- [x] Admin panel gets a 2×2 theme picker, replacing the old two-way button
+- [x] Sweep extended: 41 screens × **4 themes**, the 40-token contract per theme, chrome isolation, and **12 contrast pairs × 4 themes at 4.5:1**
+      ↳ **three pre-existing defects found.** Eight dead overrides in `.dark-mode` (`--bg`, `--phone`, six `--chrome-*`) that could never apply because the class is on `.screen` and those tokens are consumed by an ancestor and a sibling. An implicit text-on-`--accent` pairing that inverted with the theme, leaving Natural Dark at ~1.6:1 — now explicit via `--on-accent` / `--accent-fill-text`. And `--info` shipping at 3.92:1 in Natural Light
+- [x] Syntax clean; `bash scripts/sweep.sh` → 44 checks, 0 failed, 0 warnings
 
 ---
 

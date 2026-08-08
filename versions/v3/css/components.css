@@ -462,10 +462,12 @@
 }
 
 /* Buttons */
+/* --on-accent, not --on-dark: --accent inverts between the light and dark
+   themes, so the text on it has to invert too (see variables.css). */
 .button {
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: var(--on-dark);
+  color: var(--on-accent);
   padding: 10px 13px;
   border-radius: 13px;
   font-size: 13px;
@@ -477,7 +479,7 @@
 /* .primary is an alias for the default button style — explicit intent marker */
 .button.primary {
   background: var(--accent);
-  color: var(--on-dark);
+  color: var(--on-accent);
   border-color: var(--accent);
 }
 
@@ -1153,7 +1155,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   border: 1px solid var(--accent);
   border-radius: 11px;
   background: var(--accent);
-  color: var(--on-dark);
+  color: var(--on-accent);
   font-size: 12px;
   font-weight: 850;
   text-align: left;
@@ -1349,7 +1351,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   border-radius: 0;
   cursor: pointer;
 }
-.ls-seg-btn.active { background: var(--accent); color: var(--on-dark); }
+.ls-seg-btn.active { background: var(--accent); color: var(--on-accent); }
 
 /* Review step: compact slider rows + pinned-feel totals */
 .ls-review-totals {
@@ -1576,7 +1578,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .screen .button:not(.secondary) {
   background: var(--accent-fill);
   border-color: var(--accent-fill);
-  color: var(--ink);
+  color: var(--accent-fill-text);
 }
 .screen .button:not(.secondary):hover { filter: brightness(.96); }
 

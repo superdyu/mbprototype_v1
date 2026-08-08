@@ -40,19 +40,137 @@ function renderSafe(sc) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-section("1. Every screen renders, in both colour modes");
+section("1. Every screen renders, in all four themes");
 var renderFails = [];
-["light", "dark"].forEach(function (mode) {
-  state.settings.colorMode = mode;
+THEMES.forEach(function (t) {
+  state.settings.colorMode = t.id;
   SCREENS.forEach(function (sc) {
     var html = renderSafe(sc);
-    if (html && html.__error) renderFails.push(mode + " " + sc + ": " + html.__error);
-    try { renderAdmin(); adminSubtitle(); renderTopBar(); renderNav(); }
-    catch (e) { renderFails.push(mode + " " + sc + " chrome: " + e); }
+    if (html && html.__error) renderFails.push(t.id + " " + sc + ": " + html.__error);
+    try { renderAdmin(); adminSubtitle(); renderTopBar(); renderNav(); themeApply(); }
+    catch (e) { renderFails.push(t.id + " " + sc + " chrome: " + e); }
   });
 });
-state.settings.colorMode = "light";
-chk(renderFails.length === 0, SCREENS.length + " screens x 2 modes", renderFails.slice(0, 6).join("\n          "));
+state.settings.colorMode = THEME_DEFAULT;
+chk(renderFails.length === 0, SCREENS.length + " screens x " + THEMES.length + " themes",
+    renderFails.slice(0, 6).join("\n          "));
+
+// An unknown id must resolve to the default, not leave .screen unclassed —
+// that would silently render Natural Light and look deliberate.
+chk(themeById("nonsense").id === THEME_DEFAULT, "unknown theme id falls back to " + THEME_DEFAULT);
+chk(state.settings.colorMode === "dark", "Dark is the default theme (L21)");
+
+// render() is the real entry point and does things renderScreen() does not —
+// applying the theme class and filling the admin theme picker. Exercise it.
+var fullRenderFails = [];
+THEMES.forEach(function (t) {
+  state.settings.colorMode = t.id;
+  state.screen = "home";
+  try { render(); } catch (e) { fullRenderFails.push(t.id + ": " + e); }
+});
+state.settings.colorMode = THEME_DEFAULT;
+chk(fullRenderFails.length === 0, "full render() in all four themes",
+    fullRenderFails.join("\n          "));
+
+// The picker is the whole user-facing deliverable — assert it is populated with
+// one working button per theme and exactly one marked active, not just that
+// render() did not throw.
+render();
+var picker = String(document.getElementById("themePicker").innerHTML || "");
+var wired = THEMES.filter(function (t) { return picker.indexOf("themeSet('" + t.id + "')") !== -1; });
+chk(wired.length === THEMES.length, "admin picker offers all " + THEMES.length + " themes",
+    "wired: " + wired.map(function (t) { return t.id; }).join(", "));
+chk((picker.match(/aria-pressed="true"/g) || []).length === 1,
+    "exactly one theme shown as active");
+
+// ─────────────────────────────────────────────────────────────────────────────
+section("1b. Theme token contract (L21)");
+
+// Parse variables.css into { selector: { token: value } }.
+function cssBlocks(css) {
+  var out = {}, re = /([.:][\w-]+)\s*\{([\s\S]*?)\n\}/g, m;
+  while ((m = re.exec(css))) {
+    var sel = m[1], body = m[2].replace(/\/\*[\s\S]*?\*\//g, ""), t, tre = /(--[\w-]+)\s*:\s*([^;]+);/g;
+    out[sel] = out[sel] || {};
+    while ((t = tre.exec(body))) out[sel][t[1]] = t[2].trim();
+  }
+  return out;
+}
+var CSS = cssBlocks(__VARS_CSS);
+
+// Tokens that are deliberately theme-INDEPENDENT, plus the chrome a theme must
+// never touch. Everything else in :root is the per-theme colour contract.
+var THEME_FREE = ["--on-dark","--tier-copper","--radius-card","--radius-button","--radius-pill",
+  "--shadow-soft","--ease","--dur","--font-display","--font-body","--phone","--bg",
+  "--chrome-card","--chrome-text","--chrome-muted","--chrome-line","--chrome-accent","--chrome-danger",
+  "--streak-bg","--streak-burst","--streak-pill","--streak-text","--streak-accent","--streak-on","--streak-off",
+  "--space-xs","--space-sm","--space-md","--space-lg","--space-xl","--topbar-h","--nav-h"];
+
+var CONTRACT = Object.keys(CSS[":root"]).filter(function (k) { return THEME_FREE.indexOf(k) === -1; });
+chk(CONTRACT.length === 40, "contract is 40 colour tokens", "got " + CONTRACT.length);
+
+// Each theme class must define exactly the contract — no more, no fewer. A
+// missing token falls through to :root's cream and paints one warm patch into
+// a cool theme, which reads as intentional rather than broken.
+THEMES.filter(function (t) { return t.cls; }).forEach(function (t) {
+  var have = Object.keys(CSS["." + t.cls] || {});
+  var missing = CONTRACT.filter(function (k) { return have.indexOf(k) === -1; });
+  var extra   = have.filter(function (k) { return CONTRACT.indexOf(k) === -1; });
+  chk(missing.length === 0 && extra.length === 0, t.label + " defines the full contract",
+      (missing.length ? "missing: " + missing.join(" ") : "") +
+      (extra.length ? "  extra: " + extra.join(" ") : ""));
+});
+
+// The frame must hold still. --chrome-*/--bg/--phone style the admin panel, the
+// page and the bezel, all of which live OUTSIDE .screen where these classes
+// are applied — so an override here is not just unwanted, it is inert.
+var chromeLeak = [];
+THEMES.filter(function (t) { return t.cls; }).forEach(function (t) {
+  Object.keys(CSS["." + t.cls] || {}).forEach(function (k) {
+    if (k.indexOf("--chrome-") === 0 || k === "--bg" || k === "--phone") chromeLeak.push(t.cls + " " + k);
+  });
+});
+chk(chromeLeak.length === 0, "no theme touches chrome / --bg / --phone", chromeLeak.join(", "));
+
+// ── Contrast ────────────────────────────────────────────────────────────────
+// The reason --accent-fill-text and --on-accent exist: --accent is dark in the
+// light themes and light in the dark ones, so a single fixed text colour on it
+// cannot clear 4.5:1 in both. Checked rather than eyeballed.
+function resolve(theme, tok, depth) {
+  if ((depth || 0) > 8) return null;
+  var v = (CSS["." + theme] || {})[tok];
+  if (v === undefined) v = CSS[":root"][tok];
+  if (v === undefined) return null;
+  var m = /^var\((--[\w-]+)\)$/.exec(v.trim());
+  return m ? resolve(theme, m[1], (depth || 0) + 1) : v.trim();
+}
+function lum(hex) {
+  var m = /^#([0-9a-f]{6})$/i.exec(hex); if (!m) return null;
+  var c = [0, 2, 4].map(function (i) {
+    var s = parseInt(m[1].substr(i, 2), 16) / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+function ratio(a, b) {
+  var la = lum(a), lb = lum(b); if (la === null || lb === null) return null;
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+var PAIRS = [["--text","--card"],["--text","--screen"],["--muted","--card"],["--accent","--card"],
+  ["--accent-fill-text","--accent-fill"],["--on-accent","--accent"],
+  ["--good","--good-bg"],["--warn","--warn-bg"],["--info","--info-bg"],
+  ["--good-pill-text","--good-pill-bg"],["--warn-pill-text","--warn-pill-bg"],
+  ["--warn-pill-strong-text","--warn-pill-strong-bg"]];
+var lowContrast = [];
+THEMES.forEach(function (t) {
+  PAIRS.forEach(function (p) {
+    var fg = resolve(t.cls, p[0]), bg = resolve(t.cls, p[1]), r = ratio(fg, bg);
+    if (r !== null && r < 4.5) lowContrast.push(t.id + " " + p[0] + " on " + p[1] +
+      " = " + r.toFixed(2) + ":1 (" + fg + " / " + bg + ")");
+  });
+});
+chk(lowContrast.length === 0, THEMES.length + " themes x " + PAIRS.length + " pairs clear 4.5:1",
+    lowContrast.join("\n          "));
 
 // ─────────────────────────────────────────────────────────────────────────────
 section("2. D19 — no screen renders empty, in any state");
@@ -234,6 +352,9 @@ print("    · prefers-reduced-motion actually stilling the buddy idle and the");
 print("      daily-update sequence");
 print("    · Narration audio lining up with the visuals it is cued to");
 print("    · Whether the repaint reads as 'not a bank'");
+print("    · The four themes side by side (L21). The contract and contrast are");
+print("      checked above, but not whether Light/Dark actually LOOK like v2,");
+print("      nor whether the frame and admin panel hold still while switching");
 
 // ─────────────────────────────────────────────────────────────────────────────
 print("");

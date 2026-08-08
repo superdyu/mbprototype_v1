@@ -177,8 +177,9 @@ const state = {
     speed:           1
   },
 
-  // Color mode — toggled from admin panel, resets to light on page refresh
-  settings: { colorMode: "light" },
+  // Theme — picked from the admin panel, resets on page refresh (D03: no
+  // persistence). Valid ids live in THEMES (js/theme.js); default is Dark (L21).
+  settings: { colorMode: "dark" },
 
   // UI interaction state
   selectedBadge: "Credit Cards",

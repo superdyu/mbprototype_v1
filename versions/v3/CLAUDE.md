@@ -7,7 +7,7 @@ nobody opens another doc.
 
 | File | Why |
 |---|---|
-| `plan.md` §0 (repo root) | **19 locked decisions, L1–L19. Do not re-litigate them.** They were settled across eight rounds with the repo owner |
+| `plan.md` §0 (repo root) | **21 locked decisions, L1–L21. Do not re-litigate them.** L1–L19 were settled across eight question rounds with the repo owner; L20 and L21 landed mid- and post-build |
 | `versions/v3/PROGRESS.md` | Start at `Current state:`, work the first unchecked item, tick as you go |
 | `versions/v3/docs/architecture.md` | Cross-cutting contracts — data loading, taxonomy, nav, top bar, audio |
 | `versions/v3/docs/spec-coverage.md` | Where each of the 53 spec items lands |
@@ -64,7 +64,15 @@ moderate + cooks sometimes → `275 × 1.34 × 1.0 = 368.5` → **370**.
   destroys focus. Admin sliders are the exception, paired with `debouncedRender()`.
 - **`.item-card` is `display:block`, not flex.** Fix trailing children with
   scoped inline flex; never change the global rule.
-- Style with CSS variables only, never hardcoded hex. Light **and** dark must work.
+- Style with CSS variables only, never hardcoded hex. **All four themes** must
+  work (L21) — Light, Dark, Natural Light, Natural Dark. Adding a colour token
+  means adding it to `:root` **and** all three theme classes, or the sweep fails.
+- **Never hardcode a text colour over `--accent` or `--accent-fill`.** `--accent`
+  is dark in the light themes and light in the dark ones. Use `--on-accent` and
+  `--accent-fill-text`; `--on-dark` is only for genuinely always-dark surfaces.
+- **A theme must never set `--chrome-*`, `--bg` or `--phone`.** They style the
+  admin panel, page and bezel, which live outside `.screen` where theme classes
+  are applied — the override is inert, and the frame is meant to hold still.
 - **Surgical edits.** Change only what you're fixing. Never collapse files.
 
 **Copy** — applies to every surface

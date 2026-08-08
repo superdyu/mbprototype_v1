@@ -20,6 +20,9 @@ Pass log:
   JSON, plus a v2 cross-reference map for the strip. Found the household-index
   bug, two answer-key traps, three framing-tree traps, and the same wrong formula
   surviving in §6 (§16 logs it all).
+- **Post-build** — L21, four themes with Dark as the default (§17). Not a
+  planning pass; the build was already complete and swept. Logged here because
+  it changes the default a tester first sees, which L2/L19/D36 all speak to.
 
 ---
 
@@ -49,6 +52,7 @@ Settled across question rounds 1–8. Don't re-litigate.
 | L18 | **Character creation offers all five attributes** — breed, fur, eyes, nose, size — per 01-onboarding step 7. | **D40 is overridden.** It dropped eyes/nose and capped fur at four only because raster sheets can't recolour; under L15 there are no sheets, so the constraint is void and the cost is one line of description each. |
 | L20 | **The no-advice guardrail is code, not data.** `advice_deflect`'s 10 keywords are a floor; `ADVICE_PATTERNS` in `chat-router.js` catches the shapes they miss. Any question asking what to do gets the safeguard reply, checked **before** scoring. | D26 is absolute. The data alone missed 12 of 15 natural phrasings — "help me decide", "can I afford", "what would you do" — and each would have been answered by whichever topic shared a noun. Over-eager deflection is the safe failure: a retry costs a tester seconds, giving advice breaks the prototype's core rule. Verified both ways: 20/20 advice shapes deflect, 0 of 24 legitimate questions do. |
 | L19 | **The Finch-like repaint is Phase 2.5** — after the budget screens settle, before the daily loop is authored. | Closes the only spec decision with no phase (D36). L2 deferred it; this schedules it. See §15. |
+| L21 | **Four themes, picked in the admin panel. Dark is the default.** `Light` + `Dark` reproduce v2's palette; `Natural Light` + `Natural Dark` are the D36 repaint. `THEMES` (`js/theme.js`) is the single source of truth; the class lands on `.screen` only. | Owner call, post-Phase-6. The v2 pair exists so the repaint can be **judged against what it replaced** rather than from memory — that only works if switching is instant and side-by-side. **Dark as default deliberately means a tester's first screen is not the D36 cream**, which is a knowing trade: L21 governs the default *view*, D36 still governs the *design*. One line in `state.js` reverses it. See §17. |
 
 <!-- L1 voids two PROGRESS.md Phase 0 items outright ("Vite + React + Tailwind
      initialized", "Design tokens in Tailwind config"). Phase 0 shrinks to:
@@ -982,3 +986,73 @@ open item.
      was CORRECT when written and went stale when a later decision landed. The
      locked-decision table is cheap to update; the prose that references it is
      where the rot accumulates. Grep for the L-number when a decision changes. -->
+
+---
+
+## 17. Four themes (L21) — post-Phase-6 change
+
+Requested after the build was complete and swept. The ask: offer Light, Dark,
+Natural Light and Natural Dark in the admin panel, with Dark as the default.
+
+### 17.1 Why the v2 pair is worth carrying
+
+D36 replaced v2's blue-on-white with the cream/sage Finch palette, and once a
+repaint lands the thing it replaced stops being available to compare against —
+you are left arguing from memory about whether it improved. Keeping v2's palette
+as two switchable themes makes the comparison a two-click A/B on the *same*
+screen with the *same* data. That is worth more than the ~120 lines it costs.
+
+The corollary: **Light and Dark reproduce v2 faithfully, including its real
+alarm reds.** D36's "no red" governs the product design, which is the Natural
+pair. The v2 pair is the control in the experiment and is not held to the rule
+it exists to be measured against. Softening its reds would defeat the point.
+
+### 17.2 The contract, and why it is enforced
+
+`:root` keeps the full Natural Light token set, so every token always resolves
+and nothing can render unset. The other three themes are classes on `.screen`.
+
+The failure mode this invites is specific: a theme that omits a token silently
+inherits `:root`'s **cream**, painting one warm patch into a cool theme. It does
+not look broken — it looks like a deliberate accent. So the contract is machine-
+checked: all 40 colour tokens in every theme, no more, no fewer (`sweep.sh` §1b).
+Adding a token to `:root` now fails the sweep until all three themes define it.
+
+### 17.3 Three defects found, all pre-existing
+
+**Eight dead overrides.** `.dark-mode` set `--bg`, `--phone` and six `--chrome-*`
+values, but the class sits on `.screen` while all eight are consumed by `body`,
+`.phone` and `aside.admin` — an **ancestor and a sibling**. Dark mode never
+retinted the page, bezel or admin panel despite six lines that read as if it
+did. Deleted rather than wired up: chrome staying neutral is the stated design
+(§2, and the owner's "don't break the frame" constraint), so the code was wrong,
+not the behaviour. The sweep now asserts no theme touches those tokens.
+
+**An implicit colour pairing that only held by luck.** Four rules hardcoded
+`color: var(--on-dark)` over `background: var(--accent)`, and the primary button
+hardcoded `color: var(--ink)` over `--accent-fill`. That works only while
+`--accent` stays dark — but it *inverts* between light and dark themes, so
+Natural Dark was already painting cream text on pale sage at roughly 1.6:1. Two
+new tokens, `--on-accent` and `--accent-fill-text`, make the pairing explicit
+and let each theme resolve it. In both light themes the value is unchanged, so
+nothing shifts visually; the dark themes get a readable pill.
+
+**`--info` at 3.92:1.** The D36 palette deepened `--accent` and `--good` by eye
+to clear 4.5:1 and missed `--info`. The contrast gate added with the themes
+caught it on its first run. Now `#456F86` (4.88:1) — the lightest value that
+clears, to stay closest to the original sky.
+
+<!-- The lesson repeated from §16: the first two were invisible to inspection
+     and to a rendering sweep, because both produce plausible output. What found
+     them was asking "which element is this class actually ON?" and "what does
+     this token resolve to in EVERY theme?" — questions worth asking whenever a
+     value is used relationally rather than absolutely. -->
+
+### 17.4 Not fixed — logged instead
+
+Admin-panel buttons use the app's `.button` class, so they read `--accent` and
+`--chrome-*` at once. They currently render with `:root`'s natural-light accent
+regardless of theme, because theme classes never reach outside `.screen`. It is
+stable and legible, so it is not breaking anything — but it is product styling
+leaking into instrumentation, contrary to §2. Out of scope for L21; worth a pass
+if the admin panel is ever restyled.

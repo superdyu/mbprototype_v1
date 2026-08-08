@@ -7,7 +7,7 @@ expensive to change once code exists. Per-screen layout, copy, and interaction
 detail live in per-phase docs written just before that phase is built.
 
 Read alongside:
-- `plan.md` §0 — the nineteen locked decisions (L1–L19). Authoritative.
+- `plan.md` §0 — the twenty-one locked decisions (L1–L21). Authoritative.
 - `v3 Files/spec/docs/DECISIONS.md` — D01–D40. Beats every other spec doc.
 - `v3 Files/spec/docs/ASSUMPTIONS.md` — A1–A13. A1 is overridden by L1.
 
@@ -598,8 +598,8 @@ Plus, new in v3: a **full-bleed mode class** if the screen hides the nav (§8).
   destroys focus. Admin sliders are the deliberate exception, paired with
   `debouncedRender()`.
 - **Always `h()`-escape** anything interpolated into an HTML template literal.
-- **Style with CSS variables only**, never hardcoded hex — both light and dark
-  scopes must work. (Repaint is deferred per L2; v2's tokens stand for now.)
+- **Style with CSS variables only**, never hardcoded hex — **all four themes**
+  must work, not just the one you are looking at (§14).
 - **Iterate `CATEGORIES`, never `Object.keys(data)`** — `_note` keys (§5).
 
 ### Copy — cross-cutting, applies to every surface
@@ -741,7 +741,62 @@ test. A flat colour swatch would test nothing.
 
 ---
 
-## 14. Not covered here
+## 14. Theming — four themes, one contract (L21)
+
+Four themes ship, switched from the Admin Tools panel. Two reproduce v2's
+palette so the D36 repaint can be compared against what it replaced; two are the
+repaint itself. **Dark is the default** (`state.settings.colorMode`).
+
+| Theme | Class on `.screen` | What it is |
+|---|---|---|
+| Light | `.theme-light` | v2's crisp blue-on-white |
+| Dark | `.theme-dark` | v2's cool dark — **default** |
+| Natural Light | *(none — `:root`)* | D36 cream + sage |
+| Natural Dark | `.theme-natural-dark` | D36 dimmed, warm |
+
+`THEMES` in `js/theme.js` is the single source of truth. `render()` calls
+`themeApply()`, which puts exactly one class on `.screen`. To add a theme, add
+an entry there and a class in `variables.css` — nothing else reads the list.
+
+### The 40-token contract
+
+`:root` holds the complete Natural Light set, so every token always resolves.
+Each of the three classes must then define **all 40 colour tokens, no more and
+no fewer.**
+
+This is enforced (`scripts/sweep.sh` §1b) rather than trusted, because the
+failure mode is invisible: a theme that omits a token inherits `:root`'s
+**cream**, which paints one warm patch into a cool theme and reads as a
+deliberate accent rather than a bug. Adding a token to `:root` now fails the
+sweep until all three themes define it.
+
+### What a theme must never touch
+
+**`--chrome-*`, `--bg`, `--phone`.** These style the admin panel, the page and
+the bezel — all of which live *outside* `.screen`, where theme classes are
+applied. An override is therefore inert as well as unwanted: the frame is meant
+to hold still while the app repaints. The sweep asserts this. (Eight such dead
+overrides existed in the old `.dark-mode` and were removed — see `plan.md` §17.3.)
+
+### Colours that pair, and must be declared as pairs
+
+`--accent` is **dark** in the light themes and **light** in the dark ones. Any
+rule putting text on it therefore cannot hardcode a text colour — there are two
+tokens for this, and new rules should use them rather than reaching for
+`--on-dark`:
+
+| Background | Text token |
+|---|---|
+| `--accent` | `--on-accent` |
+| `--accent-fill` | `--accent-fill-text` |
+| a genuinely always-dark surface (lesson stage, night login) | `--on-dark` |
+
+The sweep checks 12 foreground/background pairs across all four themes at a
+4.5:1 floor. That gate caught `--info` shipping at 3.92:1 in Natural Light.
+
+---
+
+## 15. Not covered here
 
 Deliberately deferred to per-phase docs, written just before each phase:
 

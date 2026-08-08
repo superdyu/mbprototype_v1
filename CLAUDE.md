@@ -23,7 +23,7 @@ If you are working in `versions/v3/`, **read these three before touching code**:
 
 | File | What it is |
 |---|---|
-| `plan.md` (repo root) | **Locked decisions L1–L19** in §0 — do not re-litigate them. Plus the rationale, spec contradictions, and review logs |
+| `plan.md` (repo root) | **Locked decisions L1–L21** in §0 — do not re-litigate them. Plus the rationale, spec contradictions, and review logs |
 | `versions/v3/docs/architecture.md` | Cross-cutting contracts: data loading, the 12-category taxonomy, nav/back-stack, top bar, audio pipeline, standing rules |
 | `versions/v3/PROGRESS.md` | The build checklist. Start at `Current state:`, work the first unchecked item |
 

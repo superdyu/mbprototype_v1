@@ -169,7 +169,7 @@ function render() {
   screenRoot.classList.toggle("journal-mode",     ["dailySummary","dailyShare"].includes(state.screen) || screenRoot.classList.contains("journal-mode"));
   screenRoot.classList.toggle("journal-mode",     state.screen === "onboarding" || screenRoot.classList.contains("journal-mode"));
   screenRoot.classList.toggle("chat-mode",        state.screen === "chat");
-  document.querySelector(".screen").classList.toggle("dark-mode", state.settings.colorMode === "dark");
+  themeApply();   // one of four theme classes on .screen (js/theme.js, L21)
   screenRoot.innerHTML  = renderScreen();
   if (state.screen === "lesson") lpMountHook(lpWasPlaying);
   if (state.screen === "chat")   chatMountHook();   // pin the thread to the newest message
@@ -191,9 +191,23 @@ function render() {
   document.getElementById("adminRoot").innerHTML         = renderAdmin();
   document.getElementById("adminSubtitle").textContent   = adminSubtitle();
 
-  // Color mode button label — shows the mode you'd switch TO
-  const cmBtn = document.getElementById("colorModeBtn");
-  if (cmBtn) cmBtn.textContent = state.settings.colorMode === "dark" ? "Light Mode" : "Dark Mode";
+  // Theme picker — four options, active one highlighted (L21). Styled with
+  // --chrome-* because it is admin instrumentation, not the product.
+  const tp = document.getElementById("themePicker");
+  if (tp) {
+    const active = themeCurrent().id;
+    tp.innerHTML = THEMES.map(t => `
+      <button type="button"
+        onclick="themeSet('${t.id}')"
+        aria-pressed="${t.id === active}"
+        style="padding:5px 4px;font-size:10px;font-weight:700;cursor:pointer;
+               border-radius:6px;white-space:nowrap;
+               border:1px solid ${t.id === active ? "var(--chrome-accent)" : "var(--chrome-line)"};
+               background:${t.id === active ? "var(--chrome-accent)" : "var(--chrome-card)"};
+               color:${t.id === active ? "#FFFFFF" : "var(--chrome-muted)"};">
+        ${h(t.label)}
+      </button>`).join("");
+  }
 
   // Admin collapse — toggle class on page root, show/hide expand tab
   document.querySelector(".page").classList.toggle("admin-collapsed", !!state.adminCollapsed);

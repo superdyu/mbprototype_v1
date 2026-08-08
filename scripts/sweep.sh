@@ -60,6 +60,13 @@ while read -r src; do
   n=$((n + 1))
 done < <(grep -o 'src="[^"]*\.js"' "$APP/index.html" | sed 's/src="//;s/"//')
 
+# ── the stylesheet, as a string ─────────────────────────────────────────────
+# The theme checks need to read variables.css, and jsc has no file access from
+# the concatenated bundle. Inject it as a JSON-escaped literal instead.
+printf '\nvar __VARS_CSS = ' >> "$OUT"
+python3 -c 'import json,sys; sys.stdout.write(json.dumps(open("'"$APP"'/css/variables.css").read()))' >> "$OUT"
+printf ';\n' >> "$OUT"
+
 printf '\n// ══ sweep ══\n' >> "$OUT"
 cat scripts/sweep.js >> "$OUT"
 
