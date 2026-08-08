@@ -90,6 +90,8 @@ const state = {
   // payload, so it can never drift from what would actually be posted.
   share: { anonymized: true, previewOpen: false, copied: false },
   streakRegisteredDay: null,
+  goalDraft: null,
+  goalSuggestions: [],
 
   // ── Money Journal ─────────────────────────────────────────────────────────
   // journalSession:   the in-flight entry (null when not writing one)

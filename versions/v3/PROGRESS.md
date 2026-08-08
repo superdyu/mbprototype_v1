@@ -1,11 +1,11 @@
 # v3 Build Progress
 
-**Current state:** **Phase 4 COMPLETE (4a + 4b).** The full daily loop runs:
-login → update (real narration, 8 cue types) → summary → share → streak → home.
-Anonymization is on by default and genuinely redacts — the preview is the
-literal payload, asserted character-for-character against the clipboard.
-33 assertions pass, 37 screens both modes. **Next action: Phase 5** — goals,
-My Progress, education (29 items, incl. the 15 lesson script bodies).
+**Current state:** **Phase 5a COMPLETE** (Phase 5 split three ways: 5a goals ·
+5b My Progress · 5c education). Goals rebuilt to the v3 model — two types with
+inverted pace math, spend limits tracking month-to-date live, event-based
+updates consuming the journal's `q_balance`, contextual suggestions with
+"create your own" always last. 41 assertions pass.
+**Next action: Phase 5b** — My Progress, six sections in A3 order.
 — *updated 2026-08-07*
 
 > **Read before touching anything:**
@@ -271,14 +271,19 @@ palette rather than converted.
 
 ## Phase 5 — Goals, Progress, Education
 
-### Goals — v3 model (L3, rebuilt not ported)
-- [ ] `state.goals`: one strategic + several tactical
-- [ ] **Two goal types with inverted math**: savings accumulates toward a target (>100% good); spend-limit is a monthly ceiling (>100% bad). Seed uses `behind` vs `over`
-- [ ] Pace display — ahead / on track / behind. Pace over raw figures
-- [ ] Contextual suggestions after a meaningful action: 1–3, scoped to what's on screen, "create your own" always last
-- [ ] Becomes "update your goals" once enough goals are in flight
-- [ ] Event-based updates consuming the `q_balance` event — never ask for a number directly
-- [ ] Seeded emergency fund reads as behind but recoverable (D17)
+### 5a — Goals — v3 model (L3, rebuilt not ported)
+- [x] `state.goals`: one strategic + several tactical
+- [x] **Two goal types with inverted math**: savings accumulates toward a target (>100% good); spend-limit is a monthly ceiling (>100% bad). Seed uses `behind` vs `over`
+      ↳ type is structural (a `period` means a ceiling), not a stored flag. Asserted both directions: the seeded savings goal at 40% and the spend goal at 134% are **both** the poor status — a single ">100 is good" check would have congratulated someone for blowing their dining budget
+- [x] Pace display — ahead / on track / behind. Pace over raw figures
+      ↳ **computed, never the seed's stored `pacePercent`**, which goes stale the moment anything moves. Comes out at 40% against the seed's 41% — the seed was a snapshot, this tracks
+- [x] Contextual suggestions after a meaningful action: 1–3, scoped to what's on screen, "create your own" always last
+      ↳ overall suggestions are drawn from the categories most over plan, so they are earned rather than generic. Never re-suggests a goal already tracked
+- [x] Becomes "update your goals" once enough goals are in flight
+- [x] Event-based updates consuming the `q_balance` event — never ask for a number directly
+      ↳ a checking balance updates savings goals and leaves spend limits alone. Events are marked consumed, so re-entering the tab cannot re-apply them
+- [x] Seeded emergency fund reads as behind but recoverable (D17)
+      ↳ spend limits also track month-to-date **live**, so a journal entry moves the goal (L17)
 
 ### My Progress — 6 sections in A3 order
 - [ ] Spend trend chart, hand-rolled SVG (no recharts under L1) + month-to-date summary above

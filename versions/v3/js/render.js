@@ -30,7 +30,7 @@ function adminSubtitle() {
   if (state.screen === "lifestyleWizard") return "Lifestyle wizard — 6 questions feeding the peer model.";
   if (state.screen === "lifestyleWizardReview") return "Starting budget from the peer model; sliders adjust before saving.";
   if (state.screen === "budgetDone")     return "Budget saved through the seam.";
-  if (state.screen === "goals")          return "Goals editor — create, edit, delete goals.";
+  if (state.screen === "goals")          return "Goals — one strategic, several tactical. Pace is computed; the two types invert.";
   if (state.screen === "myProgress")     return "My Progress tab — output hub for profile, results, comparisons, goals.";
   if (state.screen === "comparison")     return "Three layers — plan, what you told me, peers. Both gaps labelled distinctly.";
   if (state.screen === "accountBalances") return "Account balance snapshots — point-in-time entries.";
@@ -71,7 +71,7 @@ function renderScreen() {
   if (state.screen === "nextAction")        return renderNextAction();
   if (state.screen === "commitment")        return renderCommitment();
   if (state.screen === "finish")            return renderFinish();
-  if (state.screen === "goals")             return renderGoals();      // Budget → Goals (input/edit)
+  if (state.screen === "goals")             return renderGoalsV3();
   if (state.screen === "learn")             return renderLearn();
   if (state.screen === "topic")             return renderTopic();
   if (state.screen === "reward-preview")    return renderRewardPreview();
@@ -100,7 +100,7 @@ function renderAdmin() {
   if (state.screen === "journalConfirm") return renderJournalConfirmAdmin();
   if (state.screen === "journalDone")   return renderJournalDoneAdmin();
   if (state.screen === "home")          return renderHomeAdmin();
-  if (state.screen === "goals")         return renderGoalsAdmin();
+  if (state.screen === "goals")         return renderGoalsV3Admin();
   if (state.screen === "learn")         return renderLearnAdmin();
   if (state.screen === "topic")         return renderTopicAdmin();
   if (state.screen === "myProgress")    return renderMyProgressAdmin();

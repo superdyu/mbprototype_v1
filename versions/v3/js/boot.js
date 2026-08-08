@@ -69,6 +69,19 @@ function bootV3() {
   // different status words for exactly that reason — "behind" vs "over".
   state.strategicGoal = v3Clone(PERSONA.goals.strategic);
   state.tacticalGoals = v3Clone(PERSONA.goals.tactical);
+  // Shape the seed the same way the L11 observation reframe does — in state, so
+  // data/*.json stays verbatim. A spend-limit goal needs its category to track
+  // month-to-date live, and a savings goal needs a start date to compute pace.
+  state.tacticalGoals.forEach(g => {
+    if (g.period) g.category = goalInferCategory(g);
+    if (g.targetDate && !g.startedAt) {
+      // The persona is six days in; date the goal from the start of its window
+      // so the seeded 41% pace is reproduced rather than asserted.
+      const end = new Date(g.targetDate);
+      const start = new Date(end); start.setMonth(start.getMonth() - 12);
+      g.startedAt = start.toISOString().slice(0, 10);
+    }
+  });
 
   // ── Daily tasks, v3 shape (Phase 3 wires home) ─────────────────────────────
   // Precomputed order (A7). Routes use their own vocabulary — see the route map

@@ -1807,3 +1807,18 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   background: var(--card); color: var(--muted);
   font-size: 12px; opacity: .55; cursor: not-allowed;
 }
+
+/* ─── Goals ───────────────────────────────────────────────────────────────── */
+.goal-strategic { background: var(--accent-soft); border-color: var(--accent-border); }
+.goal-strategic-label { margin: 0; font-family: var(--font-display); font-size: 16px; font-weight: 850; }
+.goal-card { position: relative; padding: 14px; margin-bottom: 8px; }
+.goal-bar { height: 7px; border-radius: 99px; background: var(--progress-bg); overflow: hidden; }
+.goal-bar > span { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
+.goal-bar-warn { background: var(--warn); }
+.goal-pace { margin: 8px 0 0; font-size: 12px; font-weight: 700; color: var(--text); }
+.goal-remove {
+  position: absolute; top: 10px; right: 10px;
+  background: none; border: 0; color: var(--muted);
+  font-size: 10px; cursor: pointer; padding: 4px;
+}
+.goal-remove:hover { color: var(--warn); }
