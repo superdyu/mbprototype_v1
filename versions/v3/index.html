@@ -73,8 +73,23 @@ window.onunhandledrejection = function(e) {
 };
 </script>
 
-<!-- 1. Data -->
+<!-- 1. Config + seed data — must load BEFORE anything that reads them.
+     The app runs on file://, where fetch() is blocked and there is no dev
+     server, so spec JSON ships as script-loadable assignments (L13).
+     The .js files are GENERATED — run scripts/wrap-data.sh, never hand-edit. -->
+<script src="js/config.js"></script>
+<script src="data/persona.js"></script>
+<script src="data/seed-state.js"></script>
+<script src="data/journal-questions.js"></script>
+<script src="data/peer-benchmarks.js"></script>
+<script src="data/daily-scripts.js"></script>
+<script src="data/buddy-responses.js"></script>
+<script src="data/lessons.js"></script>
+
+<!-- 2. Data -->
 <script src="js/state.js"></script>
+<!-- Seeds state from the data globals above; called from navigation.js at boot -->
+<script src="js/boot.js"></script>
 <script src="js/utils.js"></script>
 <!-- Chat keyword matcher — data/logic only (no DOM); screens/chat.js renders it -->
 <script src="js/chat-router.js"></script>
@@ -82,12 +97,12 @@ window.onunhandledrejection = function(e) {
      Phase 2's lifestyle wizard becomes its only adapter (L6). -->
 <script src="js/budget-baseline.js"></script>
 
-<!-- 2. Shared components (before screens that use them) -->
+<!-- 3. Shared components (before screens that use them) -->
 <script src="components/thermometer.js"></script>
 <script src="components/streak-counter.js"></script>
 
 
-<!-- 3. Screen renderers -->
+<!-- 4. Screen renderers -->
 <script src="screens/streak.js"></script>
 <script src="screens/home.js"></script>
 <script src="screens/budget-utils.js"></script>
@@ -120,11 +135,11 @@ window.onunhandledrejection = function(e) {
 <script src="screens/my-debts.js"></script>
 <script src="screens/debt-analyzer.js"></script>
 
-<!-- 3. Shared UI components -->
+<!-- 5. Shared UI components -->
 <script src="components/badge-ring.js"></script>
 <script src="components/nav.js"></script>
 
-<!-- 4. Core engine -->
+<!-- 6. Core engine -->
 <script src="js/render.js"></script>
 <script src="js/navigation.js"></script>
 

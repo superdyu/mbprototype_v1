@@ -1,0 +1,100 @@
+// ─── Boot: seed state from the v3 data files ─────────────────────────────────
+// Runs once, from js/navigation.js, before the first render().
+//
+// The seven data globals (PERSONA, SEED_STATE, …) are READ-ONLY source data —
+// nothing may mutate them. Everything copied into `state` is deep-cloned so a
+// later edit can never write back into the loaded spec.
+//
+// In-memory only (D03). No localStorage, no backend. A refresh returns to the
+// gate, which re-boots this from scratch — that IS the reset.
+//
+// ── What 0c deliberately does NOT seed ───────────────────────────────────────
+// Three slots collide with v2 code that is still live. Overwriting them now
+// would break the app before its replacement exists, so each is seeded by the
+// phase that also rewires its consumer:
+//
+//   state.budget  ← SEED_STATE.budget.monthly   Phase 0d (taxonomy rewrite)
+//   state.tasks   ← SEED_STATE.dailyTasks.today Phase 3  (home screen)
+//   state.goals   ← PERSONA.goals               Phase 5  (v3 goals model)
+//
+// The v3-shaped data for the latter two is loaded now under distinct names
+// (state.dailyTasks, state.strategicGoal/tacticalGoals) so it is available and
+// inspectable; the owning phase swaps the consumer over and drops the v2 slot.
+
+function v3Clone(o) {
+  return o == null ? o : JSON.parse(JSON.stringify(o));
+}
+
+function bootV3() {
+  // ── Identity ───────────────────────────────────────────────────────────────
+  // Persona backs everything (D08). Onboarding overrides ONLY zip, household
+  // size and income band (D09) — Phase 3 applies those on top of this.
+  state.profile = v3Clone(PERSONA.identity);
+  state.lifestyle = v3Clone(PERSONA.lifestyle);
+  state.buddy = v3Clone(PERSONA.buddy);
+
+  // ── Engagement counters (display-only, L16) ────────────────────────────────
+  // Kibble accrues and shows; nothing spends it. Buddy level is a shown number
+  // with no progression rule. Every kibble sink is on the spec's deferred list.
+  state.kibble = PERSONA.state.kibbleBalance;
+  state.buddyLevel = PERSONA.state.buddyLevel;
+
+  // D06/D07 — the only thing SKIP_ONBOARDING changes at boot.
+  state.streak = SKIP_ONBOARDING
+    ? PERSONA.state.streakDays              // 6 — straight to home
+    : PERSONA.state.streakDaysIfOnboarded;  // 1 — after onboarding
+
+  // ── The three spend layers (architecture §5) ───────────────────────────────
+  // Self-reported = monthToDateActuals, NOT the sum of journalHistory. Six days
+  // of journal detail (~$168 dining) sits inside fabricated month-to-date totals
+  // ($429 dining) per D19. Getting this backwards breaks every observation.
+  state.mtd = v3Clone(SEED_STATE.monthToDateActuals);
+  state.journal = v3Clone(SEED_STATE.journalHistory);
+
+  // ── Review surfaces ────────────────────────────────────────────────────────
+  state.bills = v3Clone(PERSONA.bills.upcoming);
+  state.subs = v3Clone(PERSONA.subscriptions.known);
+  state.tipBanner = SEED_STATE.tipBanner.today;
+
+  // ── Goals, v3 shape (Phase 5 wires the screens) ────────────────────────────
+  // One strategic goal, several tactical. Two tactical TYPES with inverted
+  // math: a savings goal accumulates toward a target (>100% is good); a
+  // spend-limit goal is a monthly ceiling (>100% is bad). The seed uses two
+  // different status words for exactly that reason — "behind" vs "over".
+  state.strategicGoal = v3Clone(PERSONA.goals.strategic);
+  state.tacticalGoals = v3Clone(PERSONA.goals.tactical);
+
+  // ── Daily tasks, v3 shape (Phase 3 wires home) ─────────────────────────────
+  // Precomputed order (A7). Routes use their own vocabulary — see the route map
+  // in architecture §9; `lesson:apr` shows they can carry a parameter.
+  state.dailyTasks = v3Clone(SEED_STATE.dailyTasks.today);
+
+  // ── Observations ───────────────────────────────────────────────────────────
+  state.observations = v3Clone(SEED_STATE.observations.seeded);
+  v3ReframeDiningObservation();
+
+  // Journal entries the tester submits append here and feed month-to-date
+  // (L17). Empty at boot — the six seeded days live in state.journal.
+  state.journalEntries = [];
+}
+
+// L11 — obs_dining_over_peers ships typed `peer_gap` and headlined "than your
+// peers", but its numbers (429 vs 320) are the PLAN comparison: 320 is the
+// user's budget, not the benchmark. The real peer value is 370, a 16% gap.
+// 04-budget-benchmarks says the seeded observation IS the plan comparison, and
+// peer-benchmarks.json flags the discrepancy itself in `_note_gap`.
+//
+// So the numbers are right and the headline is wrong. Reframed here at boot
+// rather than by editing data/*.json, which stays a byte-identical spec copy.
+// Phase 2 adds the separate peer card (429 vs 370) alongside it — both framings
+// must appear, labelled distinctly, and neither may stand in for the other.
+function v3ReframeDiningObservation() {
+  const o = (state.observations || []).find(x => x.id === "obs_dining_over_peers");
+  if (!o) return;
+  o.type = "plan_gap";
+  o.comparedTo = "plan";
+  o.headline = "You're spending more on dining out than you planned";
+  o.detail = "34% above your own budget for this month.";
+  o.planValue = o.peerValue;   // 320 — mislabelled in the seed; it is the budget
+  delete o.peerValue;          // the real peer value is derived, not seeded
+}

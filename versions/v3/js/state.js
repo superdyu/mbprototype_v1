@@ -878,5 +878,8 @@ function resetUserData() {
   state.pendingBaseline      = null;
   state.lessonPlayback       = { sentences: [], cues: [], total: 0, elapsed: 0, lastTick: 0, index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1 };
   state.chat                 = { messages: [] };
+  // Re-seed from the v3 data files so reset returns to the seeded start state
+  // rather than an empty one (D03: refresh does the same thing via the gate).
+  bootV3();
   render();
 }

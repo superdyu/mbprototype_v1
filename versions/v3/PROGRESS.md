@@ -1,9 +1,11 @@
 # v3 Build Progress
 
-**Current state:** **Phase 0b complete.** Both builders + Goals V2 retired
-(4,733 lines out; 61 JS files → 41). App boots clean in a DOM harness, all 29
-screens render. `lifestyle-chain.js` was **kept** — it is not a builder (see
-divergence). Next action: **Phase 0c, data.** — *updated 2026-08-07*
+**Current state:** **Phase 0c complete.** All 7 spec JSONs load as script-wrapped
+globals; `bootV3()` seeds 16 state slots and applies the L11 reframe. Verified by
+harness: 21 value assertions + globals-not-mutated + all 29 screens render.
+`state.budget/tasks/goals` deliberately NOT seeded yet — they collide with live
+v2 code (see divergence). Next action: **Phase 0d, taxonomy.**
+— *updated 2026-08-07*
 
 > **Read before touching anything:**
 > 1. `plan.md` §0 — locked decisions **L1–L19**. Do not re-litigate them.
@@ -61,13 +63,20 @@ divergence). Next action: **Phase 0c, data.** — *updated 2026-08-07*
 
 ## Phase 0c — Data (L13)
 
-- [ ] Copy `v3 Files/spec/data/*.json` → `versions/v3/data/` (7 files, verbatim, never hand-edited)
-- [ ] `scripts/wrap-data.sh` — regenerates `.js` wrappers from `.json`
-- [ ] Generate `data/*.js` → globals `PERSONA` · `SEED_STATE` · `JOURNAL_QUESTIONS` · `PEER_BENCHMARKS` · `DAILY_SCRIPTS` · `BUDDY_RESPONSES` · `LESSONS_V3`
-- [ ] `<script>` tags in `index.html`, data block loading **before** everything that reads it
-- [ ] `js/config.js` — `SKIP_ONBOARDING`, loaded first
-- [ ] `boot()` maps data → state per architecture §2
-- [ ] **Verify: no `fetch`/XHR anywhere.** `file://` blocks them and there is no dev server (architecture §1)
+- [x] Copy `v3 Files/spec/data/*.json` → `versions/v3/data/` (7 files, verbatim, never hand-edited)
+      ↳ `diff -rq` against the spec: byte-identical
+- [x] `scripts/wrap-data.sh` — regenerates `.js` wrappers from `.json`
+      ↳ deterministic: re-running changes nothing. Each wrapper's embedded JSON verified byte-identical to its `.json`
+- [x] Generate `data/*.js` → globals `PERSONA` · `SEED_STATE` · `JOURNAL_QUESTIONS` · `PEER_BENCHMARKS` · `DAILY_SCRIPTS` · `BUDDY_RESPONSES` · `LESSONS_V3`
+- [x] `<script>` tags in `index.html`, data block loading **before** everything that reads it
+      ↳ 41 → 50 tags, all resolve. Load sections renumbered 1–6
+- [x] `js/config.js` — `SKIP_ONBOARDING`, loaded first
+      ↳ flip verified: `false` → streak 1, `true` → streak 6, nothing else changes
+- [x] `boot()` maps data → state per architecture §2
+      ↳ `bootV3()` in `js/boot.js`, called from `navigation.js` before the first render. `resetUserData()` re-seeds through it so reset returns to the seeded state, not an empty one
+      ↳ **3 slots deliberately deferred** — see divergence
+- [x] **Verify: no `fetch`/XHR anywhere.** `file://` blocks them and there is no dev server (architecture §1)
+      ↳ clean — the only `fetch` matches are comments explaining why it can't be used
 
 ## Phase 0d — Taxonomy (do before Phase 1)
 
@@ -255,6 +264,24 @@ Verified by clicking through, not by inspection.
 ## Divergence log
 
 One line per item that landed differently than specified, with the why.
+
+**0c — three state slots were deliberately not seeded.** architecture §2 maps
+`state.budget`, `state.tasks` and `state.goals` from the data, but all three
+names are already owned by live v2 code: v2's 5-bucket budget model, v2's task
+cards (`title`/`description`/`cta`), and v2's simple goals array. Overwriting
+them in 0c would break `home.js` and the budget screens before their
+replacements exist — and "never leave a session with a broken app" is the rule.
+
+The v3-shaped data is loaded now under non-colliding names so it is available
+and inspectable; the phase that rewires the consumer also swaps the slot:
+
+| v3 data | parked as | consumer rewired in |
+|---|---|---|
+| `SEED_STATE.budget.monthly` | *(not loaded)* | **0d** — taxonomy rewrite owns it |
+| `SEED_STATE.dailyTasks.today` | `state.dailyTasks` | **3** — home screen |
+| `PERSONA.goals` | `state.strategicGoal` + `state.tacticalGoals` | **5** — v3 goals model |
+
+All 14 other slots were verified free of collisions before writing.
 
 **0b — `lifestyle-chain.js` is not a budget builder; it was kept.** The 0b item
 listed it under "Retire Lifestyle Survey (L6)". Reading it first showed that is

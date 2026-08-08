@@ -285,6 +285,9 @@ function completeLesson() {
 // is guaranteed to be defined before this call fires.
 // replaceState seeds the initial history entry (screen: "home") so that
 // pressing back from the second screen cleanly returns to Home.
+// Seed state from the v3 data files before anything renders (js/boot.js).
+bootV3();
+
 try { history.replaceState(getNavSnapshot(), ''); } catch(e) {}
 render();
 
