@@ -95,14 +95,14 @@ function navAdminJump(screen) {
 
 // Flow entry points that should return to Home when complete.
 // Set flowOrigin so the finish screen knows where to send the user back.
-const FLOW_ENTRY_SCREENS = ["budgetSetup", "lifestyle", "lifestyleChain", "accountBalances", "debtBalances"];
+const FLOW_ENTRY_SCREENS = ["lifestyleWizard", "lifestyle", "lifestyleChain", "accountBalances", "debtBalances"];
 
 // Entry point for a Home daily task. Switches to the home stack FIRST, so the
 // task's destination backs to Home rather than to whatever tab was last open.
 function taskGo(destination) {
   if (FLOW_ENTRY_SCREENS.includes(destination)) {
     state.flowOrigin = "home";
-    if (destination === "budgetSetup") {
+    if (destination === "lifestyleWizard") {
       state.postResultContext = "budget";
     }
   }
@@ -129,10 +129,6 @@ function currentBadge() {
   return state.badges.find(b => b.name === state.selectedBadge) || state.badges[0];
 }
 
-function selectBudgetCategory(key) {
-  state.selectedBudgetCategory = key;
-  go("budgetCategory");
-}
 
 function goMyDebts(editId) {
   state.selectedDebt = editId || null;
@@ -305,7 +301,7 @@ function completeLesson() {
 //
 // Tab → screens mapping (activeTabFor() in utils.js):
 //   home        → home
-//   aboutMe     → aboutMe, budgetSetup, budgetCategory, myDebts, debtAnalyzer,
+//   aboutMe     → aboutMe, lifestyleWizard, myDebts, debtAnalyzer,
 //                 lifestyle, lifestyleChain, accountBalances, debtBalances, goals
 //   myProgress  → myProgress
 //   learn       → learn, topic, reward-preview, lesson, quiz, simulation
@@ -314,7 +310,7 @@ function completeLesson() {
 // Post-result flow (no tab active, no nav bar):
 //   budget save / lifestyle save / monthly update complete
 //     → postResult → nextAction → commit → finish → myProgress
-//   "Adjust it" path: nextAction → budgetSetup (mid-loop exit)
+//   "Adjust it" path: nextAction → Budget tab (mid-loop exit)
 //   "Compare more" path: nextAction → myProgress (mid-loop exit)
 //   "Make a goal" path: nextAction → commitment → finish → myProgress
 //   "Accept" / "Review later": nextAction → finish → myProgress (or flowOrigin)

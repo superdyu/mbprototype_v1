@@ -89,7 +89,7 @@ function chatLessonReply(lesson) {
 function chatBudgetLink() {
   return state.budget.status === "empty"
     ? { label: "Take me to Budget", action: "go('aboutMe')" }
-    : { label: "Open my budget",    action: "go('budgetSetup')" };
+    : { label: "Open my budget",    action: "navGoTab('aboutMe')" };
 }
 
 // Ordered: first keyword match wins. Each respond() returns { text, link? }.

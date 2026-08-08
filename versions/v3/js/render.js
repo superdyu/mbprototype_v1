@@ -21,10 +21,11 @@ function adminSubtitle() {
   if (state.screen === "topic")          return "Override lesson statuses for this badge.";
   if (state.screen === "reward-preview") return "Lesson preview — read-only. Edit content in Learn admin.";
   if (state.screen === "lesson")         return "Toggle stage style, seek to sentence for testing.";
-  if (state.screen === "aboutMe")        return "Budget tab — input hub for budget, lifestyle, goals, balances.";
+  if (state.screen === "aboutMe")        return "Budget — 12 flat categories, plan vs what the journal says.";
+  if (state.screen === "lifestyleWizard") return "Lifestyle wizard — 6 questions feeding the peer model.";
+  if (state.screen === "lifestyleWizardReview") return "Starting budget from the peer model; sliders adjust before saving.";
+  if (state.screen === "budgetDone")     return "Budget saved through the seam.";
   if (state.screen === "goals")          return "Goals editor — create, edit, delete goals.";
-  if (state.screen === "budgetSetup")    return "Budget setup — income, housing, ZIP, major bills.";
-  if (state.screen === "budgetCategory") return "Intentional toggle, target spend, sub-category amounts.";
   if (state.screen === "myProgress")     return "My Progress tab — output hub for profile, results, comparisons, goals.";
   if (state.screen === "lifestyle")      return "Lifestyle theme selection — 5 themes.";
   if (state.screen === "lifestyleChain") return "Lifestyle question chain — answers drive budget sub-sliders.";
@@ -48,8 +49,10 @@ function renderScreen() {
   if (state.screen === "journalConfirm")    return renderJournalConfirm();
   if (state.screen === "journalDone")       return renderJournalDone();
   if (state.screen === "home")              return renderHome();
-  if (state.screen === "aboutMe")           return renderAboutMe();
-  if (state.screen === "budgetSetup")       return renderBudgetSetup();
+  if (state.screen === "aboutMe")           return renderBudgetV3();
+  if (state.screen === "lifestyleWizard")   return renderLifestyleWizard();
+  if (state.screen === "lifestyleWizardReview") return renderLifestyleWizardReview();
+  if (state.screen === "budgetDone")        return renderBudgetDone();
   if (state.screen === "budgetUpdateConfirm") return renderBudgetUpdateConfirm();
   if (state.screen === "myProgress")        return renderMyProgress();
   if (state.screen === "lifestyle")         return renderLifestyle();
@@ -61,13 +64,11 @@ function renderScreen() {
   if (state.screen === "commitment")        return renderCommitment();
   if (state.screen === "finish")            return renderFinish();
   if (state.screen === "goals")             return renderGoals();      // Budget → Goals (input/edit)
-  if (state.screen === "analysis")          return renderAboutMe();    // legacy redirect
   if (state.screen === "learn")             return renderLearn();
   if (state.screen === "topic")             return renderTopic();
   if (state.screen === "reward-preview")    return renderRewardPreview();
   if (state.screen === "lesson")            return renderLesson();
   if (state.screen === "quiz")              return renderQuiz();
-  if (state.screen === "budgetCategory")    return renderBudgetCategory();
   if (state.screen === "simulation")        return renderSimulation();
   if (state.screen === "marketplace")       return renderMarketplace();
   if (state.screen === "marketplaceDetail") return renderMarketplaceDetail();
@@ -93,10 +94,9 @@ function renderAdmin() {
   if (state.screen === "marketplace")   return renderMarketplaceAdmin();
   if (state.screen === "lesson")        return renderLessonAdmin();
   if (state.screen === "reward")        return renderRewardAdmin();
-  if (state.screen === "aboutMe")       return renderAboutMeAdmin();
-  if (state.screen === "analysis")      return renderAboutMeAdmin();   // legacy history redirect
-  if (state.screen === "budgetSetup")   return renderBudgetAdmin();
-  if (state.screen === "budgetCategory") return renderBudgetCategoryAdmin();
+  if (state.screen === "aboutMe")       return renderBudgetV3Admin();
+  if (state.screen === "lifestyleWizard") return renderLifestyleWizardAdmin();
+  if (state.screen === "lifestyleWizardReview") return renderLifestyleWizardAdmin();
   if (state.screen === "myDebts")       return renderMyDebtsAdmin();
   if (state.screen === "debtAnalyzer")  return renderDebtAnalyzerAdmin();
   if (state.screen === "chat")          return renderChatAdmin();
@@ -108,7 +108,7 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="navAdminJump(this.value)">
-          ${["streak","home","journalEntry","journalConfirm","journalDone","aboutMe","budgetSetup","myProgress","lifestyle","lifestyleChain",
+          ${["streak","home","journalEntry","journalConfirm","journalDone","aboutMe","lifestyleWizard","lifestyleWizardReview","budgetDone","myProgress","lifestyle","lifestyleChain",
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
              "goals","learn","topic","lesson","quiz","simulation","marketplace",
              "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
@@ -132,7 +132,7 @@ function render() {
   lpStopPlayback();
 
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");
-  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone"].includes(state.screen));
+  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","lifestyleWizard","lifestyleWizardReview","budgetDone"].includes(state.screen));
   screenRoot.classList.toggle("streak-mode",      state.screen === "streak");
   screenRoot.classList.toggle("chat-mode",        state.screen === "chat");
   document.querySelector(".screen").classList.toggle("dark-mode", state.settings.colorMode === "dark");

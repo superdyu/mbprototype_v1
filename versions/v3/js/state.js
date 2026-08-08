@@ -21,7 +21,9 @@ const destinations = [
   ["journalConfirm", "Journal: Confirm"],
   ["journalDone",    "Journal: Done"],
   ["aboutMe",        "Budget"],
-  ["budgetSetup",    "Budget Setup"],
+  ["lifestyleWizard","Lifestyle Wizard"],
+  ["lifestyleWizardReview","Wizard: Review"],
+  ["budgetDone",     "Budget: Saved"],
   ["myProgress",     "My Progress"],
   ["lifestyle",      "Lifestyle"],
   ["learn",          "Learn"],
@@ -75,6 +77,14 @@ const state = {
   journalEntriesCount: 0,
   goalEvents: [],
 
+  // ── Plan (12-category budget) ─────────────────────────────────────────────
+  // "empty" until a builder saves through the seam. v2's state.budget is
+  // vestigial and read only by my-progress until Phase 2b moves it.
+  planStatus: "complete",
+  planBuiltWith: null,
+  planBuiltDate: null,
+  lifestyleWizard: null,
+
   // Admin panel collapse — persists across screens
   adminCollapsed: false,
 
@@ -118,8 +128,7 @@ const state = {
       description: "Create a rough first budget without connecting accounts.",
       cta: "Start",
       tab: "aboutMe",
-      // budgetSetup is the budget hub; Phase 2's lifestyle wizard hangs off it.
-      destination: "budgetSetup",
+      destination: "lifestyleWizard",
       completed: false
     },
     {

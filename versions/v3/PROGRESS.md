@@ -1,10 +1,12 @@
 # v3 Build Progress
 
-**Current state:** **Phase 1 COMPLETE — the Money Journal works end to end.**
-Question selection → answers → confirmation with adjustable estimates → submit →
-month-to-date grows → observations recompute with templated copy → second
-same-day entry asks different questions. 55 harness assertions pass.
-Next action: **Phase 2, budget and benchmarks.** — *updated 2026-08-07*
+**Current state:** **Phase 2a COMPLETE** (Phase 2 was split — it is XL).
+2a = the builder path: 6-question lifestyle wizard → peer-model starting budget
+→ seam → confirm gate → 12-slider Budget tab. v2's about-me / budget-setup /
+budget-category / budget.js retired. 40 assertions pass.
+**Next action: Phase 2b** — three-layer comparison (plan · journal · peer), the
+two gaps labelled distinctly, and porting `my-progress` off v2's `state.budget`.
+— *updated 2026-08-07*
 
 > **Read before touching anything:**
 > 1. `plan.md` §0 — locked decisions **L1–L19**. Do not re-litigate them.
@@ -151,17 +153,28 @@ Next action: **Phase 2, budget and benchmarks.** — *updated 2026-08-07*
 - [x] Visible entry point for an additional same-day entry (D13)
       ↳ and it asks a genuinely different set, because submitting set cooldowns
 
-## Phase 2 — Budget and benchmarks
+## Phase 2a — Budget builder
 
-- [ ] Lifestyle wizard, 6 questions → `foodie` · `cooksAtHome` · `hobbySpend` · `paysRent` · `commute` · `travelFrequency`
-- [ ] Wizard writes through `submitBudgetBaseline()` (the kept seam), gated by the old→new confirm screen
-- [ ] Wizard output produces a starting budget across all 12 categories
-- [ ] Budget screen with category sliders
-- [ ] Three-layer comparison: plan (`budget.monthly`) · journal (`monthToDateActuals`) · peer
-- [ ] **Two gaps labelled distinctly** — 34% over plan (429 vs 320) and 16% over peers (429 vs 370). Neither substitutes for the other
+- [x] Lifestyle wizard, 6 questions → `foodie` · `cooksAtHome` · `hobbySpend` · `paysRent` · `commute` · `travelFrequency`
+      ↳ options store the DATA key, not the label — `paysRent` is `"true"`/`"false"`, "Mostly walk" is `none`
+- [x] Wizard writes through `submitBudgetBaseline()` (the kept seam), gated by the old→new confirm screen
+      ↳ seam **ported to the flat 12**: v2's HOUSING_SPLIT/BILLS_SPLIT conversion is gone, a baseline now carries one figure per category
+- [x] Wizard output produces a starting budget across all 12 categories
+      ↳ the starting budget **is** the peer model run on their own answers — which is why no question asks for a figure
+- [x] Budget screen with category sliders
+      ↳ `screens/budget-v3.js` is the Budget tab. v2's `about-me` / `budget-setup` / `budget-category` / `budget.js` retired
+- [x] Retire the v2 budget screens (deferred here from 0d)
+      ↳ `budget-utils.js` survives — `budgetFmt` is used in 15 files. `state.budget` stays vestigial for `my-progress` until 2b
+
+## Phase 2b — Three-layer comparison
+
+- [ ] Three-layer comparison: plan (`state.plan`) · journal (`state.mtd`) · peer (`benchAllPeerValues`)
+- [ ] **Two gaps labelled distinctly** — over plan and over peers. Neither substitutes for the other
 - [ ] Observation #1 reframed to the plan comparison, with a separate peer card (L11)
+      ↳ `observationPeerCounterpart()` already exists and is asserted; 2b surfaces it
 - [ ] Inline observation cards on categories with a gap worth noticing
 - [ ] All four seeded observations visible
+- [ ] Port `my-progress` off v2's `state.budget`, then delete the vestigial model
 
 ## Phase 2.5 — Repaint (D36, L19)
 

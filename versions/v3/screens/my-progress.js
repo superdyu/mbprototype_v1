@@ -81,7 +81,7 @@ function renderMPProfile() {
         ${zip ? h(zip) : ""}${zip && size ? " – " : ""}${size ? size + " Person" + (size !== 1 ? "s" : "") : ""}${(zip || size) && income > 0 ? " – " : ""}${income > 0 ? budgetFmt(income) + "/mo" : ""}
       </div>
       ${updated ? `<p class="helper" style="margin:0 0 8px;">Last updated ${h(updated)}</p>` : ""}
-      ${!zip && !income ? `<p class="helper">No profile data yet. <button class="button secondary small" style="margin-left:6px;" type="button" onclick="go('budgetSetup')">Build Budget</button></p>` : ""}
+      ${!zip && !income ? `<p class="helper">No profile data yet. <button class="button secondary small" style="margin-left:6px;" type="button" onclick="navGoTab('aboutMe')">Build Budget</button></p>` : ""}
 
       <details style="margin-top:8px;">
         <summary class="helper" style="cursor:pointer;font-weight:700;">Assumptions used</summary>
@@ -109,7 +109,7 @@ function renderMPBudgetResults(hasBudget) {
         <div class="row" style="margin-bottom:8px;">
           <div class="section-title" style="margin:0;">Budget Results</div>
         </div>
-        <p class="helper">No budget yet. <button class="button secondary small" style="margin-left:6px;" type="button" onclick="go('budgetSetup')">Build Budget</button></p>
+        <p class="helper">No budget yet. <button class="button secondary small" style="margin-left:6px;" type="button" onclick="navGoTab('aboutMe')">Build Budget</button></p>
       </div>
     `;
   }
@@ -141,7 +141,7 @@ function renderMPBudgetResults(hasBudget) {
       <div class="row" style="margin-bottom:12px;">
         <div class="section-title" style="margin:0;">Budget Results</div>
         <button class="button secondary small" style="border:1.5px solid var(--accent);color:var(--accent);font-weight:700;"
-                type="button" onclick="editInAboutMe('budgetSetup')">Update Budget</button>
+                type="button" onclick="navGoTab('aboutMe')">Update Budget</button>
       </div>
 
       ${renderMPGapBanner()}
@@ -241,7 +241,7 @@ function renderMPGapBanner() {
         </p>
         <p class="helper" style="margin-bottom:10px;">Your budget may need a refresh — major life changes often drive this gap.</p>
         <button class="button primary" style="font-size:12px;" type="button"
-                onclick="editInAboutMe('budgetSetup')">Update Budget</button>
+                onclick="navGoTab('aboutMe')">Update Budget</button>
         <button class="button secondary" style="font-size:12px;margin-left:8px;" type="button"
                 onclick="state.monthlyUpdateGap=null;render()">Looks right</button>
       </div>

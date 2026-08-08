@@ -1473,3 +1473,42 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .journal-amount { margin: 0; font-size: 16px; font-weight: 850; }
 .journal-total  { margin: 0; font-size: 20px; font-weight: 850; }
 .journal-slider { width: 100%; accent-color: var(--accent); }
+
+/* ─── Budget (v3) ─────────────────────────────────────────────────────────────
+   One row per category — twelve flat rows, no nesting (A2). */
+.budget-row { margin-bottom: 8px; padding: 12px 14px; }
+.budget-row-name { font-size: 14px; font-weight: 700; }
+.budget-row-amt  { font-size: 15px; font-weight: 850; }
+
+/* Plan-vs-take-home fill. Uses --warn when the plan exceeds income. */
+.budget-bar {
+  margin-top: 10px;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--progress-bg);
+  overflow: hidden;
+}
+.budget-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+}
+
+/* ─── Observation card ────────────────────────────────────────────────────────
+   Surfaced by the registry, never hardcoded by a screen (architecture §6).
+   Attention states use --warn, never --danger — a flagged figure is not an
+   emergency, and D36's palette has no alarm red at all. */
+.obs-card {
+  border-color: var(--warn-border);
+  background: var(--warn-bg);
+}
+.obs-figure {
+  font-size: 13px;
+  font-weight: 850;
+  color: var(--warn);
+  white-space: nowrap;
+}
+
+.pill-warn { background: var(--warn-pill-bg); color: var(--warn-pill-text); border-color: var(--warn-border); }
+.pill-good { background: var(--good-pill-bg); color: var(--good-pill-text); border-color: var(--good-border); }

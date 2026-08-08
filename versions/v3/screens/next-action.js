@@ -8,7 +8,7 @@
 // NAVIGATION
 //   Entry: Post-result screen after reaction is selected
 //   Exit:  Accept / Review later → finish screen
-//          Adjust it → budgetSetup screen
+//          Adjust it → Budget tab
 //          Compare more → myProgress (Comparisons section)
 //          Make a goal → commitment screen
 //
@@ -56,7 +56,7 @@ function selectNextAction(value) {
     state.postResultContext  = null;
     state.postResultTheme    = null;
     state.postResultReaction = null;
-    go("budgetSetup");
+    navGoTab("aboutMe");
   } else if (value === "compare") {
     // Mid-loop exit: clear all flow state — user is done with this flow
     clearFlowState();
