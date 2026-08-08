@@ -98,7 +98,7 @@ function renderAdmin() {
       <p class="helper">No detailed admin controls for this screen yet.</p>
       <div class="input-group">
         <label>Jump to screen</label>
-        <select onchange="go(this.value)">
+        <select onchange="navAdminJump(this.value)">
           ${["streak","home","aboutMe","budgetSetup","myProgress","lifestyle","lifestyleChain",
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
              "goals","learn","topic","lesson","quiz","simulation","marketplace",
@@ -115,6 +115,7 @@ function renderAdmin() {
 function render() {
   const screenRoot = document.getElementById("screenRoot");
   const navRoot    = document.getElementById("navRoot");
+  const topbarRoot = document.getElementById("topbarRoot");
 
   // Clear lesson player timer before destroying the DOM it references.
   // Capture play state first so lpMountHook can resume if a re-render interrupted mid-play.
@@ -128,13 +129,16 @@ function render() {
   screenRoot.innerHTML  = renderScreen();
   if (state.screen === "lesson") lpMountHook(lpWasPlaying);
   if (state.screen === "chat")   chatMountHook();   // pin the thread to the newest message
+  topbarRoot.innerHTML  = renderTopBar();
   navRoot.innerHTML     = renderNav();
   const hasNav = !!navRoot.innerHTML;
-  // Hide navRoot and clear the 78px bottom reservation when no nav is shown.
-  // screenRoot's CSS default is bottom:78px; lesson-mode and streak-mode
-  // override it via class; all other no-nav screens need the inline reset.
-  navRoot.style.display  = hasNav ? "" : "none";
-  screenRoot.style.bottom = hasNav ? "" : "0";
+  const hasTopbar = !!topbarRoot.innerHTML;
+  // Offsets are driven by classes only — no inline px. The heights live in
+  // --topbar-h / --nav-h (css/variables.css) so the reservation is stated once
+  // instead of the three places v2 kept it in.
+  navRoot.style.display = hasNav ? "" : "none";
+  screenRoot.classList.toggle("no-nav", !hasNav);
+  screenRoot.classList.toggle("no-topbar", !hasTopbar);
 
   document.getElementById("adminRoot").innerHTML         = renderAdmin();
   document.getElementById("adminSubtitle").textContent   = adminSubtitle();

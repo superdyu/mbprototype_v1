@@ -67,10 +67,7 @@ function renderBudgetCategory() {
   return `
     <!-- Back nav + category header -->
     <div class="card" style="margin-bottom:14px;">
-      <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
-              type="button" onclick="go('budgetSetup')">← Budget</button>
-
-      <div class="row" style="align-items:flex-start;">
+<div class="row" style="align-items:flex-start;">
         <div style="flex:1;">
           <div style="font-size:16px;margin-bottom:6px;">${cat.icon} <strong>${h(cat.name)}</strong></div>
           <div style="font-size:26px;font-weight:850;line-height:1;">${budgetFmt(total)}<span style="font-size:13px;font-weight:600;color:var(--muted);"> /mo</span></div>

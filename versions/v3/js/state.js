@@ -35,6 +35,30 @@ const state = {
   // Navigation — opens on the streak splash on every fresh load/refresh.
   screen: "streak",
 
+  // ── Per-stack navigation history (L5, architecture §7) ────────────────────
+  // Each tab keeps its OWN stack, plus "home" which is reached by the top-left
+  // icon rather than a tab. This is what lets the same screen back to two
+  // different places: a lesson opened from a Home task backs to Home, the same
+  // lesson opened from Education backs to Education — no special-casing.
+  //
+  // A tab tap SWITCHES stacks, it does not push. Otherwise back would walk
+  // backwards through every tab switch, and a tester who tapped around four
+  // tabs would need four backs to escape.
+  nav: {
+    activeStack: "home",
+    stacks: {
+      home:        ["home"],
+      goals:       ["goals"],
+      aboutMe:     ["aboutMe"],
+      myProgress:  ["myProgress"],
+      learn:       ["learn"],
+      marketplace: ["marketplace"]
+    }
+  },
+
+  // Top-bar hamburger overlay
+  topbarMenuOpen: false,
+
   // Admin panel collapse — persists across screens
   adminCollapsed: false,
 

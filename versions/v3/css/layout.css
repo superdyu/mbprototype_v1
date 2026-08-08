@@ -43,28 +43,111 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  top: 0;
-  bottom: 78px;
+  top: var(--topbar-h);
+  bottom: var(--nav-h);
   overflow-y: auto;
   padding: 18px;
+}
+
+/* Chrome-absent variants. render() toggles these; nothing sets inline px. */
+.screen-scroll.no-topbar { top: 0; }
+.screen-scroll.no-nav    { bottom: 0; }
+
+/* ─── Shared top bar (L5) ────────────────────────────────────────────────────
+   Fixed to the top of the phone screen, above the scrolling content. */
+.topbar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 8px;
+  background: var(--screen);
+  border-bottom: 1px solid var(--line);
+  z-index: 5;
+}
+
+/* Full-bleed screens get the back control only — no status strip competing
+   with a focused flow. Transparent so the scene shows through. */
+.topbar-bare {
+  background: transparent;
+  border-bottom: 0;
+}
+
+.topbar-btn {
+  width: 44px;              /* design-system tap-target floor */
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 12px;
+}
+.topbar-btn:hover { background: var(--soft); }
+
+/* Keeps the status strip centred when a side has no button. */
+.topbar-slot { width: 44px; height: 44px; flex-shrink: 0; }
+
+.topbar-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 850;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.topbar-stat { display: inline-flex; align-items: center; gap: 3px; }
+.topbar-ico  { font-size: 12px; }
+.topbar-dot  { color: var(--muted); font-weight: 400; }
+
+/* Half-screen overlay for system info (03-home-daily-loop). */
+.topbar-menu-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(16, 24, 40, .34);
+  z-index: 8;
+}
+.topbar-menu {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  min-height: 46%;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0 0 22px 22px;
+  padding: 18px;
+  z-index: 9;
+  box-shadow: 0 12px 40px rgba(16, 24, 40, .18);
 }
 
 .screen-scroll.lesson-mode {
   padding: 0;
   overflow: hidden;
-  bottom: 0; /* extend past tab bar — nav is hidden when lesson is active */
+  bottom: 0;
+  top: 0;       /* extend past tab bar — nav is hidden when lesson is active */
 }
 
 .screen-scroll.streak-mode {
   padding: 0;
   overflow: hidden;
-  bottom: 0; /* full-bleed branded splash — nav is hidden on the streak screen */
+  bottom: 0;
+  top: 0;       /* full-bleed branded splash — nav is hidden on the streak screen */
 }
 
 .screen-scroll.chat-mode {
   padding: 0;
   overflow: hidden;
-  bottom: 0; /* nav is hidden on chat — the input bar sits on the bottom edge */
+  bottom: 0;
+  top: 0;       /* nav is hidden on chat — the input bar sits on the bottom edge */
   /* The chat shell owns its own scrolling: the thread scrolls, the chips and
      input bar stay pinned. See .chat-shell in components.css. */
 }
@@ -75,7 +158,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 78px;
+  height: var(--nav-h);
   padding: 10px 10px 14px;
   background: rgba(248, 250, 252, .98);
   border-top: 1px solid var(--line);

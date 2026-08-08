@@ -36,9 +36,7 @@ function renderBudgetSetup() {
 
   return `
     <div class="card" style="margin-bottom:14px;">
-      <button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:14px;"
-              type="button" onclick="goBackFromBudgetSetup()">← ${state.flowOrigin === 'myProgress' ? 'My Progress' : 'Budget'}</button>
-      <h1 class="title" style="margin:0;font-size:20px;">Budget</h1>
+<h1 class="title" style="margin:0;font-size:20px;">Budget</h1>
       <p class="subtitle" style="margin:4px 0 0;">Build it once. Update it when life changes.</p>
     </div>
 
@@ -82,8 +80,7 @@ function renderBudgetDashboard(status, opts) {
 
     <!-- Header -->
     <div class="card" style="margin-bottom:14px;">
-      ${asTab ? "" : `<button class="button secondary" style="font-size:12px;padding:8px 14px;margin-bottom:12px;"
-              type="button" onclick="goBackFromBudgetSetup()">← ${state.flowOrigin === 'myProgress' ? 'My Progress' : 'Budget'}</button>`}
+      ${asTab ? "" : ``}
       <div class="row" style="margin-bottom:2px;align-items:center;">
         <h1 class="title" style="margin:0;font-size:20px;">Monthly Budget</h1>
         <!-- Rebuild the whole budget from scratch (gated by the update-confirm flow). -->

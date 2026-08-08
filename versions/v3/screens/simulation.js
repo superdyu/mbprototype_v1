@@ -25,8 +25,7 @@ function renderSimulation() {
         <h1 class="title">Simulation</h1>
         <p class="subtitle">Applied scenario practice.</p>
       </div>
-      <button class="button secondary" type="button" onclick="go('learn')">← Learn</button>
-    </div>
+</div>
 
     <div class="card" style="text-align:center;padding:32px 20px;">
       <div style="font-size:32px;margin-bottom:12px;">🧪</div>

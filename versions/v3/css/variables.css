@@ -39,6 +39,16 @@
   --streak-off: rgba(255, 255, 255, .28);
 }
 
+/* ─── Chrome heights ─────────────────────────────────────────────────────────
+   Stated ONCE. v2 duplicated the 78px nav reservation in three places — the
+   CSS default, the per-mode override classes, and an inline JS fallback — and
+   v3 adds a top bar, which would have doubled that. Everything references
+   these; nothing hardcodes a pixel offset. */
+:root {
+  --topbar-h: 52px;
+  --nav-h:    78px;
+}
+
 /* ─── Spacing scale ──────────────────────────────────────────────────────────
    Use these tokens in new code. Existing inline styles are migrated gradually. */
 :root {

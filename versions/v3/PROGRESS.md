@@ -1,11 +1,11 @@
 # v3 Build Progress
 
-**Current state:** **Phase 0d complete.** `CATEGORIES` + `state.plan` (12-cat
-plan layer) + the peer benchmark engine, with all three formula traps handled and
-asserted. 45 harness assertions pass incl. the `→ 370` self-test. v2's 5-bucket
-`state.budget` still stands — the two models coexist until Phase 2 retires the v2
-budget screens (see divergence). Next action: **Phase 0e, shell.**
-— *updated 2026-08-07*
+**Current state:** **Phase 0 COMPLETE (0a–0e).** Shared top bar, 5-tab nav in
+D34 order, per-stack back history, offsets from `--topbar-h`/`--nav-h`. 46 harness
+assertions pass, incl. the headline case: the same lesson backs to Education or
+to Home depending on how it was entered. 10 per-screen back buttons removed —
+the top bar owns back now. Next action: **Phase 1, Money Journal** (the deepest
+build). — *updated 2026-08-07*
 
 > **Read before touching anything:**
 > 1. `plan.md` §0 — locked decisions **L1–L19**. Do not re-litigate them.
@@ -101,16 +101,24 @@ budget screens (see divergence). Next action: **Phase 0e, shell.**
 
 ## Phase 0e — Shell
 
-- [ ] Shared top bar component (**new** — v2 has none; every screen renders its own header today)
-- [ ] Top bar content: kibble · streak · buddy level · hamburger (right)
-- [ ] Top-left contextual slot: home icon at stack root · back when deeper · hidden on full-bleed · nothing on Home
-- [ ] Bottom nav → **5 tabs**, D34 order: Goals · Budget · My Progress · Education · Marketplace
-- [ ] `state.nav` with per-stack model; `go()` / `taskGo()` / `back()` per architecture §7
-- [ ] `history.pushState` / `popstate` kept in sync so browser back still works
-- [ ] Admin "Jump to screen" **resets** the target stack to `[screen]`
-- [ ] Replace the triplicated 78px offset with `--nav-h` / `--topbar-h` custom properties
-- [ ] Audit every full-bleed mode class — must zero *both* top and bottom
-- [ ] `SKIP_ONBOARDING` seam: `false` → onboarding → 1-day streak · `true` → home → 6-day streak. Flipping it touches nothing else
+- [x] Shared top bar component (**new** — v2 has none; every screen renders its own header today)
+      ↳ `components/topbar.js` + `#topbarRoot`. Home icon is inline SVG — no icon library under L1
+- [x] Top bar content: kibble · streak · buddy level · hamburger (right)
+      ↳ hamburger opens a half-screen overlay; its *contents* are Phase 3's job
+- [x] Top-left contextual slot: home icon at stack root · back when deeper · hidden on full-bleed · nothing on Home
+      ↳ **10 per-screen back buttons removed.** They were hardcoded `go('X')` forward-jumps dressed as back, which is wrong once a screen can be reached from two places
+- [x] Bottom nav → **5 tabs**, D34 order: Goals · Budget · My Progress · Education · Marketplace
+      ↳ labels `Goals | Budget | Progress | Learn | Market`; Market inert (D33). `goals` gets its own stack — it lived under Budget in v2
+- [x] `state.nav` with per-stack model; `go()` / `taskGo()` / `navBack()` per architecture §7
+      ↳ `go()` pushes · `navGoTab()` switches without pushing · `navBack()` pops · `taskGo()` switches to the home stack first
+- [x] `history.pushState` / `popstate` kept in sync so browser back still works
+      ↳ `getNavSnapshot()` now carries a deep copy of `state.nav`
+- [x] Admin "Jump to screen" **resets** the target stack to `[screen]`
+- [x] Replace the triplicated 78px offset with `--nav-h` / `--topbar-h` custom properties
+      ↳ zero hardcoded offsets remain outside `variables.css`; `render()` toggles `.no-nav` / `.no-topbar` instead of setting inline px
+- [x] Audit every full-bleed mode class — must zero *both* top and bottom
+- [x] `SKIP_ONBOARDING` seam: `false` → onboarding → 1-day streak · `true` → home → 6-day streak. Flipping it touches nothing else
+      ↳ `v3EntryScreen()`. Both paths land on home until Phase 3 builds the onboarding screen; the branch is wired now so it is not retrofitted
 
 ---
 

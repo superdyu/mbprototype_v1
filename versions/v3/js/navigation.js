@@ -5,6 +5,7 @@
 function getNavSnapshot() {
   return {
     screen:                state.screen,
+    nav:                   JSON.parse(JSON.stringify(state.nav)),
     selectedBadge:         state.selectedBadge,
     selectedBudgetCategory:state.selectedBudgetCategory,
     selectedDebt:          state.selectedDebt,
@@ -24,6 +25,7 @@ function getNavSnapshot() {
 function restoreNavSnapshot(snap) {
   if (!snap) return;
   state.screen                  = snap.screen;
+  if (snap.nav) state.nav       = snap.nav;
   state.selectedBadge           = snap.selectedBadge;
   state.selectedBudgetCategory  = snap.selectedBudgetCategory;
   state.selectedDebt            = snap.selectedDebt;
@@ -38,18 +40,65 @@ function restoreNavSnapshot(snap) {
   state.rewardLessonTitle       = snap.rewardLessonTitle      || '';
 }
 
-function go(screen) {
-  if (state.screen === screen) { render(); return; }
+// ─── Per-stack navigation (L5, architecture §7) ───────────────────────────────
+// Every screen change goes through go() / navGoTab() / navBack() / navAdminJump().
+// Assigning state.screen directly bypasses the stack AND the nav log — that was
+// already v2's rule and it matters more now, because the stack is what decides
+// where back lands.
+
+function navStack()   { return state.nav.stacks[state.nav.activeStack]; }
+function navDepth()   { return navStack().length; }
+function navCurrent() { return navStack()[navStack().length - 1]; }
+
+function navCommit(screen) {
   state.screen = screen;
+  state.topbarMenuOpen = false;          // any navigation closes the overlay
   window.__navLog = [screen, ...window.__navLog].slice(0, 10);
   try { history.pushState(getNavSnapshot(), ''); } catch(e) {}
   render();
+}
+
+// PUSH onto the active stack. This is the default for every in-app link.
+function go(screen) {
+  if (state.screen === screen) { render(); return; }
+  navStack().push(screen);
+  navCommit(screen);
+}
+
+// SWITCH stacks — does not push. Returning to a tab resumes it where you left
+// off, which is the behaviour that makes per-stack history worth having.
+function navGoTab(key) {
+  if (!state.nav.stacks[key]) return;
+  state.nav.activeStack = key;
+  navCommit(navCurrent());
+}
+
+// POP. At depth 1 there is nowhere to go — the top bar shows home instead.
+function navBack() {
+  const st = navStack();
+  if (st.length <= 1) {
+    if (state.nav.activeStack !== "home") navGoTab("home");
+    return;
+  }
+  st.pop();
+  navCommit(navCurrent());
+}
+
+// Admin "Jump to screen" has no history — it teleports. RESET the owning stack
+// to just that screen, or back would land somewhere the tester never was.
+function navAdminJump(screen) {
+  const key = state.nav.stacks[activeTabFor(screen)] ? activeTabFor(screen) : "home";
+  state.nav.activeStack = key;
+  state.nav.stacks[key] = [screen];
+  navCommit(screen);
 }
 
 // Flow entry points that should return to Home when complete.
 // Set flowOrigin so the finish screen knows where to send the user back.
 const FLOW_ENTRY_SCREENS = ["budgetSetup", "lifestyle", "lifestyleChain", "accountBalances", "debtBalances"];
 
+// Entry point for a Home daily task. Switches to the home stack FIRST, so the
+// task's destination backs to Home rather than to whatever tab was last open.
 function taskGo(destination) {
   if (FLOW_ENTRY_SCREENS.includes(destination)) {
     state.flowOrigin = "home";
@@ -57,6 +106,7 @@ function taskGo(destination) {
       state.postResultContext = "budget";
     }
   }
+  state.nav.activeStack = "home";
   go(destination);
 }
 

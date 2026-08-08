@@ -82,6 +82,21 @@ function bootV3() {
   // Journal entries the tester submits append here and feed month-to-date
   // (L17). Empty at boot — the six seeded days live in state.journal.
   state.journalEntries = [];
+
+  // ── Entry point (D06/D07) ──────────────────────────────────────────────────
+  // The whole seam is this one branch plus the streak above. Flipping
+  // SKIP_ONBOARDING must not require unwinding anything else.
+  state.screen = v3EntryScreen();
+  state.nav.activeStack = "home";
+  state.nav.stacks.home = [state.screen];
+}
+
+// false → onboarding step 1 · true → straight to home.
+// Phase 3 builds the onboarding screen; until it exists both paths land on
+// home, so the flag is wired and testable now rather than retrofitted later.
+function v3EntryScreen() {
+  if (SKIP_ONBOARDING) return "home";
+  return typeof renderOnboarding === "function" ? "onboarding" : "home";
 }
 
 // L11 — obs_dining_over_peers ships typed `peer_gap` and headlined "than your
