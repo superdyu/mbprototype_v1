@@ -95,7 +95,7 @@ function navAdminJump(screen) {
 
 // Flow entry points that should return to Home when complete.
 // Set flowOrigin so the finish screen knows where to send the user back.
-const FLOW_ENTRY_SCREENS = ["lifestyleWizard", "lifestyle", "lifestyleChain", "accountBalances", "debtBalances"];
+const FLOW_ENTRY_SCREENS = ["lifestyleWizard", "accountBalances", "debtBalances"];
 
 // Entry point for a Home daily task. Switches to the home stack FIRST, so the
 // task's destination backs to Home rather than to whatever tab was last open.

@@ -46,6 +46,9 @@ function renderBudgetV3() {
 
     ${renderBudgetObservationCards("budget_comparison")}
 
+    <button class="button secondary full" style="margin-top:12px;" type="button"
+            onclick="go('comparison')">Compare with peers</button>
+
     <div class="section-title" style="margin:18px 0 8px;">Categories</div>
     ${CATEGORIES.map(c => renderBudgetCategoryRow(c)).join("")}
   `;

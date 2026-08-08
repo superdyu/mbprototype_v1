@@ -25,7 +25,6 @@ const destinations = [
   ["lifestyleWizardReview","Wizard: Review"],
   ["budgetDone",     "Budget: Saved"],
   ["myProgress",     "My Progress"],
-  ["lifestyle",      "Lifestyle"],
   ["learn",          "Learn"],
   ["topic",          "Topic Page"],
   ["reward-preview", "Reward Preview"],
@@ -715,106 +714,16 @@ const state = {
   selectedDebt: null,
   debtAnalyzerExtraPayment: 200,
   debtAnalyzerIncluded: {},
+  // ── v2 debt data (L14) ────────────────────────────────────────────────────
+  // v3 never specified debts, so the v2 debt screens are kept off the main
+  // paths and still need their instruments. Everything else that lived on
+  // state.budget — 5 nested category buckets, fixedOverhead, the peer-average
+  // profile — was retired in 2b along with the screens that read it. The v3
+  // budget is state.plan (12 flat categories).
   budget: {
-    status: "empty",
-    inProgressPct: 60,
-    wizardInputs: null,
-    // Which builder produced the current budget + when — the source stamp for
-    // latest-wins consolidation (see js/budget-baseline.js). Shown on the
-    // Budget screen as "Built with 2 Minute Budget · date".
-    builtWith: null,   // builder source id | null (never built). Phase 2 sets this
-    builtDate: null,
-
-    profile: {
-      zip: "95126",
-      householdSize: 1,
-      // Collected by the 2 Minute Budget for peer segmentation. Nothing branches
-      // on them yet — they're captured so future peer comparisons can segment by
-      // age/gender the way they already segment by income and ZIP.
-      gender: "",
-      age: 0,
-      // Gross income as the user entered it (monthly-normalized) + which mode
-      // they typed it in — lets any builder re-open showing their real income.
-      grossMonthly: 0,
-      incomeMode: "annual",   // "annual" | "monthly"
-      lastUpdated: "2026-02-15",
-      // Income model — supports salary, variable (gig), or mixed households
-      incomeType: "salary",   // "salary" | "variable" | "mixed"
-      earners: [
-        { label: "Primary", monthlyNet: 7500, type: "salary" }
-      ],
-      variableIncomeMonths: [6800, 7200, 7500]  // 3 months, oldest → most recent
-    },
-
-    // Bottom-line math (3-month checking balance trend)
-    // monthlyNetSpend = (balanceStart - balanceEnd + income*3 - debtRepaid + assetsSold) / 3
-    // debtRepaid: extra debt principal paid from checking (reduces apparent spend;
-    //             it left checking but is not discretionary lifestyle spending)
-    balanceStart:  12000,
-    balanceEnd:    14400,
-    debtRepaid:    0,
-    assetsSold:    0,
-
-    // Fixed overhead — shown as a summary line below category tiles, not as a tile
     fixedOverhead: [
-      { name: "Medical / Insurance",  amount: 250 },
       { name: "Debt Minimum Payments", amount: 150 }
     ],
-
-    // Category buckets (5 wide tiles)
-    // fixed: true → suppress "Worth a look" signal even if above peer avg
-    // intentional: user-set on Category Detail screen
-    // targetSpend: set via "Set a Spending Target" — null if not set
-    categories: [
-      {
-        key: "housing", name: "Housing", icon: "🏠", fixed: true,
-        intentional: false, targetSpend: null,
-        subcategories: [
-          { key: "rent",      name: "Rent / Mortgage", amount: 2600 },
-          { key: "utilities", name: "Utilities",        amount: 250  },
-          { key: "hoa",       name: "HOA / PMI",         amount: 0    }
-        ]
-      },
-      {
-        key: "food", name: "Food & Daily", icon: "🍔", fixed: false,
-        intentional: false, targetSpend: null,
-        subcategories: [
-          { key: "groceries", name: "Groceries",         amount: 450 },
-          { key: "dining",    name: "Dining Out",         amount: 250 },
-          { key: "daily",     name: "Daily Convenience",  amount: 80  }
-        ]
-      },
-      {
-        key: "transport", name: "Transport", icon: "🚗", fixed: true,
-        intentional: false, targetSpend: null,
-        subcategories: [
-          { key: "car_fixed", name: "Car / Fixed Costs",    amount: 450 },
-          { key: "gas",       name: "Gas & Variable",        amount: 200 },
-          { key: "transit",   name: "Transit / Rideshare",   amount: 100 }
-        ]
-      },
-      {
-        key: "lifestyle", name: "Lifestyle", icon: "🎭", fixed: false,
-        intentional: false, targetSpend: null,
-        subcategories: [
-          { key: "shopping",  name: "Shopping",              amount: 280 },
-          { key: "entertain", name: "Entertainment",          amount: 220 },
-          { key: "subs",      name: "Subscriptions & Phone",  amount: 350 }
-        ]
-      },
-      {
-        key: "savings", name: "Savings & Goals", icon: "💰", fixed: false,
-        intentional: false, targetSpend: null,
-        subcategories: [
-          { key: "emergency",  name: "Emergency Fund",    amount: 100 },
-          { key: "retirement", name: "Retirement",         amount: 150 },
-          { key: "debt_extra", name: "Extra Debt Payoff",  amount: 50  }
-        ]
-      }
-    ],
-
-    // Debt instruments — cashflow debt only (credit cards, loans, etc.; not mortgage).
-    // Populated by the 2 Minute Budget wizard via postMessage bridge or admin panel.
     debts: [
       {
         id: "d_1", type: "creditCard", name: "Chase Sapphire",
@@ -854,12 +763,6 @@ const state = {
     other:         { answers: {}, lastUpdated: null }
   },
 
-  // Sub-slider amounts per theme, derived from lifestyle answers + user-adjustable.
-  // Food drives Food & Daily bucket; entertainment+shopping+other drive Lifestyle bucket;
-  // travel drives Getting Around bucket.
-  lifestyleSubSliders: {
-    food: {}, entertainment: {}, travel: {}, shopping: {}, other: {}
-  },
 
   // ── Point-in-time balance snapshots (for monthly tracking) ────────────────
   accountBalances: [],  // [{id, account, amount, date}]
@@ -899,13 +802,6 @@ const state = {
 // Wipes user-entered profile data and re-renders. Called from admin panel.
 function resetUserData() {
   state.userProfile = { name: "", monthlyIncome: "", housingCost: "", notes: "" };
-  state.budget.status        = "empty";
-  state.budget.wizardInputs  = null;
-  state.budget.builtWith     = null;
-  state.budget.builtDate     = null;
-  state.budget.profile.grossMonthly = 0;
-  state.budget.profile.incomeMode   = "annual";
-  state.budget.profile.lastUpdated  = null;
   state.budget.debts         = [];
   state.selectedDebt         = null;
   state.debtAnalyzerIncluded = {};
@@ -913,8 +809,6 @@ function resetUserData() {
   state.rewardBadgeGains     = null;
   state.rewardXp             = 0;
   state.rewardLessonTitle    = "";
-  state.lifestyleAnswers     = { food: { answers: {}, lastUpdated: null }, entertainment: { answers: {}, lastUpdated: null }, travel: { answers: {}, lastUpdated: null }, shopping: { answers: {}, lastUpdated: null }, other: { answers: {}, lastUpdated: null } };
-  state.lifestyleSubSliders  = { food: {}, entertainment: {}, travel: {}, shopping: {}, other: {} };
   state.accountBalances      = [];
   state.commitments          = [];
   state.flowOrigin           = null;

@@ -71,8 +71,7 @@ function activeTabFor(screen) {
   if (["lifestyleWizard","lifestyleWizardReview","budgetDone"].includes(screen)) return "aboutMe";
   if (screen === "myDebts")           return "aboutMe";
   if (screen === "debtAnalyzer")      return "aboutMe";
-  if (screen === "lifestyle")         return "aboutMe";
-  if (screen === "lifestyleChain")    return "aboutMe";
+  if (screen === "comparison")        return "aboutMe";
   if (screen === "accountBalances")   return "aboutMe";
   if (screen === "debtBalances")      return "aboutMe";
   // Marketplace sub-screen

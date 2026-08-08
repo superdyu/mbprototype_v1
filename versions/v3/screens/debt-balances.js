@@ -149,8 +149,8 @@ function checkMonthlyUpdateGap() {
 
   // Compare actual monthly spend (from 3-month balance trend) against plan total.
   // Both are monthly figures — comparable units. Budget signal uses the same logic.
-  const actualMonthlySpend = budgetMonthlyNetSpend();
-  const planMonthlySpend   = budgetPlanTotal();
+  const actualMonthlySpend = catTotal(state.mtd);   // 2b: month-to-date across the 12
+  const planMonthlySpend   = catTotal(state.plan);
 
   const gap = planMonthlySpend > 0
     ? Math.abs((actualMonthlySpend - planMonthlySpend) / planMonthlySpend)

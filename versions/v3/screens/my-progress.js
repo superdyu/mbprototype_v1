@@ -28,7 +28,7 @@
 //   budget-utils.js functions.
 
 function renderMyProgress() {
-  const hasBudget = state.budget.status !== "empty";
+  const hasBudget = state.planStatus === "complete";
 
   return `
     <div class="home-header">
@@ -56,18 +56,17 @@ function renderMyProgress() {
 }
 
 function renderMPProfile() {
-  const profile = state.budget.profile;
+  const profile = { zip: state.profile.zip, householdSize: state.profile.householdSize };
   const up      = state.userProfile;
   const name    = up && up.name ? up.name : null;
   const zip     = profile && profile.zip ? profile.zip : null;
   const size    = profile && profile.householdSize ? profile.householdSize : null;
-  const income  = budgetMonthlyIncome();
+  const income  = state.monthlyIncomeNet;
   const updated = profile && profile.lastUpdated ? profile.lastUpdated : null;
-  const themes = LIFESTYLE_THEMES || [];
-  const answeredThemes = themes.filter(t => {
-    const la = state.lifestyleAnswers && state.lifestyleAnswers[t.key];
-    return la && la.lastUpdated;
-  });
+  // 2b: v2's five lifestyle THEMES were retired with their screens. The v3
+  // wizard's six dimensions are the equivalent signal.
+  const themes = LW_QUESTIONS;
+  const answeredThemes = themes.filter(q => state.lifestyle && state.lifestyle[q.dim]);
 
   return `
     <div class="card mb-md">
@@ -90,11 +89,11 @@ function renderMPProfile() {
           ${size ? `<p class="helper" style="margin-bottom:6px;">${size}-person household multiplier applied</p>` : ""}
           ${answeredThemes.length > 0 ? `
             <p class="helper" style="font-weight:700;margin-bottom:4px;">Lifestyle signals</p>
-            ${answeredThemes.map(t => `<p class="helper" style="margin-bottom:2px;">${h(t.label)} · Updated ${h(state.lifestyleAnswers[t.key].lastUpdated)}</p>`).join("")}
+            ${answeredThemes.map(t => `<p class="helper" style="margin-bottom:2px;">${h(t.prompt)} <strong>${h(state.lifestyle[t.dim])}</strong></p>`).join("")}
           ` : `<p class="helper">No lifestyle data yet.</p>`}
           ${answeredThemes.length === 0 ? `
             <button class="button secondary small" style="margin-top:6px;border:1.5px solid var(--accent);color:var(--accent);font-weight:700;"
-                    type="button" onclick="editInAboutMe('lifestyle')">Update Lifestyle</button>
+                    type="button" onclick="lwStart()">Answer lifestyle questions</button>
           ` : ""}
         </div>
       </details>
@@ -106,35 +105,26 @@ function renderMPBudgetResults(hasBudget) {
   if (!hasBudget) {
     return `
       <div class="card mb-md">
-        <div class="row" style="margin-bottom:8px;">
-          <div class="section-title" style="margin:0;">Budget Results</div>
-        </div>
-        <p class="helper">No budget yet. <button class="button secondary small" style="margin-left:6px;" type="button" onclick="navGoTab('aboutMe')">Build Budget</button></p>
-      </div>
-    `;
+        <div class="section-title" style="margin:0 0 6px;">Budget Results</div>
+        <p class="helper" style="margin:0;">No budget yet.
+          <button class="button secondary small" style="margin-left:6px;" type="button"
+                  onclick="navGoTab('aboutMe')">Build Budget</button>
+        </p>
+      </div>`;
   }
 
-  const income    = budgetMonthlyIncome();
-  const planTotal = budgetPlanTotal();
-  const savings   = income - planTotal;
+  // PORTED IN 2b — was v2's 5 nested buckets + its crude peer helper. Now the
+  // flat 12 (A2) and the real benchmark model.
+  const income    = state.monthlyIncomeNet;
+  const planTotal = catTotal(state.plan);
+  const actual    = catTotal(state.mtd);
+  const leftover  = income - planTotal;
 
-  // Non-discretionary: housing + fixed overhead
-  const housingCat = state.budget.categories.find(c => c.key === "housing");
-  const housingAmt = housingCat ? budgetCategoryTotal(housingCat) : 0;
-  const fixedTotal = budgetFixedOverheadTotal();
-  const nonDiscAmt = housingAmt + fixedTotal;
-
-  // Discretionary: food, transport, lifestyle
-  const discCats = ["food", "transport", "lifestyle"];
-  const discAmt = discCats.reduce((s, key) => {
-    const cat = state.budget.categories.find(c => c.key === key);
-    return s + (cat ? budgetCategoryTotal(cat) : 0);
-  }, 0);
-
-  // Peer savings
-  const peerSavings = budgetPeerAvg("savings");
-  const savingsPct = income > 0 ? Math.round((Math.max(0, savings) / income) * 100) : 0;
-  const peerSavingsPct = income > 0 ? Math.round((peerSavings / income) * 100) : 0;
+  // Non-discretionary vs discretionary, expressed in taxonomy terms.
+  const FIXED = ["Housing", "Utilities", "Health", "Debt payments"];
+  const fixedAmt = FIXED.reduce((sum, c) => sum + catValue(state.plan, c), 0);
+  const discAmt  = planTotal - fixedAmt;
+  const pct = n => income > 0 ? Math.round((n / income) * 100) : 0;
 
   return `
     <div class="card mb-md">
@@ -144,84 +134,31 @@ function renderMPBudgetResults(hasBudget) {
                 type="button" onclick="navGoTab('aboutMe')">Update Budget</button>
       </div>
 
-      ${renderMPGapBanner()}
-
-      <div class="summary-grid" style="margin-bottom:14px;">
-        <div>
-          <div class="label" style="margin-bottom:2px;">Income</div>
-          <div style="font-size:18px;font-weight:850;">${budgetFmt(income)}</div>
-        </div>
-        <div>
-          <div class="label" style="margin-bottom:2px;">Plan</div>
-          <div style="font-size:18px;font-weight:850;">${budgetFmt(planTotal)}</div>
-        </div>
+      <div class="row" style="align-items:baseline;">
+        <span class="helper">Planned</span>
+        <span style="font-weight:850;">${budgetFmt(planTotal)}</span>
+      </div>
+      <div class="row" style="align-items:baseline;margin-top:4px;">
+        <span class="helper">What you told me, so far</span>
+        <span style="font-weight:850;">${budgetFmt(actual)}</span>
+      </div>
+      <div class="row" style="align-items:baseline;margin-top:4px;">
+        <span class="helper">Take-home</span>
+        <span class="helper">${budgetFmt(income)}</span>
       </div>
 
-      <!-- P&L layout -->
-      <div style="border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:8px;">
-        <div class="helper" style="font-weight:700;margin-bottom:6px;">Non-Discretionary</div>
-        <div class="row" style="margin-bottom:4px;font-size:13px;">
-          <span class="helper">${housingCat ? (housingCat.icon || "🏠") + " " + housingCat.name : "Housing"}</span>
-          <span style="font-weight:700;">${budgetFmt(housingAmt)}</span>
-        </div>
-        ${state.budget.fixedOverhead.length > 0 ? `
-          <div class="row" style="margin-bottom:4px;font-size:13px;">
-            <span class="helper">Required Costs</span>
-            <span style="font-weight:700;">${budgetFmt(fixedTotal)}</span>
-          </div>
-        ` : ""}
-        <div class="row" style="border-top:1px solid var(--line);padding-top:4px;font-size:12px;font-weight:700;margin-bottom:8px;">
-          <span>Subtotal</span>
-          <span>${budgetFmt(nonDiscAmt)}</span>
-        </div>
+      <div class="budget-bar" aria-hidden="true">
+        <span style="width:${Math.min(100, pct(planTotal))}%"></span>
       </div>
 
-      <div style="border-bottom:2px solid var(--line);padding-bottom:8px;margin-bottom:8px;">
-        <div class="helper" style="font-weight:700;margin-bottom:6px;">Discretionary</div>
-        ${["food", "transport", "lifestyle"].map(key => {
-          const cat = state.budget.categories.find(c => c.key === key);
-          return cat ? `
-            <div class="row" style="margin-bottom:4px;font-size:13px;">
-              <span class="helper">${h(cat.icon || "")} ${h(cat.name)}</span>
-              <span style="font-weight:700;">${budgetFmt(budgetCategoryTotal(cat))}</span>
-            </div>
-          ` : "";
-        }).join("")}
-        <div class="row" style="border-top:1px solid var(--line);padding-top:4px;font-size:12px;font-weight:700;margin-bottom:8px;">
-          <span>Subtotal</span>
-          <span>${budgetFmt(discAmt)}</span>
-        </div>
-      </div>
-
-      <!-- Summary row -->
-      <div class="row" style="margin-bottom:6px;border-bottom:1px solid var(--line);padding-bottom:6px;">
-        <span class="helper" style="font-weight:700;">Total Spending</span>
-        <span style="font-weight:850;font-size:13px;">${budgetFmt(planTotal)}</span>
-      </div>
-
-      <div class="row" style="margin-bottom:8px;">
-        <span class="helper">Income</span>
-        <span style="font-weight:850;font-size:13px;">${budgetFmt(income)}</span>
-      </div>
-
-      <div class="row" style="margin-bottom:12px;">
-        <span class="helper" style="font-weight:700;">Savings</span>
-        <span style="font-weight:850;font-size:14px;color:${savings >= 0 ? "var(--accent)" : "var(--danger)"};">${budgetFmt(savings)}</span>
-      </div>
-
-      <!-- Savings thermometer -->
-      ${renderThermometer(Math.max(0, savings), peerSavings, {
-        higherIsBetter: true,
-        userLabel: "You " + savingsPct + "%",
-        peerLabel: "Peers " + peerSavingsPct + "%"
-      })}
-
-      <div class="row" style="margin-top:12px;gap:8px;">
-        <button class="button secondary small" style="border:1.5px solid var(--accent);color:var(--accent);font-weight:700;"
-                type="button" onclick="goDebtAnalyzer()">Debt Analysis</button>
-        <button class="button secondary small" style="border:1.5px solid var(--accent);color:var(--accent);font-weight:700;"
-                type="button" onclick="goMyDebts(null)">Manage Debts</button>
-      </div>
+      <p class="helper" style="margin:10px 0 0;">
+        ${leftover >= 0
+          ? budgetFmt(leftover) + " left over each month (" + pct(leftover) + "% of take-home)."
+          : budgetFmt(Math.abs(leftover)) + " more than you bring in."}
+      </p>
+      <p class="helper" style="margin:6px 0 0;font-size:11px;">
+        Fixed ${budgetFmt(fixedAmt)} · everything else ${budgetFmt(discAmt)}
+      </p>
     </div>
   `;
 }
@@ -267,35 +204,16 @@ function renderMPComparisons(hasBudget) {
   if (!hasBudget) {
     return `
       <div class="card mb-md">
-        <div class="section-title" style="margin-bottom:8px;">Comparisons</div>
-        <p class="helper">Build your budget to see how you compare.</p>
-      </div>
-    `;
+        <div class="section-title" style="margin:0 0 6px;">Comparisons</div>
+        <p class="helper" style="margin:0;">Build a budget to see how the layers line up.</p>
+      </div>`;
   }
-
-  const cats = state.budget.categories;
+  // Same data as the Budget tab, framed for review rather than editing
+  // (07-progress-bills). The full twelve live on the comparison screen.
   return `
     <div class="card mb-md">
-      <div class="section-title" style="margin-bottom:12px;">Comparisons</div>
-      <p class="helper" style="margin-bottom:12px;">How your spending compares to similar households.</p>
-      ${cats.map(cat => {
-        const spend   = budgetCategoryTotal(cat);
-        const peer    = budgetPeerAvg(cat.key);
-        const pct     = peer > 0 ? Math.round((spend - peer) / peer * 100) : 0;
-        const sign    = pct >= 0 ? "+" : "";
-        const color   = pct > 20  ? "var(--warn)"
-                      : pct < -20 ? "var(--accent)"
-                      : "var(--muted)";
-        return `
-          <div class="row" style="margin-bottom:8px;">
-            <span class="helper">${h(cat.icon || "")} ${h(cat.name)}</span>
-            <div style="text-align:right;">
-              <div style="font-size:12px;font-weight:700;color:${color};">${sign}${pct}% vs peers</div>
-              <div style="font-size:10px;color:var(--muted);">You ${budgetFmt(spend)} · Peers ${budgetFmt(peer)}</div>
-            </div>
-          </div>
-        `;
-      }).join("")}
+      <div class="section-title" style="margin:0 0 10px;">Comparisons</div>
+      ${renderComparisonCompact(5)}
     </div>
   `;
 }
@@ -367,6 +285,7 @@ function goalTitleById(goalId) {
   return g ? g.title : "Goal";
 }
 
+// 2b: the Budget tab is a single screen now, so this is just a tab switch.
 function editInAboutMe(screen) {
   state.flowOrigin = "myProgress";
   go(screen);

@@ -1,12 +1,10 @@
 # v3 Build Progress
 
-**Current state:** **Phase 2a COMPLETE** (Phase 2 was split — it is XL).
-2a = the builder path: 6-question lifestyle wizard → peer-model starting budget
-→ seam → confirm gate → 12-slider Budget tab. v2's about-me / budget-setup /
-budget-category / budget.js retired. 40 assertions pass.
-**Next action: Phase 2b** — three-layer comparison (plan · journal · peer), the
-two gaps labelled distinctly, and porting `my-progress` off v2's `state.budget`.
-— *updated 2026-08-07*
+**Current state:** **Phase 2 COMPLETE (2a + 2b).** Three-layer comparison live —
+plan · what you told me · peers, with both gaps labelled distinctly on every row
+(34% vs plan, 16% vs peers for dining). v2's nested budget model is **gone**;
+`state.budget` now holds only the debt instruments L14 keeps. 44 assertions pass.
+Next action: **Phase 2.5, the repaint (D36/L19).** — *updated 2026-08-07*
 
 > **Read before touching anything:**
 > 1. `plan.md` §0 — locked decisions **L1–L19**. Do not re-litigate them.
@@ -168,13 +166,16 @@ two gaps labelled distinctly, and porting `my-progress` off v2's `state.budget`.
 
 ## Phase 2b — Three-layer comparison
 
-- [ ] Three-layer comparison: plan (`state.plan`) · journal (`state.mtd`) · peer (`benchAllPeerValues`)
-- [ ] **Two gaps labelled distinctly** — over plan and over peers. Neither substitutes for the other
-- [ ] Observation #1 reframed to the plan comparison, with a separate peer card (L11)
-      ↳ `observationPeerCounterpart()` already exists and is asserted; 2b surfaces it
-- [ ] Inline observation cards on categories with a gap worth noticing
-- [ ] All four seeded observations visible
-- [ ] Port `my-progress` off v2's `state.budget`, then delete the vestigial model
+- [x] Three-layer comparison: plan (`state.plan`) · journal (`state.mtd`) · peer (`benchAllPeerValues`)
+      ↳ `screens/comparison.js`; three distinct hues so the layers never read as one series
+- [x] **Two gaps labelled distinctly** — over plan and over peers. Neither substitutes for the other
+      ↳ every row carries both pills, and the label is half the point — an unlabelled percentage IS the trap
+- [x] Observation #1 reframed to the plan comparison, with a separate peer card (L11)
+- [x] Inline observation cards on categories with a gap worth noticing
+      ↳ requires BOTH ≥15% and ≥$25: percentage alone flags Subscriptions over by $0.46, dollars alone flags Housing for being Housing
+- [x] All four seeded observations visible
+- [x] Port `my-progress` off v2's `state.budget`, then delete the vestigial model
+      ↳ also retired `screens/lifestyle.js` + `lifestyle-chain.js` (superseded by the v3 wizard), `state.lifestyleAnswers`, `state.lifestyleSubSliders`, and 8 dead helpers from `budget-utils.js`. `state.budget` keeps only debts (L14)
 
 ## Phase 2.5 — Repaint (D36, L19)
 

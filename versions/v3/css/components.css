@@ -1512,3 +1512,31 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 
 .pill-warn { background: var(--warn-pill-bg); color: var(--warn-pill-text); border-color: var(--warn-border); }
 .pill-good { background: var(--good-pill-bg); color: var(--good-pill-text); border-color: var(--good-border); }
+
+/* ─── Three-layer comparison ─────────────────────────────────────────────────
+   Plan / what you told me / peers. Three distinct hues so the layers are never
+   read as one series — "never blur these" is the whole point of the screen. */
+.cmp-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--muted); }
+.cmp-legend > div { display: flex; align-items: center; gap: 5px; }
+.cmp-key { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.cmp-key-plan { background: var(--bar); }
+.cmp-key-user { background: var(--accent); }
+.cmp-key-peer { background: var(--good); }
+
+.cmp-row { margin-bottom: 8px; padding: 12px 14px; }
+.cmp-bars {
+  display: grid;
+  grid-template-columns: 38px 1fr 54px;
+  align-items: center;
+  gap: 4px 8px;
+}
+.cmp-label { font-size: 10px; color: var(--muted); }
+.cmp-val   { font-size: 11px; font-weight: 700; text-align: right; }
+.cmp-bar   { height: 7px; background: var(--progress-bg); border-radius: 99px; overflow: hidden; }
+.cmp-bar > span { display: block; height: 100%; border-radius: 99px; }
+
+.cmp-gaps { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+.cmp-compact { padding: 7px 0; border-bottom: 1px solid var(--line); gap: 8px; }
+.cmp-compact:last-of-type { border-bottom: 0; }
+.cmp-compact-name { font-size: 12px; font-weight: 700; flex: 1; }

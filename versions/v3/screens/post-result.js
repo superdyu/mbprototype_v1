@@ -45,10 +45,10 @@ function renderPostResult() {
       ${context === "budget" ? `
       <div class="card" style="margin-bottom:12px;">
         <div class="section-title" style="margin-bottom:8px;">Your budget at a glance</div>
-        ${state.budget.categories.map(cat => `
+        ${CATEGORIES.slice(0,5).map(cat => `
           <div class="row" style="margin-bottom:4px;">
-            <span class="helper">${h(cat.icon || "")} ${h(cat.name)}</span>
-            <span class="stat-val">${budgetFmt(budgetCategoryTotal(cat))}</span>
+            <span class="helper">${h(cat.icon || "")} ${h(cat)}</span>
+            <span class="stat-val">${budgetFmt(catValue(state.plan, cat))}</span>
           </div>
         `).join("")}
       </div>
@@ -134,9 +134,12 @@ function updateFeelingDescription() {
   if (el) el.textContent = descs[val] || descs[2];
 }
 
+// 2b: v2's lifestyle themes were retired with their screens. The post-result
+// loop still labels its context, so fall back to the generic word.
 function lifestyleThemeLabel(themeKey) {
-  const theme = (LIFESTYLE_THEMES || []).find(function(t) { return t.key === themeKey; });
-  return theme ? theme.label : "Lifestyle";
+  const q = (typeof LW_QUESTIONS !== "undefined" ? LW_QUESTIONS : [])
+    .find(function(x) { return x.dim === themeKey; });
+  return q ? q.prompt : "Lifestyle";
 }
 
 function selectReaction(sliderValue) {
