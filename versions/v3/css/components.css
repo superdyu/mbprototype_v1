@@ -1392,3 +1392,84 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   cursor: not-allowed;
   pointer-events: none;
 }
+
+/* ─── Money Journal ───────────────────────────────────────────────────────────
+   Head / body / foot so the prompt stays put and only the options scroll. */
+.journal-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 4px 18px 18px;
+}
+.journal-head { flex-shrink: 0; padding-bottom: 14px; }
+.journal-body { flex: 1; }
+.journal-foot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 14px;
+}
+.journal-foot-total { border-top: 1px solid var(--line); }
+
+.journal-progress { display: flex; gap: 5px; }
+.journal-pip {
+  height: 3px; flex: 1; border-radius: 99px;
+  background: var(--progress-bg);
+}
+.journal-pip.on { background: var(--accent); }
+
+.journal-options { display: flex; flex-direction: column; gap: 8px; }
+.journal-opt {
+  width: 100%;
+  min-height: 44px;                 /* tap-target floor */
+  text-align: left;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.journal-opt:hover { border-color: var(--accent-border); }
+.journal-opt.picked {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.journal-opt-label { font-size: 14px; font-weight: 700; }
+.journal-opt-hint  { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+.journal-freetext {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+}
+.journal-attach { display: flex; gap: 8px; margin-top: 10px; }
+.journal-attach-btn {
+  flex: 1;
+  min-height: 44px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  cursor: pointer;
+}
+.journal-attach-btn:hover { border-color: var(--accent-border); color: var(--text); }
+
+.journal-entry-card { margin-bottom: 10px; }
+.journal-amount { margin: 0; font-size: 16px; font-weight: 850; }
+.journal-total  { margin: 0; font-size: 20px; font-weight: 850; }
+.journal-slider { width: 100%; accent-color: var(--accent); }

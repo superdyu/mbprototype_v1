@@ -17,6 +17,9 @@
 
 const destinations = [
   ["streak",         "Streak Splash"],
+  ["journalEntry",   "Money Journal"],
+  ["journalConfirm", "Journal: Confirm"],
+  ["journalDone",    "Journal: Done"],
   ["aboutMe",        "Budget"],
   ["budgetSetup",    "Budget Setup"],
   ["myProgress",     "My Progress"],
@@ -58,6 +61,19 @@ const state = {
 
   // Top-bar hamburger overlay
   topbarMenuOpen: false,
+
+  // ── Money Journal ─────────────────────────────────────────────────────────
+  // journalSession:   the in-flight entry (null when not writing one)
+  // journalAsked:     question id → day last asked. Drives cooldown, which is
+  //                   what makes a second same-day entry ask DIFFERENT questions
+  // journalRecurring: pattern follow-up answers. TRI-STATE values —
+  //                   true | "weekdays" | false — never truthiness-checked
+  // goalEvents:       emitted by q_balance, consumed by Phase 5's goals
+  journalSession: null,
+  journalAsked: {},
+  journalRecurring: {},
+  journalEntriesCount: 0,
+  goalEvents: [],
 
   // Admin panel collapse — persists across screens
   adminCollapsed: false,

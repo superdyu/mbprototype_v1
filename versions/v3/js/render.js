@@ -13,6 +13,9 @@
 
 function adminSubtitle() {
   if (state.screen === "streak")         return "Streak splash — static launch screen shown first on every refresh.";
+  if (state.screen === "journalEntry")   return "Money Journal — 4 structured questions by priority, then free text (discarded).";
+  if (state.screen === "journalConfirm") return "Confirmation — entries derived from structured answers only.";
+  if (state.screen === "journalDone")    return "Post-submit — month-to-date updated, observations recomputed.";
   if (state.screen === "home")           return "Edit daily task cards and destinations.";
   if (state.screen === "learn")          return "Adjust XP config, lesson states, badge progress.";
   if (state.screen === "topic")          return "Override lesson statuses for this badge.";
@@ -41,6 +44,9 @@ function adminSubtitle() {
 
 function renderScreen() {
   if (state.screen === "streak")            return renderStreak();
+  if (state.screen === "journalEntry")      return renderJournalEntry();
+  if (state.screen === "journalConfirm")    return renderJournalConfirm();
+  if (state.screen === "journalDone")       return renderJournalDone();
   if (state.screen === "home")              return renderHome();
   if (state.screen === "aboutMe")           return renderAboutMe();
   if (state.screen === "budgetSetup")       return renderBudgetSetup();
@@ -76,6 +82,9 @@ function renderScreen() {
 
 function renderAdmin() {
   if (state.screen === "streak")        return renderStreakAdmin();
+  if (state.screen === "journalEntry")  return renderJournalEntryAdmin();
+  if (state.screen === "journalConfirm") return renderJournalConfirmAdmin();
+  if (state.screen === "journalDone")   return renderJournalDoneAdmin();
   if (state.screen === "home")          return renderHomeAdmin();
   if (state.screen === "goals")         return renderGoalsAdmin();
   if (state.screen === "learn")         return renderLearnAdmin();
@@ -99,7 +108,7 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="navAdminJump(this.value)">
-          ${["streak","home","aboutMe","budgetSetup","myProgress","lifestyle","lifestyleChain",
+          ${["streak","home","journalEntry","journalConfirm","journalDone","aboutMe","budgetSetup","myProgress","lifestyle","lifestyleChain",
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
              "goals","learn","topic","lesson","quiz","simulation","marketplace",
              "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
@@ -123,6 +132,7 @@ function render() {
   lpStopPlayback();
 
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");
+  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone"].includes(state.screen));
   screenRoot.classList.toggle("streak-mode",      state.screen === "streak");
   screenRoot.classList.toggle("chat-mode",        state.screen === "chat");
   document.querySelector(".screen").classList.toggle("dark-mode", state.settings.colorMode === "dark");

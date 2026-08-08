@@ -1,11 +1,10 @@
 # v3 Build Progress
 
-**Current state:** **Phase 0 COMPLETE (0a–0e).** Shared top bar, 5-tab nav in
-D34 order, per-stack back history, offsets from `--topbar-h`/`--nav-h`. 46 harness
-assertions pass, incl. the headline case: the same lesson backs to Education or
-to Home depending on how it was entered. 10 per-screen back buttons removed —
-the top bar owns back now. Next action: **Phase 1, Money Journal** (the deepest
-build). — *updated 2026-08-07*
+**Current state:** **Phase 1 COMPLETE — the Money Journal works end to end.**
+Question selection → answers → confirmation with adjustable estimates → submit →
+month-to-date grows → observations recompute with templated copy → second
+same-day entry asks different questions. 55 harness assertions pass.
+Next action: **Phase 2, budget and benchmarks.** — *updated 2026-08-07*
 
 > **Read before touching anything:**
 > 1. `plan.md` §0 — locked decisions **L1–L19**. Do not re-litigate them.
@@ -124,22 +123,33 @@ build). — *updated 2026-08-07*
 
 ## Phase 1 — Money Journal (deepest build, D05)
 
-- [ ] Journal entry screen, structured question sequence
-- [ ] Question types: `multi_select`, `fill_number`, `single_select`. **No dropdown** — the prose says it, the data has none
-- [ ] Selection: 4 by priority from the 6 scoreable questions, skipping cooldown
-- [ ] `q_free_text` always last, **outside** the count of 4 — accepts input, silently discarded, never on the confirmation screen, never acknowledged (D12)
-- [ ] Attachment affordances (image · camera · voice) present and tappable, nothing processed
-- [ ] `q_breakfast_habit` fires on `triggeredBy: pattern_detected`, not by score. `setsRecurring` is **tri-state** (`true` / `"weekdays"` / `false`)
-- [ ] `q_watched` is `signalOnly` — engagement signal, no financial entry
-- [ ] Task deep-link **bypasses cooldown** (Hulu task → `q_watched`, which has a 2-day cooldown) (L12)
-- [ ] `q_balance` emits a goal-progress event — consumed in Phase 5, but emitted now
-- [ ] `q_balance` pre-fills from `PERSONA.connectedAccounts.selfReportedBalance` (1840) — otherwise that seed data has no consumer
-- [ ] Confirmation screen: category · estimate from persona · adjustment slider
-- [ ] Cash-flow only: ate-at-home entries are **$0** with an "already in your groceries" note (D15)
-- [ ] Submit → entries written to session state
-- [ ] **Submitted entries add to month-to-date; observations recompute** (L17)
-- [ ] Observation copy is **templated, not static** — seeded strings have baked figures that go stale on first entry
-- [ ] Visible entry point for an additional same-day entry (D13)
+- [x] Journal entry screen, structured question sequence
+      ↳ `screens/journal-entry.js`, full-bleed one-question-at-a-time with a progress rail
+- [x] Question types: `multi_select`, `fill_number`, `single_select`. **No dropdown** — the prose says it, the data has none
+      ↳ **correction to plan.md §9.6:** there is no dropdown *type*, but `q_anything_big` carries `categoryDropdown: true` — a category picker paired with the number input. That is what the prose meant. Implemented
+- [x] Selection: 4 by priority from the 6 scoreable questions, skipping cooldown
+      ↳ triggered questions join the pool when their pattern fires and then compete on priority; `q_breakfast_habit` (p70) outranks `q_getting_around` (p65)
+- [x] `q_free_text` always last, **outside** the count of 4 — accepts input, silently discarded, never on the confirmation screen, never acknowledged (D12)
+      ↳ asserted: the text appears nowhere in `state` after submit
+- [x] Attachment affordances (image · camera · voice) present and tappable, nothing processed
+- [x] `q_breakfast_habit` fires on `triggeredBy: pattern_detected`, not by score. `setsRecurring` is **tri-state** (`true` / `"weekdays"` / `false`)
+      ↳ coffee appears on all 6 seeded days, so the pattern genuinely fires. Tri-state asserted not coerced
+- [x] `q_watched` is `signalOnly` — engagement signal, no financial entry
+      ↳ mentioning Hulu flips its `status` to `active_used` and clears the flag
+- [x] Task deep-link **bypasses cooldown** (Hulu task → `q_watched`, which has a 2-day cooldown) (L12)
+      ↳ `navRouteTask()` in navigation.js; the question is also pinned first so the task's intent reads
+- [x] `q_balance` emits a goal-progress event — consumed in Phase 5, but emitted now
+      ↳ a balance is not spending: asserted it does **not** move month-to-date
+- [x] `q_balance` pre-fills from `PERSONA.connectedAccounts.selfReportedBalance` (1840)
+- [x] Confirmation screen: category · estimate from persona · adjustment slider
+- [x] Cash-flow only: ate-at-home entries are **$0** with an "already in your groceries" note (D15)
+- [x] Submit → entries written to session state
+- [x] **Submitted entries add to month-to-date; observations recompute** (L17)
+      ↳ end-to-end: 429 → 470, gap 34% → 47%, and the sentence followed the number
+- [x] Observation copy is **templated, not static** — seeded strings have baked figures that go stale on first entry
+      ↳ `js/observations.js` — the registry (`observationsFor`) plus computed copy
+- [x] Visible entry point for an additional same-day entry (D13)
+      ↳ and it asks a genuinely different set, because submitting set cooldowns
 
 ## Phase 2 — Budget and benchmarks
 

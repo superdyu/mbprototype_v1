@@ -334,3 +334,10 @@ body {
     scrollbar-color: var(--scroll-thumb) transparent;
   }
 }
+
+/* Money Journal — full-bleed, one question at a time. Zeroes both offsets. */
+.screen-scroll.journal-mode {
+  padding: 0;
+  top: var(--topbar-h);   /* keeps the bare back bar; nav is hidden */
+  bottom: 0;
+}

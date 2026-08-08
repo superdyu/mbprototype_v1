@@ -78,6 +78,7 @@ function bootV3() {
   // ── Observations ───────────────────────────────────────────────────────────
   state.observations = v3Clone(SEED_STATE.observations.seeded);
   v3ReframeDiningObservation();
+  observationsRecompute();   // derive figures from live state, never the baked strings
 
   // Journal entries the tester submits append here and feed month-to-date
   // (L17). Empty at boot — the six seeded days live in state.journal.

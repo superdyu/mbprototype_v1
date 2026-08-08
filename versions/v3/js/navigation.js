@@ -350,3 +350,24 @@ window.addEventListener('popstate', function(e) {
   render();
 });
 
+
+
+// ─── Daily-task route map (architecture §9) ───────────────────────────────────
+// seed-state's dailyTasks use their own vocabulary, matching no screen id, and
+// a route can carry a parameter ("lesson:apr").
+//
+// `subscription_confirm` is NOT a screen (L12) — it deep-links into a journal
+// entry focused on q_watched, which is where the engagement signal driving the
+// Hulu flag actually comes from. The deep link bypasses that question's 2-day
+// cooldown, or the task could open an entry missing its own question.
+function navRouteTask(route) {
+  if (!route) return;
+  const parts = String(route).split(":");
+  const name = parts[0], param = parts[1];
+
+  if (name === "money_journal")       { journalStart({}); taskGo("journalEntry"); return; }
+  if (name === "subscription_confirm"){ journalStart({ focusQuestionId: "q_watched" }); taskGo("journalEntry"); return; }
+  if (name === "lesson" && param)     { selectLesson(param); return; }
+  if (name === "budget")              { taskGo("aboutMe"); return; }
+  taskGo(name);
+}
