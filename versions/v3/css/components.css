@@ -1707,3 +1707,19 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   margin-top: 12px; font-size: 11px; color: var(--muted); cursor: pointer;
 }
 .login-notice { text-align: center; margin: 0; }
+
+/* ─── Onboarding ──────────────────────────────────────────────────────────── */
+.onb-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.onb-swatch {
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.onb-swatch.picked { border-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+.onb-trial-list { margin: 0 0 14px; padding-left: 18px; font-size: 13px; line-height: 1.7; color: var(--text); }

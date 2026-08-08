@@ -66,6 +66,7 @@ function generateId(prefix) {
 function activeTabFor(screen) {
   if (screen === "streak")            return "home";
   if (screen === "login")             return "home";
+  if (screen === "onboarding")        return "home";
   if (["journalEntry","journalConfirm","journalDone"].includes(screen)) return "home";   // splash → no nav, but keep mapping defined
   // Budget sub-screens
   if (screen === "goals")             return "goals";    // v3: Goals is its own tab (D34)

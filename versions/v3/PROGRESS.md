@@ -1,10 +1,12 @@
 # v3 Build Progress
 
-**Current state:** **Phase 3a COMPLETE** (Phase 3 split — XL). 3a = the
-returning-user loop: login scene (day/night by real local time) → daily-update
-prompt → home with tip banner, buddy stage, four routing tasks → journal.
-45 assertions pass. **Next action: Phase 3b** — onboarding's 8 steps, the trial
-popup, and swapping chat onto `BUDDY_RESPONSES`. — *updated 2026-08-07*
+**Current state:** **Phase 3 COMPLETE (3a + 3b).** Both entry paths work:
+`SKIP_ONBOARDING=false` runs all 8 onboarding steps → 1-day streak → home;
+`true` goes login → home with the 6-day streak. Chat now runs off
+`BUDDY_RESPONSES` with D26's advice guardrail enforced ahead of scoring.
+52 assertions pass. Only Phase 3 item left is the streak registering at the end
+of the share flow — that IS Phase 4. **Next action: Phase 4, daily update and
+share.** — *updated 2026-08-07*
 
 > **Read before touching anything:**
 > 1. `plan.md` §0 — locked decisions **L1–L19**. Do not re-litigate them.
@@ -228,13 +230,17 @@ palette rather than converted.
 - [ ] Streak registers after a completed entry, at the end of the share flow — **Phase 4** (that IS the share flow)
 
 ### 3b — Onboarding and chat
-- [ ] Onboarding, 8 steps: name · ZIP · household size · income band · lifestyle wizard · strategic goal · buddy creation · trial popup
-- [ ] Only ZIP, household size, income override the persona (D09)
-- [ ] Buddy creation: **all five attributes** (L18) — the stage already reflects them
-- [ ] Trial popup fires immediately after buddy creation; accept or decline is identical afterward (D32)
-- [ ] Chat with Buddy — keep v2's `chat-router.js` matcher, swap in `BUDDY_RESPONSES`
-- [ ] Opening bubbles + `followUp` chains; bubbles are the primary input path
-- [ ] Two responses have `bubble: null` (`advice_deflect`, `catch_all`) — keyword-only, no bubble
+- [x] Onboarding, 8 steps: name · ZIP · household size · income band · lifestyle wizard · strategic goal · buddy creation · trial popup
+      ↳ step 5 reuses `LW_QUESTIONS` — one wizard, two entry points, so answers mean the same thing either way
+- [x] Only ZIP, household size, income override the persona (D09)
+      ↳ asserted both ways: those three change, `age`/`city` do not. Income is picked as a BAND and stored as a representative annual, so `benchIncomeBand()` maps it back with no second code path
+- [x] Buddy creation: **all five attributes** (L18) — the stage already reflects them
+- [x] Trial popup fires immediately after buddy creation; accept or decline is identical afterward (D32)
+- [x] Chat with Buddy — swap in `BUDDY_RESPONSES`
+      ↳ **`advice_deflect` carries `priority: "override"` and must be checked BEFORE scoring.** Its own note says advice-shaped input lands there *regardless of keyword score* — that is how D26 is enforced. Scoring alone would answer "is it worth it to cancel hulu?" with `hulu_question`
+- [x] Opening bubbles + `followUp` chains; bubbles are the primary input path
+- [x] Two responses have `bubble: null` (`advice_deflect`, `catch_all`) — keyword-only, never listed
+      ↳ replies carry a `navigate:` action offered as a BUTTON; the chat never auto-navigates, so the answer gets read first
 
 ### Assets — no generation (L15)
 - [ ] Buddy, login backgrounds (day/night), kibble bowl all ship as described placeholders

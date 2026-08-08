@@ -18,6 +18,7 @@ function adminSubtitle() {
   if (state.screen === "journalDone")    return "Post-submit — month-to-date updated, observations recomputed.";
   if (state.screen === "home")           return "Home — tip banner, buddy stage, four daily tasks.";
   if (state.screen === "login")          return "Login scene — day/night by local time, then the daily-update prompt.";
+  if (state.screen === "onboarding")     return "Onboarding — 8 steps. Only ZIP, household and income override the persona (D09).";
   if (state.screen === "learn")          return "Adjust XP config, lesson states, badge progress.";
   if (state.screen === "topic")          return "Override lesson statuses for this badge.";
   if (state.screen === "reward-preview") return "Lesson preview — read-only. Edit content in Learn admin.";
@@ -46,6 +47,7 @@ function adminSubtitle() {
 function renderScreen() {
   if (state.screen === "streak")            return renderStreak();
   if (state.screen === "login")             return renderLogin();
+  if (state.screen === "onboarding")        return renderOnboarding();
   if (state.screen === "journalEntry")      return renderJournalEntry();
   if (state.screen === "journalConfirm")    return renderJournalConfirm();
   if (state.screen === "journalDone")       return renderJournalDone();
@@ -84,6 +86,7 @@ function renderScreen() {
 function renderAdmin() {
   if (state.screen === "streak")        return renderStreakAdmin();
   if (state.screen === "login")         return renderLoginAdmin();
+  if (state.screen === "onboarding")    return renderOnboardingAdmin();
   if (state.screen === "journalEntry")  return renderJournalEntryAdmin();
   if (state.screen === "journalConfirm") return renderJournalConfirmAdmin();
   if (state.screen === "journalDone")   return renderJournalDoneAdmin();
@@ -110,7 +113,7 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="navAdminJump(this.value)">
-          ${["streak","login","home","journalEntry","journalConfirm","journalDone","aboutMe","lifestyleWizard","lifestyleWizardReview","budgetDone","myProgress","comparison",
+          ${["streak","onboarding","login","home","journalEntry","journalConfirm","journalDone","aboutMe","lifestyleWizard","lifestyleWizardReview","budgetDone","myProgress","comparison",
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
              "goals","learn","topic","lesson","quiz","simulation","marketplace",
              "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
@@ -137,6 +140,7 @@ function render() {
   screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","lifestyleWizard","lifestyleWizardReview","budgetDone"].includes(state.screen));
   screenRoot.classList.toggle("streak-mode",      state.screen === "streak");
   screenRoot.classList.toggle("login-mode",       state.screen === "login");
+  screenRoot.classList.toggle("journal-mode",     state.screen === "onboarding" || screenRoot.classList.contains("journal-mode"));
   screenRoot.classList.toggle("chat-mode",        state.screen === "chat");
   document.querySelector(".screen").classList.toggle("dark-mode", state.settings.colorMode === "dark");
   screenRoot.innerHTML  = renderScreen();

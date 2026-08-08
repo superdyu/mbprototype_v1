@@ -35,31 +35,27 @@ const CHAT_GREETING = {
 };
 
 // Quick-tap suggestions. Each is worded to land on a DIFFERENT route in
-// CHAT_ROUTES, so the chips double as a demo of what the matcher understands.
+// BUDDY_RESPONSES, so the bubbles double as a demo of what the matcher knows.
 // Tapping one is identical to typing it — both go through chatRespond().
 // Note the phrasing avoids learning verbs ("how do", "explain") where an action
 // is wanted, since the learn route is checked first and would win. See the
 // ordering notes in chat-router.js.
-const CHAT_CHIPS = [
-  "Set up my budget",
-  "How does interest work?",
-  "I want to set a goal",
-  "Pay off my debt faster",
-  "What can you help me with?"
-];
 
 function renderChat() {
   const thread = [CHAT_GREETING].concat(state.chat.messages);
+  const bubbles = (state.chat.bubbles && state.chat.bubbles.length)
+    ? state.chat.bubbles
+    : BUDDY_RESPONSES.openingBubbles;
 
   return `
     <div class="chat-shell">
 
       <div class="chat-header">
         <div>
-          <h1 class="title">Chat with Buddy</h1>
+          <h1 class="title">Chat with ${h(state.buddy.name || "Buddy")}</h1>
           <p class="subtitle">Ask a question — I'll point you the right way.</p>
         </div>
-        <button class="button secondary" type="button" onclick="go('home')">Back</button>
+        <button class="button secondary" type="button" onclick="navBack()">Back</button>
       </div>
 
       <div class="chat-thread" id="chatThread">
@@ -68,9 +64,10 @@ function renderChat() {
             <div class="chat-row ${m.from === "user" ? "chat-row-user" : ""}">
               <div class="chat-bubble ${m.from === "user" ? "chat-bubble-user" : "chat-bubble-buddy"}">
                 ${h(m.text)}
-                ${m.link ? `
-                  <button class="chat-link" type="button" onclick="${m.link.action}">
-                    ${h(m.link.label)} →
+                ${m.action ? `
+                  <button class="chat-link" type="button"
+                          onclick="chatFollowAction('${h(m.action)}')">
+                    ${h(chatActionLabel(m.action))} →
                   </button>
                 ` : ""}
               </div>
@@ -80,15 +77,22 @@ function renderChat() {
       </div>
 
       <div class="chat-foot">
+        <!-- Bubbles are the PRIMARY input path (inputMode: bubbles_primary).
+             The set changes with each reply — followUp when the response has
+             one, otherwise back to the openers. Responses with bubble: null
+             (advice_deflect, catch_all) are keyword-only and never listed. -->
         <div class="chat-chips">
-          ${CHAT_CHIPS.map(function (c) {
-            return `<button class="chat-chip" type="button" onclick="chatRespond('${h(c).replace(/'/g, "\\'")}')">${h(c)}</button>`;
+          ${bubbles.map(function (id) {
+            const r = buddyResponseById(id);
+            if (!r || !r.bubble) return "";
+            return `<button class="chat-chip" type="button"
+                            onclick="chatTapBubble('${h(id)}')">${h(r.bubble)}</button>`;
           }).join("")}
         </div>
 
         <div class="chat-inputbar">
           <input id="chatInput" class="chat-input" type="text" autocomplete="off"
-                 placeholder="Ask Buddy anything..." onkeydown="chatInputKey(event)">
+                 placeholder="Or type a question..." onkeydown="chatInputKey(event)">
           <button class="button" type="button" onclick="chatSend()">Send</button>
         </div>
       </div>
@@ -136,19 +140,28 @@ function renderChatAdmin() {
     </div>
 
     <div class="admin-card">
-      <p class="admin-card-title">Keyword Routes</p>
+      <p class="admin-card-title">Response Library</p>
       <p class="helper" style="margin-bottom:10px;">
-        Word matching only — no AI. First match wins, top to bottom. Anything else
-        gets the "not sure" reply.
+        Word matching only — no AI (D25). Highest keyword overlap wins; ties
+        break by declaration order; nothing matching plays the fallback.
       </p>
-      ${CHAT_ROUTES.map(function (r) {
+      ${BUDDY_RESPONSES.responses.map(function (r) {
+        const tag = r.priority === "override" ? "OVERRIDE" : (r.isFallback ? "FALLBACK" : "");
         return `
-          <div style="margin-bottom:8px;">
-            <div style="font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">${h(r.id)}</div>
-            <div style="font-size:12px;color:var(--text);">${h(r.keywords.length ? r.keywords.join(", ") : r.note || "—")}</div>
+          <div style="margin-bottom:9px;">
+            <div style="font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.05em;color:var(--chrome-muted);">
+              ${h(r.id)}${tag ? ` · ${tag}` : ""}${r.bubble ? "" : " · keyword-only"}
+            </div>
+            <div style="font-size:12px;color:var(--chrome-text);">
+              ${h((r.keywords && r.keywords.length) ? r.keywords.join(", ") : "—")}
+            </div>
           </div>
         `;
       }).join("")}
+      <p class="helper" style="font-size:10px;margin-top:8px;">
+        advice_deflect is checked BEFORE scoring — D26 means an advice-shaped
+        question can never be answered by whichever topic shares a noun with it.
+      </p>
     </div>
   `;
 }

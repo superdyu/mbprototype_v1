@@ -84,6 +84,10 @@ function bootV3() {
   // (L17). Empty at boot — the six seeded days live in state.journal.
   state.journalEntries = [];
 
+  // Chat opens with the four opening bubbles (bubbles are the primary input
+  // path — inputMode: bubbles_primary).
+  state.chat = { messages: [], bubbles: (BUDDY_RESPONSES.openingBubbles || []).slice() };
+
   // ── Entry point (D06/D07) ──────────────────────────────────────────────────
   // The whole seam is this one branch plus the streak above. Flipping
   // SKIP_ONBOARDING must not require unwinding anything else.

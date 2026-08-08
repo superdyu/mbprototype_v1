@@ -17,6 +17,7 @@
 
 const destinations = [
   ["streak",         "Streak Splash"],
+  ["onboarding",     "Onboarding"],
   ["login",          "Login Scene"],
   ["home",           "Home"],
   ["journalEntry",   "Money Journal"],
@@ -75,6 +76,8 @@ const state = {
   rememberDailyChoice: false,
   dailyPromptNoticeSeen: false,
   dailyPromptNoticeShown: false,
+  onboarding: null,
+  trialAccepted: null,
 
   // ── Money Journal ─────────────────────────────────────────────────────────
   // journalSession:   the in-flight entry (null when not writing one)
@@ -710,7 +713,7 @@ const state = {
   // rebuilding per visit) is what lets the user follow a reply's link and come
   // back to the conversation intact. The greeting is NOT stored — chat.js
   // always renders CHAT_GREETING ahead of this array.
-  chat: { messages: [] },
+  chat: { messages: [], bubbles: [] },
 
   // ─── Reward session data ──────────────────────────────────────────────────
   // Written by completeLesson() before navigating to the reward screen.
@@ -833,7 +836,7 @@ function resetUserData() {
   state.editingGoalId        = null;
   state.pendingBaseline      = null;
   state.lessonPlayback       = { sentences: [], cues: [], total: 0, elapsed: 0, lastTick: 0, index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1 };
-  state.chat                 = { messages: [] };
+  state.chat                 = { messages: [], bubbles: [] };
   // Re-seed from the v3 data files so reset returns to the seeded start state
   // rather than an empty one (D03: refresh does the same thing via the gate).
   bootV3();
