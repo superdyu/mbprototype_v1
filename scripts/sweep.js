@@ -341,6 +341,51 @@ var missingScripts = [];
 chk(missingScripts.length === 0, "all 15 lesson variants have a script body", missingScripts.join(", "));
 
 // ─────────────────────────────────────────────────────────────────────────────
+section("7b. Unreferenced functions — inventory, not a verdict");
+
+// POLICY: unused code is KEPT, not deleted. This is a prototype under active
+// iteration, and something dropped today is something rewritten next week. Git
+// history technically preserves a deletion, but retrieving it means knowing
+// which commit to dig into — friction that is not worth the tidiness.
+//
+// So this does not fail on dead code. What it watches for is MOVEMENT: a
+// function that used to be referenced and now is not was probably orphaned by
+// accident — a handler left behind when its button moved, a cue dropped from a
+// dispatch table. That is a refactor bug, and it looks identical to deliberate
+// dead code unless you know which ones were already here.
+//
+// Hence the baseline. Everything below was unreferenced as of the L21 change
+// and is kept on purpose. Anything NOT on this list is new, and warns.
+var DEAD_BASELINE = [
+  "benchSelfTest",              // documents the benchmark formula by example
+  "buddyDescription",           // L15 buddy plumbing, used once art lands
+  "budgetDelta",
+  "catRows",                    // taxonomy helper, pairs with catTotal/catValue
+  "completeAndReward",
+  "dailySummaryDone",
+  "journalDiscard",             // journal seam
+  "observationPeerCounterpart",
+  "planToBaseline",             // budget-baseline seam (L6)
+  "themeIsDark"                 // L21, for a screen that wants to branch on theme
+];
+
+var deadNames = __UNREFERENCED.map(function (d) { return d.name; });
+var appeared = __UNREFERENCED.filter(function (d) { return DEAD_BASELINE.indexOf(d.name) === -1; });
+var resolved = DEAD_BASELINE.filter(function (n) { return deadNames.indexOf(n) === -1; });
+
+ok(deadNames.length + " unreferenced, " + DEAD_BASELINE.length + " expected (kept on purpose)");
+if (appeared.length) {
+  warn("newly unreferenced since the baseline — orphaned by a refactor?",
+       appeared.map(function (d) { return d.name + "  " + d.file; }).join("\n          "));
+} else {
+  ok("nothing newly orphaned");
+}
+if (resolved.length) {
+  ok(resolved.length + " baseline entr" + (resolved.length === 1 ? "y is" : "ies are") +
+     " now referenced", "prune from DEAD_BASELINE: " + resolved.join(", "));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 section("8. Cannot be checked here — needs the owner");
 print("  These are real Phase 6 items that no headless check can settle:");
 print("");

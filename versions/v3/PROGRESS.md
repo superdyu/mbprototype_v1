@@ -3,7 +3,7 @@
 **Current state:** **v3 IS BUILT — phases 0 → 6 complete**, plus the four-theme
 change (L21) that landed after the sweep.
 **Next action: the owner's click-through.** `bash scripts/sweep.sh` passes
-**44/44 with 0 warnings**, but seven items are not machine-checkable and the
+**49/49 with 0 warnings**, but seven items are not machine-checkable and the
 sweep prints them explicitly rather than passing them silently — see below.
 — *updated 2026-08-07*
 
@@ -353,7 +353,26 @@ the contract is `docs/architecture.md` §14.
 - [x] Admin panel gets a 2×2 theme picker, replacing the old two-way button
 - [x] Sweep extended: 41 screens × **4 themes**, the 40-token contract per theme, chrome isolation, and **12 contrast pairs × 4 themes at 4.5:1**
       ↳ **three pre-existing defects found.** Eight dead overrides in `.dark-mode` (`--bg`, `--phone`, six `--chrome-*`) that could never apply because the class is on `.screen` and those tokens are consumed by an ancestor and a sibling. An implicit text-on-`--accent` pairing that inverted with the theme, leaving Natural Dark at ~1.6:1 — now explicit via `--on-accent` / `--accent-fill-text`. And `--info` shipping at 3.92:1 in Natural Light
-- [x] Syntax clean; `bash scripts/sweep.sh` → 44 checks, 0 failed, 0 warnings
+- [x] Syntax clean; `bash scripts/sweep.sh` → 47 checks, 0 failed, 0 warnings
+
+## Pre-refactor — unreferenced-function inventory (sweep §7b)
+
+Added ahead of the owner's in-depth review + refactor.
+
+- [x] **Policy: unused code is kept, not deleted.** A prototype in iteration
+      loses more to a premature deletion than to clutter. The check is an
+      inventory, not a gate — it never fails on dead code
+- [x] What it actually watches is **movement**: 10 unreferenced functions are
+      baselined in `DEAD_BASELINE`; anything *newly* unreferenced warns, because
+      that usually means a refactor orphaned a handler rather than a deliberate choice
+- [x] Detection is a **bare-identifier** match, not `name(` — functions here are
+      reached four ways (ordinary calls, `onclick` in screen template literals,
+      `onclick` in `index.html`, bare identifiers in dispatch tables) and only
+      the first looks like a call. A `name(` scan misreported `activeTabFor`,
+      `copyAppState` and `duCueBarCompare` as dead when all three are live
+- [x] **Validated with a negative control**: removing `copyAppState`'s only
+      reference (an `onclick` in `index.html` — no JS caller to lose) is caught
+- [x] `bash scripts/sweep.sh` → 49 checks, 0 failed, 0 warnings
 
 ---
 

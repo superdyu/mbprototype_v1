@@ -74,6 +74,15 @@ moderate + cooks sometimes → `275 × 1.34 × 1.0 = 368.5` → **370**.
   admin panel, page and bezel, which live outside `.screen` where theme classes
   are applied — the override is inert, and the frame is meant to hold still.
 - **Surgical edits.** Change only what you're fixing. Never collapse files.
+- **Do not delete unused code.** This is a prototype under iteration; something
+  dropped today is something rewritten next week. `sweep.sh` §7b inventories
+  unreferenced functions against a baseline and **warns only on new ones** —
+  a function that was referenced and now isn't was likely orphaned by accident.
+  Deliberately-unused code goes in `DEAD_BASELINE`, it does not get removed.
+- **Never judge "is this used?" by grepping for `name(`.** Functions here are
+  reached four ways: ordinary calls, `onclick` in screen template literals,
+  `onclick` in `index.html`, and bare identifiers in dispatch tables. Only the
+  first looks like a call. Use `sweep.sh` §7b — grep gets this wrong.
 
 **Copy** — applies to every surface
 - **No financial advice. Ever. Anywhere** (D26). Surface the number and the gap;

@@ -67,6 +67,31 @@ printf '\nvar __VARS_CSS = ' >> "$OUT"
 python3 -c 'import json,sys; sys.stdout.write(json.dumps(open("'"$APP"'/css/variables.css").read()))' >> "$OUT"
 printf ';\n' >> "$OUT"
 
+# ── unreferenced functions ──────────────────────────────────────────────────
+# Computed here rather than in sweep.js: it needs each file's text separately
+# plus index.html, and injecting all of that would double the bundle.
+#
+# A bare-identifier match, NOT `name(`. Functions in this app are reached four
+# ways — ordinary calls, onclick inside screen template literals, onclick in
+# index.html, and bare identifiers in dispatch tables. Only the first looks like
+# a call. Matching on `name(` misreads the other three as unused.
+printf '\nvar __UNREFERENCED = ' >> "$OUT"
+python3 - "$APP" <<'PY' >> "$OUT"
+import re, sys, glob, json, os
+app = sys.argv[1]
+files = sorted(glob.glob(app+'/js/*.js') + glob.glob(app+'/screens/*.js') + glob.glob(app+'/components/*.js'))
+src = {p: open(p, encoding='utf-8').read() for p in files}
+corpus = "\n".join(src.values()) + "\n" + open(app+'/index.html', encoding='utf-8').read()
+out = []
+for p, s in src.items():
+    for m in re.finditer(r'^function\s+([A-Za-z_]\w*)', s, re.M):
+        f = m.group(1)
+        if len(re.findall(r'\b'+re.escape(f)+r'\b', corpus)) - 1 <= 0:
+            out.append({"name": f, "file": os.path.relpath(p, app)})
+json.dump(sorted(out, key=lambda d: d["name"]), sys.stdout)
+PY
+printf ';\n' >> "$OUT"
+
 printf '\n// ══ sweep ══\n' >> "$OUT"
 cat scripts/sweep.js >> "$OUT"
 
