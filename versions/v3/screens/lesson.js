@@ -460,7 +460,13 @@ function renderLesson() {
   if (state.lessonPlayback.currentLessonId !== lesson.id) {
     const lp = state.lessonPlayback;
     lp.currentLessonId = lesson.id;
-    lp.sentences       = LP_SCRIPTS[lesson.id] || [
+    // v3 (D38): the player is NOT rewritten — the only hook is which sentence
+    // array it plays. state.lessonVariantScript is set by the framing tree
+    // (js/lessons-v3.js) from the variant the answers selected. v2's lessons
+    // still fall back to LP_SCRIPTS by lesson id.
+    lp.sentences       = state.lessonVariantScript
+                      || LP_SCRIPTS[lesson.id]
+                      || [
       "This lesson's content will be added soon.",
       "Tap Next to proceed to the quiz."
     ];

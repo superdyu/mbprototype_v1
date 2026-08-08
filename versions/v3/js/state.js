@@ -34,6 +34,7 @@ const destinations = [
   ["learn",          "Learn"],
   ["topic",          "Topic Page"],
   ["reward-preview", "Reward Preview"],
+  ["lessonFraming",  "Lesson: Framing"],
   ["lesson",         "Lesson Player"],
   ["quiz",           "Quiz"],
   ["simulation",     "Simulation"],
@@ -93,6 +94,11 @@ const state = {
   goalDraft: null,
   goalSuggestions: [],
 
+  // ── Lesson framing (D38) ──────────────────────────────────────────────────
+  lessonFraming: null,
+  lessonVariantId: null,
+  lessonVariantScript: null,
+
   // ── Money Journal ─────────────────────────────────────────────────────────
   // journalSession:   the in-flight entry (null when not writing one)
   // journalAsked:     question id → day last asked. Drives cooldown, which is
@@ -117,9 +123,12 @@ const state = {
   // Admin panel collapse — persists across screens
   adminCollapsed: false,
 
-  // Lesson player stage style — toggled from admin panel
-  // "waveform": animated bars above title | "clean": title only
-  lpStageStyle: "waveform",
+  // Lesson player stage style — toggled from admin panel.
+  // L10 flipped the default to "clean": the narration is a recorded .wav, and
+  // an animated waveform that does not correspond to the audio is decoration
+  // pretending to be a visualisation. "waveform" remains as the non-default
+  // admin option.
+  lpStageStyle: "clean",
 
   // ── Lesson playback session state ─────────────────────────────────────────
   // All playback variables consolidated here so navigation resets them cleanly

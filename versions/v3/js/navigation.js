@@ -383,7 +383,7 @@ function navRouteTask(route) {
 
   if (name === "money_journal")       { journalStart({}); taskGo("journalEntry"); return; }
   if (name === "subscription_confirm"){ journalStart({ focusQuestionId: "q_watched" }); taskGo("journalEntry"); return; }
-  if (name === "lesson" && param)     { selectLesson(param); return; }
+  if (name === "lesson" && param)     { lessonV3Start(param); return; }
   if (name === "budget")              { taskGo("aboutMe"); return; }
   taskGo(name);
 }

@@ -1,12 +1,11 @@
 # v3 Build Progress
 
-**Current state:** **Phase 5a + 5b COMPLETE.** Goals rebuilt to the v3 model
-(inverted pace math, live spend limits, event-based updates). My Progress
-rewritten to A3's six sections — trend chart, comparison, bills, subscriptions,
-badges, kibble. 68 assertions across the two.
-**Next action: Phase 5c** — education: the lesson player, framing decision
-trees, variant matching, and the **15 script bodies** (L8) — the largest block
-of unwritten prose left, bound by L20's copy rules.
+**Current state:** **Phase 5a + 5b + 5c-i COMPLETE.** Goals rebuilt; My
+Progress on A3's six sections; and D38's two gaps are filled — framing decision
+trees, tag-driven variant matching, and **all 15 script bodies written** (105
+lines, asserted advice-free). 108 assertions across the three.
+**Next action: Phase 5c-ii** — badges (lessons.json 5 tiers + v2 admin knobs,
+L9), quiz, one simulation per lesson, reward screen, return routing.
 — *updated 2026-08-07*
 
 > **Read before touching anything:**

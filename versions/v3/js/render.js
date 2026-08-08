@@ -25,6 +25,7 @@ function adminSubtitle() {
   if (state.screen === "learn")          return "Adjust XP config, lesson states, badge progress.";
   if (state.screen === "topic")          return "Override lesson statuses for this badge.";
   if (state.screen === "reward-preview") return "Lesson preview — read-only. Edit content in Learn admin.";
+  if (state.screen === "lessonFraming")  return "Framing tree — tags select which pre-written script variant plays.";
   if (state.screen === "lesson")         return "Toggle stage style, seek to sentence for testing.";
   if (state.screen === "aboutMe")        return "Budget — 12 flat categories, plan vs what the journal says.";
   if (state.screen === "lifestyleWizard") return "Lifestyle wizard — 6 questions feeding the peer model.";
@@ -75,6 +76,7 @@ function renderScreen() {
   if (state.screen === "learn")             return renderLearn();
   if (state.screen === "topic")             return renderTopic();
   if (state.screen === "reward-preview")    return renderRewardPreview();
+  if (state.screen === "lessonFraming")     return renderLessonFraming();
   if (state.screen === "lesson")            return renderLesson();
   if (state.screen === "quiz")              return renderQuiz();
   if (state.screen === "simulation")        return renderSimulation();
@@ -106,6 +108,7 @@ function renderAdmin() {
   if (state.screen === "myProgress")    return renderMyProgressAdmin();
   if (state.screen === "comparison")    return renderComparisonAdmin();
   if (state.screen === "marketplace")   return renderMarketplaceAdmin();
+  if (state.screen === "lessonFraming") return renderLessonFramingAdmin();
   if (state.screen === "lesson")        return renderLessonAdmin();
   if (state.screen === "reward")        return renderRewardAdmin();
   if (state.screen === "aboutMe")       return renderBudgetV3Admin();
@@ -124,7 +127,7 @@ function renderAdmin() {
         <select onchange="navAdminJump(this.value)">
           ${["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home","journalEntry","journalConfirm","journalDone","aboutMe","lifestyleWizard","lifestyleWizardReview","budgetDone","myProgress","comparison",
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
-             "goals","learn","topic","lesson","quiz","simulation","marketplace",
+             "goals","learn","topic","lessonFraming","lesson","quiz","simulation","marketplace",
              "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
              "chat","budgetUpdateConfirm"].map(s => `
             <option value="${s}" ${state.screen === s ? "selected" : ""}>${s}</option>
@@ -146,6 +149,7 @@ function render() {
   lpStopPlayback();
 
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");
+  screenRoot.classList.toggle("journal-mode",     state.screen === "lessonFraming" || screenRoot.classList.contains("journal-mode"));
   screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","lifestyleWizard","lifestyleWizardReview","budgetDone"].includes(state.screen));
   screenRoot.classList.toggle("streak-mode",      state.screen === "streak");
   screenRoot.classList.toggle("login-mode",       state.screen === "login");
