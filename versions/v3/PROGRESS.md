@@ -1,11 +1,12 @@
 # v3 Build Progress
 
-**Current state:** **Phase 5a COMPLETE** (Phase 5 split three ways: 5a goals ·
-5b My Progress · 5c education). Goals rebuilt to the v3 model — two types with
-inverted pace math, spend limits tracking month-to-date live, event-based
-updates consuming the journal's `q_balance`, contextual suggestions with
-"create your own" always last. 41 assertions pass.
-**Next action: Phase 5b** — My Progress, six sections in A3 order.
+**Current state:** **Phase 5a + 5b COMPLETE.** Goals rebuilt to the v3 model
+(inverted pace math, live spend limits, event-based updates). My Progress
+rewritten to A3's six sections — trend chart, comparison, bills, subscriptions,
+badges, kibble. 68 assertions across the two.
+**Next action: Phase 5c** — education: the lesson player, framing decision
+trees, variant matching, and the **15 script bodies** (L8) — the largest block
+of unwritten prose left, bound by L20's copy rules.
 — *updated 2026-08-07*
 
 > **Read before touching anything:**
@@ -285,13 +286,17 @@ palette rather than converted.
 - [x] Seeded emergency fund reads as behind but recoverable (D17)
       ↳ spend limits also track month-to-date **live**, so a journal entry moves the goal (L17)
 
-### My Progress — 6 sections in A3 order
-- [ ] Spend trend chart, hand-rolled SVG (no recharts under L1) + month-to-date summary above
-- [ ] Three-layer comparison, framed for review not editing
-- [ ] Bills calendar — car insurance $187, due in 4 days, flagged as unbudgeted
-- [ ] Subscription usage flags — Hulu, 3 weeks unmentioned, $18.99. Framed as a question, never "cancel Hulu"
-- [ ] Badge and buddy level
-- [ ] Kibble balance (display-only, L16)
+### 5b — My Progress — 6 sections in A3 order
+- [x] Spend trend chart, hand-rolled SVG (no recharts under L1) + month-to-date summary above
+      ↳ **v2's section order was its own** (Profile → Budget Results → Assumptions → Comparisons → Goals → Commitments); A3 fixes a different one, so the file was rewritten rather than patched
+      ↳ D19 asserted: 6 seeded days, none empty, and the month-to-date above it is genuinely larger than their sum — the fabricated depth the spec asks for. A tester's own entry adds a 7th bar labelled "Today"
+- [x] Three-layer comparison, framed for review not editing
+- [x] Bills calendar — car insurance $187, due in 4 days, flagged as unbudgeted
+      ↳ soonest first; the flag uses **clay, never alarm colouring** — nothing here is an emergency
+- [x] Subscription usage flags — Hulu, 3 weeks unmentioned, $18.99. Framed as a question, never "cancel Hulu"
+      ↳ asserted the word "cancel" appears **nowhere** on the screen, and that the flag clears when the journal hears about it
+- [x] Badge and buddy level — badges say plainly that they unlock nothing
+- [x] Kibble balance (display-only, L16)
 
 ### Education
 - [ ] v2 lesson player inherited unchanged — **do not rebuild** (D38)

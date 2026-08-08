@@ -1,315 +1,261 @@
-// ─── My Progress ──────────────────────────────────────────────────────────────
+// ─── My Progress (07-progress-bills, A3) ─────────────────────────────────────
 // TAB: My Progress | NAV BAR: Visible
 //
-// PURPOSE
-// Primary output hub. Shows the user's money picture based on all their Budget
-// inputs — budget results, comparisons, goals progress, and the assumptions
-// that drove those estimates. Read-first; every section links back to Budget
-// for editing.
+// The review surface. Mostly views over data other phases produce, which is why
+// it is built late.
 //
-// NAVIGATION
-//   Entry: My Progress tab tap; completing any Budget input flow
-//   Exit:  Edit links → Budget sub-screens; back to Budget after editing
+// REWRITTEN IN 5b. v2's section order (Profile → Budget Results → Assumptions →
+// Comparisons → Goals → Commitments) was its own; A3 fixes a different one, so
+// this file is deliberately a list of six calls in that order:
 //
-// STATES
-//   Sections render with placeholder/seed data when no real data is present.
-//   Budget Results: mirrors category totals + fixed overhead from budget state.
-//   monthlyUpdateGap: when non-null, Budget Results shows a check-in banner prompting refresh.
-//   Assumptions Used: shows lifestyle answers + budget profile inputs.
-//   Goals: shows progress bars for state.goals[].
-//   Active Commitments: shows state.commitments[].
+//   1 spend trend chart, with month-to-date above it
+//   2 three-layer comparison — plan, journal, peers
+//   3 bills calendar
+//   4 subscription usage flags
+//   5 badge and buddy level
+//   6 kibble balance
 //
-// PRODUCTION NOTES
-//   Section order (confirmed): Profile → Budget Results → Assumptions Used →
-//   Comparisons → Goals → Active Commitments.
-//   Edit links navigate to Budget sub-screens and should restore My Progress
-//   as the return destination (state.flowOrigin = "myProgress").
-//   Assumptions math (ZIP modifier, peer comparisons) reuses existing
-//   budget-utils.js functions.
+// D19 binds hardest here: "the chart must never render empty or near-empty.
+// Where six days is too thin to show a trend, show the month."
 
 function renderMyProgress() {
-  const hasBudget = state.planStatus === "complete";
-
   return `
-    <div class="home-header">
-      <div>
-        <h1 class="title">My Progress</h1>
-        <p class="subtitle">Your money picture, in motion.</p>
-      </div>
-    </div>
-
-    <!-- 1. Your Money Profile -->
-    ${renderMPProfile()}
-
-    <!-- 2. Budget Results -->
-    ${renderMPBudgetResults(hasBudget)}
-
-    <!-- 3. Comparisons -->
-    ${renderMPComparisons(hasBudget)}
-
-    <!-- 4. Goals -->
-    ${renderMPGoals()}
-
-    <!-- 5. Active Commitments -->
-    ${renderMPCommitments()}
+    <h1 class="title" style="margin:0 0 14px;font-size:20px;">My progress</h1>
+    ${renderMPTrend()}
+    ${renderMPComparison()}
+    ${renderMPBills()}
+    ${renderMPSubscriptions()}
+    ${renderMPBadges()}
+    ${renderMPKibble()}
   `;
 }
 
-function renderMPProfile() {
-  const profile = { zip: state.profile.zip, householdSize: state.profile.householdSize };
-  const up      = state.userProfile;
-  const name    = up && up.name ? up.name : null;
-  const zip     = profile && profile.zip ? profile.zip : null;
-  const size    = profile && profile.householdSize ? profile.householdSize : null;
-  const income  = state.monthlyIncomeNet;
-  const updated = profile && profile.lastUpdated ? profile.lastUpdated : null;
-  // 2b: v2's five lifestyle THEMES were retired with their screens. The v3
-  // wizard's six dimensions are the equivalent signal.
-  const themes = LW_QUESTIONS;
-  const answeredThemes = themes.filter(q => state.lifestyle && state.lifestyle[q.dim]);
+// ── 1. Spend trend ───────────────────────────────────────────────────────────
+// Six days of journal detail sitting inside fabricated month-to-date totals
+// (D19). The summary is the month; the chart is the days.
 
-  return `
-    <div class="card mb-md">
-      <div class="row" style="margin-bottom:8px;">
-        <div class="section-title" style="margin:0;">Your Money Profile</div>
-        <button class="button secondary small" style="border:1.5px solid var(--accent);color:var(--accent);font-weight:700;"
-                type="button" onclick="editInAboutMe('aboutMe')">Edit</button>
-      </div>
-      ${name ? `<p class="helper" style="margin-bottom:4px;">${h(name)}</p>` : ""}
-      <div style="font-weight:700;font-size:15px;margin-bottom:4px;">
-        ${zip ? h(zip) : ""}${zip && size ? " – " : ""}${size ? size + " Person" + (size !== 1 ? "s" : "") : ""}${(zip || size) && income > 0 ? " – " : ""}${income > 0 ? budgetFmt(income) + "/mo" : ""}
-      </div>
-      ${updated ? `<p class="helper" style="margin:0 0 8px;">Last updated ${h(updated)}</p>` : ""}
-      ${!zip && !income ? `<p class="helper">No profile data yet. <button class="button secondary small" style="margin-left:6px;" type="button" onclick="navGoTab('aboutMe')">Build Budget</button></p>` : ""}
-
-      <details style="margin-top:8px;">
-        <summary class="helper" style="cursor:pointer;font-weight:700;">Assumptions used</summary>
-        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line);">
-          ${zip ? `<p class="helper" style="margin-bottom:6px;">ZIP ${h(zip)} cost-of-living modifier applied</p>` : ""}
-          ${size ? `<p class="helper" style="margin-bottom:6px;">${size}-person household multiplier applied</p>` : ""}
-          ${answeredThemes.length > 0 ? `
-            <p class="helper" style="font-weight:700;margin-bottom:4px;">Lifestyle signals</p>
-            ${answeredThemes.map(t => `<p class="helper" style="margin-bottom:2px;">${h(t.prompt)} <strong>${h(state.lifestyle[t.dim])}</strong></p>`).join("")}
-          ` : `<p class="helper">No lifestyle data yet.</p>`}
-          ${answeredThemes.length === 0 ? `
-            <button class="button secondary small" style="margin-top:6px;border:1.5px solid var(--accent);color:var(--accent);font-weight:700;"
-                    type="button" onclick="lwStart()">Answer lifestyle questions</button>
-          ` : ""}
-        </div>
-      </details>
-    </div>
-  `;
-}
-
-function renderMPBudgetResults(hasBudget) {
-  if (!hasBudget) {
-    return `
-      <div class="card mb-md">
-        <div class="section-title" style="margin:0 0 6px;">Budget Results</div>
-        <p class="helper" style="margin:0;">No budget yet.
-          <button class="button secondary small" style="margin-left:6px;" type="button"
-                  onclick="navGoTab('aboutMe')">Build Budget</button>
-        </p>
-      </div>`;
+function mpDailyTotals() {
+  const days = (state.journal || []).map(d => ({
+    label: d.label,
+    day: d.day,
+    total: (d.entries || []).reduce((t, e) => t + (Number(e.amount) || 0), 0)
+  }));
+  // Today's own entries, so a tester's submission appears on the chart.
+  const todayTotal = (state.journalEntries || []).reduce((t, e) => t + (Number(e.amount) || 0), 0);
+  if (todayTotal > 0 || days.length === 0) {
+    days.push({ label: "Today", day: journalDayIndex(), total: todayTotal });
   }
+  return days;
+}
 
-  // PORTED IN 2b — was v2's 5 nested buckets + its crude peer helper. Now the
-  // flat 12 (A2) and the real benchmark model.
-  const income    = state.monthlyIncomeNet;
-  const planTotal = catTotal(state.plan);
-  const actual    = catTotal(state.mtd);
-  const leftover  = income - planTotal;
+function renderMPTrend() {
+  const days = mpDailyTotals();
+  const mtd = catTotal(state.mtd);
+  const max = Math.max.apply(null, days.map(d => d.total).concat([1]));
+  const avg = days.length ? days.reduce((t, d) => t + d.total, 0) / days.length : 0;
 
-  // Non-discretionary vs discretionary, expressed in taxonomy terms.
-  const FIXED = ["Housing", "Utilities", "Health", "Debt payments"];
-  const fixedAmt = FIXED.reduce((sum, c) => sum + catValue(state.plan, c), 0);
-  const discAmt  = planTotal - fixedAmt;
-  const pct = n => income > 0 ? Math.round((n / income) * 100) : 0;
+  // Hand-rolled SVG — no recharts under L1 (no npm, so no React chart libs).
+  const W = 300, H = 90, gap = 6;
+  const bw = days.length ? (W - gap * (days.length - 1)) / days.length : W;
 
   return `
-    <div class="card mb-md">
-      <div class="row" style="margin-bottom:12px;">
-        <div class="section-title" style="margin:0;">Budget Results</div>
-        <button class="button secondary small" style="border:1.5px solid var(--accent);color:var(--accent);font-weight:700;"
-                type="button" onclick="navGoTab('aboutMe')">Update Budget</button>
+    <div class="card">
+      <div class="row" style="align-items:baseline;margin-bottom:2px;">
+        <span class="helper">This month so far</span>
+        <span class="journal-total">${budgetFmt(mtd)}</span>
       </div>
-
-      <div class="row" style="align-items:baseline;">
-        <span class="helper">Planned</span>
-        <span style="font-weight:850;">${budgetFmt(planTotal)}</span>
-      </div>
-      <div class="row" style="align-items:baseline;margin-top:4px;">
-        <span class="helper">What you told me, so far</span>
-        <span style="font-weight:850;">${budgetFmt(actual)}</span>
-      </div>
-      <div class="row" style="align-items:baseline;margin-top:4px;">
-        <span class="helper">Take-home</span>
-        <span class="helper">${budgetFmt(income)}</span>
-      </div>
-
-      <div class="budget-bar" aria-hidden="true">
-        <span style="width:${Math.min(100, pct(planTotal))}%"></span>
-      </div>
-
-      <p class="helper" style="margin:10px 0 0;">
-        ${leftover >= 0
-          ? budgetFmt(leftover) + " left over each month (" + pct(leftover) + "% of take-home)."
-          : budgetFmt(Math.abs(leftover)) + " more than you bring in."}
+      <p class="helper" style="margin:0 0 12px;">
+        ${budgetFmt(avg)} a day across the ${days.length} days you wrote about.
       </p>
-      <p class="helper" style="margin:6px 0 0;font-size:11px;">
-        Fixed ${budgetFmt(fixedAmt)} · everything else ${budgetFmt(discAmt)}
-      </p>
+
+      <svg class="mp-chart" viewBox="0 0 ${W} ${H + 18}" width="100%" height="${H + 18}"
+           role="img" aria-label="Daily spending over the last ${days.length} days">
+        ${days.map((d, i) => {
+          const bh = Math.max(2, (d.total / max) * H);
+          const x = i * (bw + gap);
+          return `
+            <rect x="${x}" y="${H - bh}" width="${bw}" height="${bh}" rx="3"
+                  fill="${d.label === "Today" ? "var(--accent)" : "var(--accent-border)"}"></rect>
+            <text x="${x + bw / 2}" y="${H + 13}" text-anchor="middle"
+                  font-size="8" fill="var(--muted)">${h(mpShortLabel(d.label))}</text>`;
+        }).join("")}
+      </svg>
     </div>
   `;
 }
 
-function renderMPGapBanner() {
-  const gap = state.monthlyUpdateGap;
-  if (!gap) return "";
-  if (gap.direction === "over") {
-    return `
-      <div class="card" style="margin-bottom:12px;background:var(--warn-soft, var(--soft));">
-        <div class="row" style="margin-bottom:4px;">
-          <span style="font-weight:700;">Monthly check-in ⚠️</span>
-          <span class="helper">+${h(gap.gapPct)}% over plan</span>
-        </div>
-        <p class="helper" style="margin-bottom:8px;">
-          Actual spend: ${budgetFmt(gap.actualMonthlySpend)}/mo · Plan: ${budgetFmt(gap.planMonthlySpend)}/mo
-        </p>
-        <p class="helper" style="margin-bottom:10px;">Your budget may need a refresh — major life changes often drive this gap.</p>
-        <button class="button primary" style="font-size:12px;" type="button"
-                onclick="navGoTab('aboutMe')">Update Budget</button>
-        <button class="button secondary" style="font-size:12px;margin-left:8px;" type="button"
-                onclick="state.monthlyUpdateGap=null;render()">Looks right</button>
-      </div>
-    `;
-  }
-  return `
-    <div class="card" style="margin-bottom:12px;background:var(--accent-soft);">
-      <div class="row" style="margin-bottom:4px;">
-        <span style="font-weight:700;">Monthly check-in ✓</span>
-        <span class="helper">−${h(gap.gapPct)}% under plan</span>
-      </div>
-      <p class="helper" style="margin-bottom:8px;">
-        Actual spend: ${budgetFmt(gap.actualMonthlySpend)}/mo · Plan: ${budgetFmt(gap.planMonthlySpend)}/mo
-      </p>
-      <p class="helper" style="margin-bottom:10px;">You're spending less than planned.</p>
-      <button class="button secondary" style="font-size:12px;" type="button"
-              onclick="state.monthlyUpdateGap=null;render()">Dismiss</button>
-    </div>
-  `;
+function mpShortLabel(label) {
+  if (label === "Today") return "today";
+  if (label === "Yesterday") return "yest";
+  const m = String(label).match(/^(\d+)/);
+  return m ? m[1] + "d" : label;
 }
 
-function renderMPComparisons(hasBudget) {
-  if (!hasBudget) {
+// ── 2. Three-layer comparison ────────────────────────────────────────────────
+// Same data as the Budget tab, framed for review rather than editing.
+
+function renderMPComparison() {
+  if (state.planStatus !== "complete") {
     return `
-      <div class="card mb-md">
-        <div class="section-title" style="margin:0 0 6px;">Comparisons</div>
+      <div class="card">
+        <div class="section-title" style="margin:0 0 6px;">Where it's going</div>
         <p class="helper" style="margin:0;">Build a budget to see how the layers line up.</p>
       </div>`;
   }
-  // Same data as the Budget tab, framed for review rather than editing
-  // (07-progress-bills). The full twelve live on the comparison screen.
   return `
-    <div class="card mb-md">
-      <div class="section-title" style="margin:0 0 10px;">Comparisons</div>
+    <div class="card">
+      <div class="section-title" style="margin:0 0 10px;">Where it's going</div>
       ${renderComparisonCompact(5)}
+    </div>`;
+}
+
+// ── 3. Bills calendar ────────────────────────────────────────────────────────
+// "A bill outside the budget is flagged." The seeded car insurance — $187, due
+// in four days, not budgeted — is one of the four observations and must be
+// reachable here as well as from home.
+
+function renderMPBills() {
+  const bills = (state.bills || []).slice().sort((a, b) => a.dueInDays - b.dueInDays);
+  return `
+    <div class="card">
+      <div class="section-title" style="margin:0 0 10px;">Coming up</div>
+      ${bills.length === 0 ? `<p class="helper" style="margin:0;">Nothing due that I know about.</p>` : ""}
+      ${bills.map(b => `
+        <div class="mp-bill ${b.flagged ? "mp-bill-flagged" : ""}">
+          <div class="mp-bill-when">
+            <span class="mp-bill-days">${h(b.dueInDays)}</span>
+            <span class="mp-bill-unit">day${b.dueInDays === 1 ? "" : "s"}</span>
+          </div>
+          <div style="flex:1;">
+            <p class="task-title" style="margin:0 0 1px;font-size:13px;">${h(b.name)}</p>
+            <p class="helper" style="margin:0;font-size:11px;">
+              ${b.inBudget ? "in your budget" : "not in this month's budget"}
+            </p>
+          </div>
+          <span class="mp-bill-amt">${budgetFmt(b.amount)}</span>
+        </div>
+      `).join("")}
+      <p class="helper" style="margin:10px 0 0;font-size:10px;">
+        Bills get recorded in your journal. This is where you review them.
+      </p>
     </div>
   `;
 }
 
-function renderMPGoals() {
-  const goals      = state.goals      || [];
-  const milestones = state.milestones || [];
+// ── 4. Subscription usage flags ──────────────────────────────────────────────
+// Driven by the engagement signal from journal entries. "Frame it as a
+// question, never an instruction — the app has no idea whether they still want
+// it." So never "cancel Hulu".
 
+function renderMPSubscriptions() {
+  const subs = state.subs || [];
+  const flagged = subs.filter(s => s.status === "flagged_unused");
   return `
-    <div class="card mb-md">
-      <div class="row" style="margin-bottom:8px;">
-        <div class="section-title" style="margin:0;">Goals</div>
-        <button class="button secondary small"
-                type="button" onclick="editInAboutMe('goals')">Edit Goals</button>
+    <div class="card">
+      <div class="section-title" style="margin:0 0 10px;">Subscriptions</div>
+      ${subs.map(s => {
+        const stale = s.status === "flagged_unused";
+        return `
+          <div class="row mp-sub">
+            <div style="flex:1;">
+              <p class="task-title" style="margin:0 0 1px;font-size:13px;">${h(s.name)}</p>
+              <p class="helper" style="margin:0;font-size:11px;">
+                ${stale
+                  ? "not mentioned in " + h(s.weeksSinceMention) + " weeks"
+                  : "mentioned recently"}
+              </p>
+            </div>
+            <span class="helper" style="font-size:12px;">${budgetFmt(s.monthly)}/mo</span>
+          </div>`;
+      }).join("")}
+      ${flagged.length ? `
+        <div class="mp-sub-flag">
+          <p class="task-title" style="margin:0 0 3px;font-size:13px;">
+            Haven't heard about ${h(flagged[0].name)} in a while
+          </p>
+          <p class="helper" style="margin:0;">
+            Still getting use out of it? Only you know.
+          </p>
+        </div>` : ""}
+    </div>
+  `;
+}
+
+// ── 5. Badge and buddy level ─────────────────────────────────────────────────
+// The badge is vanity — it unlocks nothing, and that is the point
+// (06-education). The 5-tier model from lessons.json lands in 5c.
+
+function renderMPBadges() {
+  const badges = (state.badges || []).slice(0, 4);
+  return `
+    <div class="card">
+      <div class="row" style="margin-bottom:10px;">
+        <div class="section-title" style="margin:0;">Level and badges</div>
+        <span class="pill" style="font-size:10px;padding:3px 10px;">Level ${h(state.buddyLevel)}</span>
       </div>
-
-      ${goals.length === 0 ? `
-        <p class="helper">No goals yet. <button class="button secondary small" style="margin-left:6px;" type="button" onclick="editInAboutMe('goals')">Add Goal</button></p>
-      ` : goals.map(g => `
-        <div style="margin-bottom:12px;">
-          <div class="task-title" style="font-size:13px;">${h(g.title)}</div>
-          <div class="progress" style="margin:6px 0 4px;">
-            <div class="progress-fill" style="width:${g.progress}%;"></div>
-          </div>
-          <div class="helper" style="font-size:11px;">${g.progress}% complete</div>
-        </div>
-      `).join("")}
-
-      ${milestones.length > 0 ? `
-        <div class="helper" style="font-weight:700;margin:12px 0 8px;">Milestones</div>
-        ${milestones.map(m => `
-          <div style="margin-bottom:10px;">
-            <div class="row" style="margin-bottom:4px;">
-              <span class="task-title" style="font-size:13px;">${h(m.title)}</span>
-              <span class="helper" style="font-size:11px;">${h(m.current)} / ${h(m.target)}</span>
-            </div>
-            <div class="progress">
-              <div class="progress-fill" style="width:${m.progress}%;"></div>
-            </div>
-          </div>
-        `).join("")}
-      ` : ""}
+      <p class="helper" style="margin:0 0 10px;font-size:11px;">
+        Badges are for show — they don't unlock anything.
+      </p>
+      ${badges.length === 0 ? `<p class="helper" style="margin:0;">No badges yet.</p>` : ""}
+      ${badges.map(b => `
+        <div class="row mp-badge">
+          <span style="font-size:12px;font-weight:700;">${h(b.name)}</span>
+          <span class="helper" style="font-size:11px;">${h(b.tier)} ${h(b.level)}</span>
+        </div>`).join("")}
     </div>
   `;
 }
 
-function renderMPCommitments() {
-  const commitments = state.commitments || [];
+// ── 6. Kibble balance ────────────────────────────────────────────────────────
+// Display-only (L16). Every sink is on the spec's deferred list.
 
+function renderMPKibble() {
   return `
-    <div class="card mb-md">
-      <div class="section-title" style="margin-bottom:8px;">Active Commitments</div>
-      ${commitments.length === 0 ? `
-        <p class="helper">No active commitments yet. Complete a budget review to create one.</p>
-      ` : commitments.map(c => `
-        <div class="item-card" style="margin-bottom:8px;">
-          <div>
-            <div class="task-title" style="font-size:13px;">${h(c.text)}</div>
-            <p class="task-desc">Added ${h(c.createdAt)}${c.goalId ? " · " + h(goalTitleById(c.goalId)) : ""}</p>
-          </div>
-        </div>
-      `).join("")}
+    <div class="card mp-kibble">
+      <div>
+        <p class="helper" style="margin:0 0 2px;">Kibble</p>
+        <p class="journal-total">🦴 ${h(state.kibble)}</p>
+      </div>
+      <p class="helper" style="margin:0;text-align:right;max-width:150px;font-size:11px;">
+        Earned from daily tasks and lessons.
+      </p>
     </div>
   `;
-}
-
-function goalTitleById(goalId) {
-  const g = (state.goals || []).find(g => g.id === goalId);
-  return g ? g.title : "Goal";
-}
-
-// 2b: the Budget tab is a single screen now, so this is just a tab switch.
-function editInAboutMe(screen) {
-  state.flowOrigin = "myProgress";
-  go(screen);
 }
 
 function renderMyProgressAdmin() {
-  const gap = state.monthlyUpdateGap;
+  const days = mpDailyTotals();
   return `
     <div class="admin-card">
       <p class="admin-card-title">My Progress</p>
-      <p class="helper">Output hub — data flows from Budget inputs.</p>
-      <p class="admin-card-title" style="margin-top:10px;">Monthly Gap Simulator</p>
-      <button class="button secondary full" style="margin-top:6px;" type="button"
-              onclick="state.monthlyUpdateGap={actualMonthlySpend:3800,planMonthlySpend:3200,gapPct:19,direction:'over',loggedAcct:12000,loggedDebt:8000};render()">
-        Simulate gap (over plan)
-      </button>
-      <button class="button secondary full" style="margin-top:6px;" type="button"
-              onclick="state.monthlyUpdateGap={actualMonthlySpend:2900,planMonthlySpend:3200,gapPct:9,direction:'under',loggedAcct:15000,loggedDebt:8000};render()">
-        Simulate gap (under plan)
-      </button>
-      ${gap ? `
-        <button class="button secondary full" style="margin-top:6px;" type="button"
-                onclick="state.monthlyUpdateGap=null;render()">Clear gap banner</button>
-      ` : ""}
+      <p class="helper" style="margin-bottom:10px;">
+        Six sections in A3's order: trend · comparison · bills · subscriptions ·
+        badges · kibble.
+      </p>
+      <div class="input-group">
+        <label>Trend — ${days.length} days charted</label>
+        <div class="helper" style="line-height:1.7;">
+          ${days.map(d => `${h(d.label)} · ${budgetFmt(d.total)}`).join("<br>")}
+        </div>
+      </div>
+      <div class="input-group">
+        <label>Month-to-date (the fabricated depth D19 asks for)</label>
+        <div class="helper">${budgetFmt(catTotal(state.mtd))}</div>
+      </div>
+      <div class="input-group">
+        <label>Flagged bill</label>
+        <div class="helper">
+          ${(state.bills || []).filter(b => b.flagged).map(b =>
+            `${h(b.name)} · ${budgetFmt(b.amount)} · ${h(b.dueInDays)}d`).join("<br>") || "none"}
+        </div>
+      </div>
+      <div class="input-group">
+        <label>Flagged subscription</label>
+        <div class="helper">
+          ${(state.subs || []).filter(s => s.status === "flagged_unused").map(s =>
+            `${h(s.name)} · ${h(s.weeksSinceMention)}w`).join("<br>") || "none — all mentioned recently"}
+        </div>
+      </div>
     </div>
   `;
 }

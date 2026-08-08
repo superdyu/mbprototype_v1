@@ -1822,3 +1822,30 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   font-size: 10px; cursor: pointer; padding: 4px;
 }
 .goal-remove:hover { color: var(--warn); }
+
+/* ─── My Progress ─────────────────────────────────────────────────────────── */
+.mp-chart { display: block; margin-top: 4px; overflow: visible; }
+
+.mp-bill { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.mp-bill:last-of-type { border-bottom: 0; }
+.mp-bill-when {
+  width: 44px; flex-shrink: 0; text-align: center;
+  border-radius: var(--radius-card); padding: 6px 0; background: var(--soft);
+}
+.mp-bill-days { display: block; font-family: var(--font-display); font-size: 16px; font-weight: 850; line-height: 1; }
+.mp-bill-unit { display: block; font-size: 9px; color: var(--muted); }
+.mp-bill-amt  { font-size: 13px; font-weight: 850; }
+/* A flagged bill uses clay, never alarm colouring — nothing here is an
+   emergency (09-design-system). */
+.mp-bill-flagged .mp-bill-when { background: var(--warn-bg); color: var(--warn); }
+.mp-bill-flagged .mp-bill-amt  { color: var(--warn); }
+
+.mp-sub { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.mp-sub:last-of-type { border-bottom: 0; }
+.mp-sub-flag {
+  margin-top: 10px; padding: 12px;
+  background: var(--warn-bg); border: 1px solid var(--warn-border);
+  border-radius: var(--radius-card);
+}
+.mp-badge { padding: 6px 0; }
+.mp-kibble { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
