@@ -103,9 +103,11 @@ function lessonSimStart() {
   go("lessonSimulation");
 }
 
+// debouncedRender, not render: fires on every pointer move of the slider, and
+// a full render replaces the element being dragged (see budgetSetPlan).
 function lessonSimSet(key, value) {
   state.lessonSim.values[key] = Number(value) || 0;
-  render();
+  debouncedRender();
 }
 
 function lessonSimToggle(i) {

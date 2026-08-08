@@ -3,7 +3,7 @@
 **Current state:** **v3 IS BUILT — phases 0 → 6 complete**, plus the four-theme
 change (L21) that landed after the sweep.
 **Next action: the owner's click-through.** `bash scripts/sweep.sh` passes
-**49/49 with 0 warnings**, but seven items are not machine-checkable and the
+**54/54 with 0 warnings**, but seven items are not machine-checkable and the
 sweep prints them explicitly rather than passing them silently — see below.
 — *updated 2026-08-07*
 
@@ -373,6 +373,36 @@ Added ahead of the owner's in-depth review + refactor.
 - [x] **Validated with a negative control**: removing `copyAppState`'s only
       reference (an `onclick` in `index.html` — no JS caller to lose) is caught
 - [x] `bash scripts/sweep.sh` → 49 checks, 0 failed, 0 warnings
+
+## Code review — v3 + gate + scripts (plan.md §18)
+
+Full read of 62 v3 files plus the shared surfaces, ahead of the refactor.
+**Four defects found and fixed; four refactor targets logged, not touched.**
+
+- [x] **`chatResetConversation()` declared in two files** — one global namespace,
+      so `screens/chat.js` (loads later) shadowed `js/chat-router.js` and the
+      router's copy never ran. The survivor skipped the bubbles, so a reset left
+      the previous reply's follow-up chips on an empty thread. Duplicate removed
+- [x] **Four product sliders called undebounced `render()` on `oninput`** —
+      `budgetSetPlan`, `lwAdjust`, `lessonSimSet`, `journalAdjustEntry`. A full
+      render reassigns `.screen`'s innerHTML, destroying the element being
+      dragged. Now `debouncedRender()`; `budgetSetPlan` took a `live` flag
+      because it also serves an admin field on `onchange`
+- [x] **`copyAppState()` dumped v2's shape** — named two keys that no longer
+      exist and captured none of v3's state. Rewritten to the three layers
+- [x] **Reduced motion reset duration but not `animation-delay`** — daily-update
+      cards stayed invisible through their stagger, then popped in one by one
+- [x] Two checks added, each **validated with a negative control**: duplicate
+      declarations (§7b's reference count is blind to shadowing — a dead copy is
+      still referenced), and a behavioural guard that chat reset restores the
+      opening bubbles, written so it fails rather than passes vacuously
+- [x] `bash scripts/sweep.sh` → **54 checks, 0 failed, 0 warnings**
+
+### Refactor targets — logged, deliberately not fixed (wide diffs)
+- [ ] 74 of 337 CSS classes unreferenced (~22%) — Phase 0b residue in `components.css`
+- [ ] `state.budget` is misnamed: holds `fixedOverhead` + `debts`; the budget is `state.plan`
+- [ ] `--tier-copper` duplicated as literal `#b87333` in `state.js:730`
+- [ ] All four scripts hardcode `versions/v3` — a v4 fork would keep sweeping v3
 
 ---
 

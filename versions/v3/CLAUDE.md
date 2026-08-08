@@ -62,6 +62,17 @@ moderate + cooks sometimes → `275 × 1.34 × 1.0 = 368.5` → **370**.
 - **Always `h()`-escape** anything interpolated into an HTML template literal.
 - **Inputs use `onchange`, not `oninput`** — a full re-render mid-keystroke
   destroys focus. Admin sliders are the exception, paired with `debouncedRender()`.
+- **A `type="range"` slider on `oninput` must use `debouncedRender()`, never
+  `render()`.** This applies to product sliders too, not just admin ones.
+  `render()` reassigns `.screen`'s innerHTML, destroying the element being
+  dragged — the browser's pointer capture dies with the old node and the thumb
+  stops tracking. State still updates immediately; only the repaint waits.
+  If a handler serves both a slider and a button, pass a `live` flag rather
+  than debouncing the button too (see `budgetSetPlan`).
+- **Never declare a name in two files.** Everything is one global namespace, so
+  the later `<script>` silently wins and the earlier becomes unreachable — not
+  an error, just dead. `sweep.sh` §7b checks this; §7b's *reference* count
+  cannot, because a shadowed function is still referenced.
 - **`.item-card` is `display:block`, not flex.** Fix trailing children with
   scoped inline flex; never change the global rule.
 - Style with CSS variables only, never hardcoded hex. **All four themes** must

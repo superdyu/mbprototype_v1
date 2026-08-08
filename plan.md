@@ -1056,3 +1056,83 @@ regardless of theme, because theme classes never reach outside `.screen`. It is
 stable and legible, so it is not breaking anything — but it is product styling
 leaking into instrumentation, contrary to §2. Out of scope for L21; worth a pass
 if the admin panel is ever restyled.
+
+---
+
+## 18. Code review — v3 + shared surfaces
+
+Full read of v3's 62 files, the gate, and the committed scripts, requested
+before the owner's refactor. Four defects, all fixed; four refactor targets
+logged and left alone.
+
+### 18.1 The four defects
+
+**A name declared in two files.** `chatResetConversation()` existed in both
+`js/chat-router.js` and `screens/chat.js`. Everything shares one global
+namespace, so the later `<script>` won and the router's copy had never run. The
+two differed: the router's restores the opening bubbles, the shadowing one only
+cleared messages. Since `chatBubblesAfter()` swaps in contextual follow-ups
+after every reply, and `renderChat` falls back to the opening set only when
+bubbles is *empty*, "Reset Conversation" left chips pointing at a thread that
+no longer existed. The duplicate is gone; the router's version is the survivor.
+
+**Four product sliders destroyed themselves mid-drag.** `budgetSetPlan`,
+`lwAdjust`, `lessonSimSet` and `journalAdjustEntry` called undebounced
+`render()` from `oninput` on a `type="range"`. `render()` reassigns `.screen`'s
+innerHTML, so the element under the pointer is replaced on every input event and
+the drag stops tracking. Now `debouncedRender()`. `budgetSetPlan` also serves an
+admin number field on `onchange`, so it took a `live` flag rather than making
+that field wait 400ms.
+
+**"Copy State" dumped v2's shape.** `copyAppState()` named `budget.status` and
+`budget.wizardInputs`, neither of which exists in v3 — nothing writes them, and
+`JSON.stringify` drops undefined keys, so it failed silently. Worse, it captured
+none of v3: no `plan`, `mtd`, `journal`, `goals`, `observations`, `nav`. A
+snapshot that cannot see the plan-vs-reported gap is useless for diagnosing the
+prototype built around it. Rewritten to the three-layer model.
+
+**Reduced motion reset duration but not delay.** `.du-stack-card` staggers via
+`animation-delay: calc(var(--i) * 90ms)` with `backwards` fill, which holds each
+card at the keyframe's `opacity: 0` for the length of its delay. Zeroing only
+the duration left the daily-update cards invisible and then popping in one by
+one — the exact motion the setting asks to remove. The block now resets delay.
+
+### 18.2 Two checks added, both negative-controlled
+
+§7b gained a **duplicate-declaration** check, because its reference count is
+structurally blind to shadowing: the dead copy is still referenced, so it looks
+alive. And section 4 gained a **behavioural** guard that a chat reset restores
+the opening bubbles — written to fail if a reply never moves the bubbles in the
+first place, so it cannot pass vacuously. Re-introducing the original defect
+fails both, from independent angles.
+
+`copyAppState()` is now exercised too. It is reachable only from an `onclick` in
+`index.html`, so nothing else ran it — which is why it drifted three phases
+behind the state it reports on.
+
+### 18.3 Logged, not fixed — wide diffs the owner should eyeball
+
+- **74 of 337 CSS classes are unreferenced (~22%)**, concentrated in
+  `budget-tile-*`, `bb-iframe` and `lifestyle-img-*` — residue from Phase 0b,
+  where the markup went and the CSS stayed. Biggest cleanup available, in the
+  biggest file (`components.css`, 1,862 lines).
+- **`state.budget` is misnamed.** It holds `fixedOverhead` and `debts`; the
+  budget is `state.plan`. `state.budget.monthly` has no readers at all. Anyone
+  reaching for the obvious name gets debts.
+- **`--tier-copper` is duplicated** as the literal `#b87333` in `state.js:730`.
+- **All four scripts hardcode `versions/v3`**, so a v4 fork silently keeps
+  sweeping v3.
+
+### 18.4 Verified clean
+
+Escaping is disciplined — 20 of 20 user-input interpolations use `h()`, and
+`h()` escapes `&` first. `finish.js` looked raw but escapes at the output
+boundary, which is the better pattern. No `_note` trap violations: all six
+`Object.keys` calls are on plain state, never category-keyed data. Six
+hardcoded hex values in 13,000 lines. The gate is sound.
+
+<!-- Three of my own findings were false positives, each caught by checking the
+     claim instead of trusting the scan: a `render()` match inside a comment, a
+     `${...}` that is escaped one line later at the output site, and a caller
+     analysis that missed onclick handlers and dispatch tables entirely. In a
+     codebase where behaviour hides in strings, grep is a lead, not a verdict. -->

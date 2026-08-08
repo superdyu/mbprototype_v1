@@ -240,12 +240,14 @@ function journalBuildEntries() {
 }
 
 // Adjust one entry's amount from the confirmation slider.
+// debouncedRender, not render: this fires on every pointer move, and a full
+// render replaces the slider being dragged (see budgetSetPlan for the detail).
 function journalAdjustEntry(entryId, amount) {
   const e = (state.journalSession.entries || []).find(x => x.id === entryId);
   if (!e) return;
   e.amount = Math.max(0, Number(amount) || 0);
   e.adjusted = true;
-  render();
+  debouncedRender();
 }
 
 // Phase 5 consumes this. Emitted now so the journal's submit path does not have

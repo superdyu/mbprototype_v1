@@ -80,7 +80,7 @@ function renderBudgetCategoryRow(category) {
       </div>
       <input class="journal-slider" type="range" min="0" max="${max}" step="5"
              value="${plan}"
-             oninput="budgetSetPlan('${h(category)}', this.value)"
+             oninput="budgetSetPlan('${h(category)}', this.value, true)"
              aria-label="${h(category)} planned amount">
     </div>
   `;
@@ -88,12 +88,18 @@ function renderBudgetCategoryRow(category) {
 
 // Direct slider edits are a tweak, not a rebuild — they do not go through the
 // seam, which exists to gate whole-budget replacement.
-function budgetSetPlan(category, amount) {
+//
+// `live` is set by the slider's oninput, which fires on every pointer move.
+// render() replaces .screen's innerHTML, so an undebounced render destroys the
+// very element being dragged — the browser's pointer capture dies with the old
+// node and the thumb stops tracking. State still updates immediately; only the
+// repaint waits. The admin number field passes no flag and stays instant.
+function budgetSetPlan(category, amount, live) {
   if (!isCategory(category)) return;
   state.plan[category] = Math.max(0, Math.round(Number(amount) || 0));
   state.planTotal = catTotal(state.plan);
   observationsRecompute();
-  render();
+  if (live) debouncedRender(); else render();
 }
 
 function renderBudgetObservationCards(surface) {

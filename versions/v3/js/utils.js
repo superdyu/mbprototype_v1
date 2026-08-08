@@ -43,11 +43,35 @@ function todayISO() {
 
 // Copies a diagnostic state snapshot to the clipboard for sharing/debugging.
 // Called from the admin panel "Copy State" button.
+//
+// This dumps the THREE-LAYER model (architecture §5) plus what drives the
+// screens. It used to emit v2's shape — `budget.status` and
+// `budget.wizardInputs`, neither of which exists in v3 (nothing writes them, so
+// JSON.stringify dropped them silently) — and none of v3's own state. A
+// snapshot that cannot see state.plan or state.mtd is no use for diagnosing a
+// prototype whose whole point is the plan-vs-reported gap.
 function copyAppState() {
   var s = {
     screen: state.screen,
-    budget: { status: state.budget.status, wizardInputs: state.budget.wizardInputs, debts: state.budget.debts },
-    selectedBadge: state.selectedBadge, selectedDebt: state.selectedDebt, selectedOffer: state.selectedOffer
+    nav: state.nav,
+    // The three layers, never blurred (architecture §5)
+    plan: state.plan,
+    planTotal: state.planTotal,
+    mtd: state.mtd,
+    journalSession: state.journalSession,
+    // Derived / display
+    observations: (state.observations || []).map(function (o) { return o.id; }),
+    goals: state.goals,
+    tasks: state.tasks,
+    buddy: state.buddy,
+    kibble: state.kibble,
+    streak: state.streak,
+    courseXp: state.courseXp,
+    theme: state.settings && state.settings.colorMode,
+    // Inherited v2 surfaces still reachable from the admin jump (L14)
+    legacy: { debts: state.budget.debts, fixedOverhead: state.budget.fixedOverhead,
+              selectedBadge: state.selectedBadge, selectedDebt: state.selectedDebt,
+              selectedOffer: state.selectedOffer }
   };
   navigator.clipboard.writeText(JSON.stringify(s, null, 2))
     .then(function() { alert('State copied to clipboard'); })

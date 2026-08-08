@@ -126,10 +126,11 @@ function chatMountHook() {
   if (thread) thread.scrollTop = thread.scrollHeight;
 }
 
-function chatResetConversation() {
-  state.chat.messages = [];
-  render();
-}
+// chatResetConversation() lives in js/chat-router.js — it owns the bubble
+// lifecycle, so it also restores the opening bubbles. A second copy here used
+// to shadow it (this file loads later, and everything shares one global
+// namespace), which cleared the transcript but left the previous reply's
+// follow-up chips pointing at a conversation that no longer existed.
 
 function renderChatAdmin() {
   return `

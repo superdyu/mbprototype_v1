@@ -92,6 +92,29 @@ json.dump(sorted(out, key=lambda d: d["name"]), sys.stdout)
 PY
 printf ';\n' >> "$OUT"
 
+# ── duplicate top-level declarations ────────────────────────────────────────
+# Everything is global here: files are plain <script> tags sharing one
+# namespace, so two files declaring the same function name is not an error —
+# the later <script> silently wins and the earlier one becomes unreachable.
+#
+# §7b cannot catch this. A shadowed function is still *referenced*, so its
+# reference count looks healthy; it just never runs. Different query, own check.
+printf '\nvar __DUPLICATE_DECLS = ' >> "$OUT"
+python3 - "$APP" <<'PY' >> "$OUT"
+import re, sys, glob, json, os, collections
+app = sys.argv[1]
+order = re.findall(r'src="([^"]*\.js)"', open(app+'/index.html', encoding='utf-8').read())
+seen = collections.defaultdict(list)
+for rel in order:
+    p = os.path.join(app, rel)
+    if not os.path.exists(p): continue
+    s = open(p, encoding='utf-8').read()
+    for m in re.finditer(r'^(?:function\s+([A-Za-z_]\w*)|(?:const|let|var)\s+([A-Za-z_]\w*)\s*=)', s, re.M):
+        seen[m.group(1) or m.group(2)].append(rel)
+json.dump([{"name": k, "files": v} for k, v in sorted(seen.items()) if len(v) > 1], sys.stdout)
+PY
+printf ';\n' >> "$OUT"
+
 printf '\n// ══ sweep ══\n' >> "$OUT"
 cat scripts/sweep.js >> "$OUT"
 

@@ -1625,6 +1625,13 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
     animation-iteration-count: 1 !important;
     transition-duration: .001ms !important;
     scroll-behavior: auto !important;
+    /* Delay must be reset too, not just duration. .du-stack-card staggers with
+       `animation-delay: calc(var(--i) * 90ms)` and `backwards` fill, which
+       holds each card at the keyframe's opacity:0 for the length of its delay.
+       Zeroing only the duration left the cards invisible and then popping in
+       one by one — the exact motion the setting asks us to remove. */
+    animation-delay: -1ms !important;
+    transition-delay: 0s !important;
   }
 }
 

@@ -275,6 +275,29 @@ var LEGIT_Q = (BUDDY_RESPONSES.responses || []).filter(function (r) { return r.b
 var overzealous = LEGIT_Q.filter(function (q) { return chatRoute(q).id === "advice_deflect"; });
 chk(overzealous.length === 0, LEGIT_Q.length + " real questions NOT wrongly deflected", overzealous.join(" | "));
 
+// Reset must restore the OPENING bubbles, not leave the last reply's follow-ups
+// behind. Two copies of chatResetConversation() once existed and the shadowing
+// one skipped the bubbles, so a reset left chips pointing at a deleted thread.
+// renderChat only falls back to openingBubbles when bubbles is EMPTY, so a
+// stale non-empty array is invisible without checking it directly.
+// Driven through chatRespond(), not chatSend(): chatSend reads a DOM input the
+// stub returns empty, which would make this pass without ever moving bubbles.
+var opening = (BUDDY_RESPONSES.openingBubbles || []).join(",");
+var moved = false;
+(BUDDY_RESPONSES.responses || []).forEach(function (r) {
+  if (moved || !r.followUp || !r.followUp.length) return;
+  chatResetConversation();
+  chatRespond(r.bubble || r.id);
+  if ((state.chat.bubbles || []).join(",") !== opening) moved = true;
+});
+var midChat = (state.chat.bubbles || []).join(",");
+chatResetConversation();
+chk(moved, "precondition: a reply moves the bubbles off the opening set",
+    "no response in the library changed them — the check below would be vacuous");
+chk(state.chat.messages.length === 0 && (state.chat.bubbles || []).join(",") === opening,
+    "chat reset restores the opening bubbles",
+    "mid-chat: " + midChat + "\n          after reset: " + (state.chat.bubbles || []).join(","));
+
 // ─────────────────────────────────────────────────────────────────────────────
 section("5. A13 — tone");
 var exclam = [];
@@ -323,6 +346,20 @@ var noTab = SCREENS.filter(function (sc) {
 });
 chk(noTab.length === 0, "every screen maps to a real nav stack", noTab.join(", "));
 
+// The admin buttons are reachable only from onclick in index.html, so nothing
+// else here exercises them. copyAppState() in particular reads a dozen state
+// keys and used to name two that no longer exist.
+var adminActionErr = null;
+try { copyAppState(); } catch (e) { adminActionErr = String(e); }
+chk(adminActionErr === null, "copyAppState() runs without throwing", adminActionErr);
+var snap = {};
+try { snap = JSON.parse(JSON.stringify({
+  plan: state.plan, mtd: state.mtd, nav: state.nav, theme: state.settings.colorMode
+})); } catch (e) { /* reported below */ }
+chk(!!(snap.plan && snap.mtd && snap.nav && snap.theme),
+    "state snapshot carries the three layers + nav + theme",
+    "missing: " + ["plan","mtd","nav","theme"].filter(function (k) { return !snap[k]; }).join(", "));
+
 // ─────────────────────────────────────────────────────────────────────────────
 section("7. Data integrity");
 chk(CATEGORIES.length === 12, "12-category taxonomy");
@@ -368,6 +405,16 @@ var DEAD_BASELINE = [
   "planToBaseline",             // budget-baseline seam (L6)
   "themeIsDark"                 // L21, for a screen that wants to branch on theme
 ];
+
+// Everything shares one global namespace, so a name declared in two files is
+// not an error — the later <script> wins and the earlier becomes unreachable.
+// This is invisible to the count above: a shadowed function is still
+// referenced, it just never runs. It is how chatResetConversation() sat dead in
+// chat-router.js while a second copy in screens/chat.js quietly did less.
+chk(__DUPLICATE_DECLS.length === 0, "no name declared in two files",
+    __DUPLICATE_DECLS.map(function (d) {
+      return d.name + "  →  " + d.files.join(" , ") + "   (last one wins)";
+    }).join("\n          "));
 
 var deadNames = __UNREFERENCED.map(function (d) { return d.name; });
 var appeared = __UNREFERENCED.filter(function (d) { return DEAD_BASELINE.indexOf(d.name) === -1; });

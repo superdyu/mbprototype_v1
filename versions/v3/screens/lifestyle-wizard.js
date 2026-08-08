@@ -94,10 +94,12 @@ function lwBuildPreview() {
   return w.preview;
 }
 
+// debouncedRender, not render: fires on every pointer move of the slider, and
+// a full render replaces the element being dragged (see budgetSetPlan).
 function lwAdjust(category, amount) {
   const w = state.lifestyleWizard;
   w.preview[category] = Math.max(0, Math.round(Number(amount) || 0));
-  render();
+  debouncedRender();
 }
 
 // Save goes through the seam — never straight into state.plan (L6).
