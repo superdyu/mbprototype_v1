@@ -42,7 +42,26 @@ const destinations = [
   ["quiz",           "Quiz"],
   ["simulation",     "Simulation"],
   ["marketplace",    "Marketplace"],
-  ["reward",         "Reward"]
+  ["reward",         "Reward"],
+
+  // L14 — the v2 screens v3 never specified stay reachable HERE and nowhere
+  // else: nothing in the five tabs or the daily tasks routes to them. The
+  // Phase 6 sweep checks this list against every routable screen, so a screen
+  // that drops out is a visible warning rather than a quiet orphan.
+  ["comparison",     "Where it's going"],
+  ["goals",          "Goals"],
+  ["chat",           "Chat with Buddy"],
+  ["budgetUpdateConfirm", "Budget: Update Confirm"],
+  ["accountBalances", "Account Balances"],
+  ["debtBalances",   "Debt Balances"],
+  ["myDebts",        "My Debts"],
+  ["debtAnalyzer",   "Debt Analyzer"],
+  ["postResult",     "Post-result"],
+  ["nextAction",     "Next Action"],
+  ["commitment",     "Commitment"],
+  ["finish",         "Finish"],
+  ["marketplaceDetail", "Marketplace Detail"],
+  ["settings",       "Settings"]
 ];
 
 const state = {

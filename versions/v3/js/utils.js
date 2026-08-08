@@ -79,10 +79,18 @@ function activeTabFor(screen) {
   if (screen === "comparison")        return "aboutMe";
   if (screen === "accountBalances")   return "aboutMe";
   if (screen === "debtBalances")      return "aboutMe";
+  if (screen === "budgetUpdateConfirm") return "aboutMe";
+  if (screen === "chat")              return "home";
+  if (screen === "settings")          return "home";
+  // The post-result loop is entered from a flow, and lands back on home.
+  if (["postResult", "nextAction", "commitment", "finish"].includes(screen)) return "home";
+  if (screen === "reward")            return "learn";
   // Marketplace sub-screen
   if (screen === "marketplaceDetail") return "marketplace";
   // Learn sub-screens
   if (["topic", "reward-preview", "lessonFraming", "lesson", "lessonQuiz", "lessonSimulation", "lessonReward", "quiz", "simulation"].includes(screen)) return "learn";
-  return screen;
+  // Anything unmapped falls back to home rather than naming a stack that does
+  // not exist — navAdminJump would otherwise have nowhere to reset.
+  return state.nav && state.nav.stacks[screen] ? screen : "home";
 }
 

@@ -29,7 +29,10 @@ function lessonQuizStart() {
 
 function renderLessonQuiz() {
   const q = state.lessonQuiz;
-  if (!q) { lessonQuizStart(); return ""; }
+  // D19 — entered directly (admin jump, or a stale link) with no session.
+  // Returning "" here rendered a genuinely blank screen.
+  if (!q) return lessonOutcomeNoSession("quiz",
+    "A quiz belongs to a lesson. Pick one and it'll turn up at the end.");
   const item = q.questions[q.index];
   if (!item) return `<div class="card"><p class="helper">No questions.</p></div>`;
 
@@ -113,7 +116,8 @@ function lessonSimToggle(i) {
 
 function renderLessonSimulation() {
   const s = state.lessonSim;
-  if (!s) { lessonSimStart(); return ""; }
+  if (!s) return lessonOutcomeNoSession("calculator",
+    "The calculators come with their lesson, loaded with figures to play with.");
   const lesson = lessonV3(s.lessonId);
   const type = lesson.simulation.type;
 
@@ -233,7 +237,8 @@ function lessonRewardStart() {
 
 function renderLessonReward() {
   const r = state.lessonReward;
-  if (!r) return `<div class="card"><p class="helper">Nothing to show.</p></div>`;
+  if (!r) return lessonOutcomeNoSession("reward",
+    "Finish a lesson and this is where the XP lands.");
   const lesson = lessonV3(r.lessonId);
 
   return `
@@ -331,6 +336,32 @@ function renderLessonOutcomeAdmin() {
       </div>
       ${r ? `<div class="input-group"><label>Last award</label>
         <div class="helper">${r.award.base} base + ${r.award.bonus} bonus = ${r.award.total} · ${r.kibble} kibble</div></div>` : ""}
+    </div>
+  `;
+}
+
+
+// D19 — a screen reached without its session still says something useful and
+// offers a way onward, rather than rendering blank or a bare "nothing here".
+function lessonOutcomeNoSession(what, line) {
+  return `
+    <div class="journal-shell">
+      <div class="journal-head">
+        <h1 class="title" style="font-size:21px;margin:0;">No ${h(what)} open</h1>
+        <p class="helper" style="margin:6px 0 0;">${h(line)}</p>
+      </div>
+      <div class="journal-body">
+        <div class="card">
+          <p class="task-title" style="margin:0 0 8px;">Lessons</p>
+          ${(LESSONS_V3.lessons || []).map(l => `
+            <button class="button secondary full" style="margin-bottom:6px;" type="button"
+                    onclick="lessonV3Start('${h(l.id)}')">${h(l.title)}</button>`).join("")}
+        </div>
+      </div>
+      <div class="journal-foot">
+        <span></span>
+        <button class="button" type="button" onclick="navGoTab('learn')">Browse lessons</button>
+      </div>
     </div>
   `;
 }

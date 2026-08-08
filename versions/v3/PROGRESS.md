@@ -4,7 +4,9 @@
 Progress on A3's six sections; and D38's two gaps are filled — framing decision
 trees, tag-driven variant matching, and **all 15 script bodies written** (105
 lines, asserted advice-free). 108 assertions across the three.
-**Next action: Phase 6** — the correctness sweep. Every build phase is done.
+**Next action: the owner's click-through.** `bash scripts/sweep.sh` passes
+36/36 with 0 warnings, but six Phase 6 items are not machine-checkable and the
+sweep prints them explicitly rather than passing them silently — see below.
 — *updated 2026-08-07*
 
 > **Read before touching anything:**
@@ -316,20 +318,29 @@ palette rather than converted.
 
 ## Phase 6 — Pass
 
-Verified by clicking through, not by inspection.
+`bash scripts/sweep.sh` — committed, repeatable, run it whenever scope shifts.
 
-- [ ] Every seeded observation reachable from ≥2 screens — via the registry (architecture §6), not by hunting
-- [ ] **No screen renders empty in any state** (D19)
-- [ ] Mobile viewport verified at 390px
-- [ ] `prefers-reduced-motion` respected — idle stops, transitions instant, daily update plays as timed static frames
-- [ ] Keyboard focus visible throughout
-- [ ] Tap targets ≥44px
-- [ ] **Copy sweep: no financial advice anywhere** (D26) — buddy replies, observations, lesson scripts, empty states
+- [x] Every seeded observation reachable from ≥2 screens — via the registry (architecture §6), not by hunting
+      ↳ and the sweep checks the headline **actually renders**, not just that it is registered. Registry membership is not the same as appearing on screen
+- [x] **No screen renders empty in any state** (D19)
+      ↳ 41 screens × **8 reachable states** (no budget, no journal, no goals, no bills, zero counters, all tasks done, no observations). **Found 5 genuinely broken** — `lessonQuiz` and `lessonSimulation` rendered literally 0 characters when entered from the admin jump. All five now show something useful with a way onward
+- [x] **Copy sweep: no financial advice anywhere** (D26) — buddy replies, observations, lesson scripts, empty states
+      ↳ 4 corpora swept (screens, response library, 15 lesson scripts, 3 daily-update scripts) plus the guardrail both ways: 14 advice phrasings deflect, 11 real questions do not
       ↳ automatable, and was automated in Phase 3b: assert every screen's rendered text and every library reply is free of `you should` / `we recommend` / `cancel your` / `switch to` / `you must` / `best option is`, and that ~20 advice-shaped questions all deflect while legitimate ones do not (L20)
-- [ ] No exclamation marks in financial observations (A13)
-- [ ] Vocabulary consistent: Buddy · Money Journal · Kibble · Streak · Peers · Observation. Never "expense tracker", never "average users"
-- [ ] 5-point admin wiring complete for every screen (architecture §11)
-- [ ] `node --check` clean across all JS
+- [x] No exclamation marks in financial observations (A13)
+- [x] Vocabulary consistent: Buddy · Money Journal · Kibble · Streak · Peers · Observation. Never "expense tracker", never "average users"
+- [x] 5-point admin wiring complete for every screen (architecture §11)
+      ↳ **found 8 screens whose `activeTabFor` returned a stack that does not exist**, and 14 that were not in `destinations[]` — breaking L14's promise that the kept v2 screens stay admin-reachable. Both fixed
+- [x] Syntax clean across all JS (`bash scripts/check-syntax.sh`)
+
+### Not machine-checkable — needs the owner's click-through
+The sweep prints these rather than passing them silently:
+- [ ] Mobile viewport at 390px — layout, wrapping, no horizontal scroll
+- [ ] Keyboard focus visibly moving through every interactive element
+- [ ] Tap targets genuinely ≥44px **as rendered** — CSS declares it; only a browser measures it
+- [ ] `prefers-reduced-motion` actually stilling the buddy idle and the daily update
+- [ ] Narration audio lining up with the visuals it is cued to
+- [ ] Whether the repaint reads as "not a bank"
 
 ---
 

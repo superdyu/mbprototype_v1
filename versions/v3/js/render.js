@@ -44,6 +44,11 @@ function adminSubtitle() {
   if (state.screen === "commitment")     return "Commitment creation.";
   if (state.screen === "marketplace")    return "Adjust marketplace preferences and offers.";
   if (state.screen === "reward")         return "Last reward output (read-only).";
+  if (state.screen === "finish")         return "Post-result loop — completion moment before returning to the origin.";
+  if (state.screen === "quiz")           return "v2 quiz — kept for v2 lessons; v3 lessons use lessonQuiz.";
+  if (state.screen === "simulation")     return "v2 simulation stub — v3 lessons use lessonSimulation.";
+  if (state.screen === "marketplaceDetail") return "Marketplace detail — admin-reachable only; the tab is inert (D33).";
+  if (state.screen === "settings")       return "Settings — carried forward from v2, off the main paths (L14).";
   if (state.screen === "myDebts")        return "Manage debt instruments, add or remove entries.";
   if (state.screen === "debtAnalyzer")   return "Adjust extra payment, toggle debts in/out of simulation.";
   if (state.screen === "chat")           return "Chat mock — keyword matching, not AI. Routes listed below.";

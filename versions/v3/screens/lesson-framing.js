@@ -11,10 +11,11 @@
 
 function renderLessonFraming() {
   const f = state.lessonFraming;
-  if (!f) return `<div class="card"><p class="helper">No lesson selected.</p></div>`;
-  const lesson = lessonV3(f.lessonId);
-  const q = lessonQuestion(lesson, f.questionId);
-  if (!lesson || !q) return `<div class="card"><p class="helper">Nothing to ask.</p></div>`;
+  const lesson = f ? lessonV3(f.lessonId) : null;
+  const q = lesson ? lessonQuestion(lesson, f.questionId) : null;
+  // D19 — entered directly with no lesson chosen.
+  if (!f || !lesson || !q) return lessonOutcomeNoSession("lesson",
+    "These questions decide which version of a lesson you get.");
 
   const asked = f.path.length + 1;
   const total = Math.max(3, Math.min(LESSONS_V3.config.maxFramingQuestions || 5,
