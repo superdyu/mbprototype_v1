@@ -27,6 +27,9 @@ function adminSubtitle() {
   if (state.screen === "reward-preview") return "Lesson preview — read-only. Edit content in Learn admin.";
   if (state.screen === "lessonFraming")  return "Framing tree — tags select which pre-written script variant plays.";
   if (state.screen === "lesson")         return "Toggle stage style, seek to sentence for testing.";
+  if (state.screen === "lessonQuiz")     return "Quiz — lessons.json question first, topped up from v2's pool (L9).";
+  if (state.screen === "lessonSimulation") return "Simulation — sandbox figures only, never the user's own.";
+  if (state.screen === "lessonReward")   return "Reward — XP to every course the lesson belongs to.";
   if (state.screen === "aboutMe")        return "Budget — 12 flat categories, plan vs what the journal says.";
   if (state.screen === "lifestyleWizard") return "Lifestyle wizard — 6 questions feeding the peer model.";
   if (state.screen === "lifestyleWizardReview") return "Starting budget from the peer model; sliders adjust before saving.";
@@ -78,6 +81,9 @@ function renderScreen() {
   if (state.screen === "reward-preview")    return renderRewardPreview();
   if (state.screen === "lessonFraming")     return renderLessonFraming();
   if (state.screen === "lesson")            return renderLesson();
+  if (state.screen === "lessonQuiz")        return renderLessonQuiz();
+  if (state.screen === "lessonSimulation")  return renderLessonSimulation();
+  if (state.screen === "lessonReward")      return renderLessonReward();
   if (state.screen === "quiz")              return renderQuiz();
   if (state.screen === "simulation")        return renderSimulation();
   if (state.screen === "marketplace")       return renderMarketplace();
@@ -110,6 +116,7 @@ function renderAdmin() {
   if (state.screen === "marketplace")   return renderMarketplaceAdmin();
   if (state.screen === "lessonFraming") return renderLessonFramingAdmin();
   if (state.screen === "lesson")        return renderLessonAdmin();
+  if (["lessonQuiz","lessonSimulation","lessonReward"].includes(state.screen)) return renderLessonOutcomeAdmin();
   if (state.screen === "reward")        return renderRewardAdmin();
   if (state.screen === "aboutMe")       return renderBudgetV3Admin();
   if (state.screen === "lifestyleWizard") return renderLifestyleWizardAdmin();
@@ -127,7 +134,7 @@ function renderAdmin() {
         <select onchange="navAdminJump(this.value)">
           ${["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home","journalEntry","journalConfirm","journalDone","aboutMe","lifestyleWizard","lifestyleWizardReview","budgetDone","myProgress","comparison",
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
-             "goals","learn","topic","lessonFraming","lesson","quiz","simulation","marketplace",
+             "goals","learn","topic","lessonFraming","lesson","lessonQuiz","lessonSimulation","lessonReward","quiz","simulation","marketplace",
              "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
              "chat","budgetUpdateConfirm"].map(s => `
             <option value="${s}" ${state.screen === s ? "selected" : ""}>${s}</option>
@@ -149,7 +156,7 @@ function render() {
   lpStopPlayback();
 
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");
-  screenRoot.classList.toggle("journal-mode",     state.screen === "lessonFraming" || screenRoot.classList.contains("journal-mode"));
+  screenRoot.classList.toggle("journal-mode",     ["lessonFraming","lessonQuiz","lessonSimulation","lessonReward"].includes(state.screen) || screenRoot.classList.contains("journal-mode"));
   screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","lifestyleWizard","lifestyleWizardReview","budgetDone"].includes(state.screen));
   screenRoot.classList.toggle("streak-mode",      state.screen === "streak");
   screenRoot.classList.toggle("login-mode",       state.screen === "login");

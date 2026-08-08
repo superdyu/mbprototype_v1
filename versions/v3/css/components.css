@@ -1849,3 +1849,12 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 }
 .mp-badge { padding: 6px 0; }
 .mp-kibble { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+/* ─── Lesson quiz / simulation / reward ───────────────────────────────────── */
+.quiz-right { border-color: var(--good); background: var(--good-bg); }
+.quiz-wrong { border-color: var(--warn-border); background: var(--warn-bg); opacity: .7; }
+.sim-row { margin-bottom: 8px; padding: 12px 14px; }
+.sim-out { text-align: center; padding: 18px 14px; background: var(--accent-soft); border-color: var(--accent-border); }
+.sim-sub-row { padding: 8px 0; border-bottom: 1px solid var(--line); gap: 10px; }
+.sim-sub-row:last-of-type { border-bottom: 0; }
+.reward-course { margin-bottom: 8px; padding: 12px 14px; }

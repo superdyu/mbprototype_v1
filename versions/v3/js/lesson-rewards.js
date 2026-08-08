@@ -1,0 +1,189 @@
+// ─── Badges, XP and rewards (06-education, L9) ───────────────────────────────
+// "Per lesson. Metal tier plus level number, Overwatch-style. XP from correct
+// answers, bonus XP when the lesson came from the daily task list. The badge is
+// vanity — it unlocks nothing. That's the point."
+//
+// L9 resolves the two incompatible models: lessons.json's five-tier
+// progression and XP values win, kept admin-tunable through v2's xpConfig
+// panel so the multipliers can be adjusted mid-test without a code edit.
+//
+// ── PROGRESS IS ON THE LESSON, NOT THE COURSE ────────────────────────────────
+// lessons.json's own note: "A lesson belongs to several courses. Progress is on
+// the lesson, so cross-cutting lessons level faster." APR belongs to three
+// courses, so finishing it moves all three. That is the design, not
+// double-counting.
+
+function lrTiers() { return LESSONS_V3.badges.tiers || ["bronze"]; }
+function lrXpPerTier() { return LESSONS_V3.badges.xpPerTier || 500; }
+
+/** Tier + level from raw XP. Caps at the final tier rather than overflowing. */
+function lrRank(xp) {
+  const per = lrXpPerTier();
+  const tiers = lrTiers();
+  const tierIdx = Math.min(tiers.length - 1, Math.floor((xp || 0) / per));
+  const within = (xp || 0) - tierIdx * per;
+  const level = Math.min(10, Math.floor((within / per) * 10) + 1);
+  return {
+    tier: tiers[tierIdx],
+    tierIndex: tierIdx,
+    level: level,
+    xp: xp || 0,
+    intoTier: within,
+    pct: Math.min(100, Math.round((within / per) * 100)),
+    maxed: tierIdx === tiers.length - 1 && within >= per
+  };
+}
+
+function lrCourseXp(courseId) {
+  return (state.courseXp && state.courseXp[courseId]) || 0;
+}
+
+/**
+ * XP for finishing a lesson. Base values come from lessons.json; the
+ * multipliers stay on v2's xpConfig so they remain hot-editable from the admin
+ * panel during a test session.
+ */
+function lrComputeAward(lesson, correctCount, fromDailyTask) {
+  const b = LESSONS_V3.badges;
+  const cfg = state.xpConfig || {};
+  const perCorrect = b.xpCorrectAnswer || 50;
+  const complete = b.xpLessonComplete || 100;
+  const bonus = fromDailyTask ? (b.xpBonusFromDailyTask || 50) : 0;
+
+  const base = complete + perCorrect * (correctCount || 0);
+  // v2's bonusMultiplier is a testing knob layered on the flat bonus.
+  const mult = fromDailyTask ? (Number(cfg.bonusMultiplier) || 1) : 1;
+  const total = Math.round(base + bonus * mult);
+
+  return {
+    base: base,
+    bonus: Math.round(bonus * mult),
+    total: total,
+    perCorrect: perCorrect,
+    correctCount: correctCount || 0,
+    fromDailyTask: !!fromDailyTask
+  };
+}
+
+/**
+ * Apply an award to every course the lesson belongs to, and return per-course
+ * before/after so the reward screen can animate the movement.
+ */
+function lrApplyAward(lesson, award) {
+  if (!state.courseXp) state.courseXp = {};
+  const gains = [];
+  (lesson.courses || []).forEach(courseId => {
+    const before = lrCourseXp(courseId);
+    const after = before + award.total;
+    state.courseXp[courseId] = after;
+    gains.push({
+      course: courseId,
+      before: before,
+      after: after,
+      rankBefore: lrRank(before),
+      rankAfter: lrRank(after),
+      leveledUp: lrRank(after).level !== lrRank(before).level
+                 || lrRank(after).tier !== lrRank(before).tier
+    });
+  });
+  return gains;
+}
+
+/** Kibble for finishing. Accrues and shows; nothing spends it (L16). */
+function lrAwardKibble(award) {
+  const k = Math.max(10, Math.round(award.total / 10));
+  state.kibble += k;
+  return k;
+}
+
+// ── Quiz ─────────────────────────────────────────────────────────────────────
+// lessons.json ships ONE question per lesson, which is thin for a quiz, so v2's
+// 48-question pool tops it up to xpConfig.quizQuestionsRequired (L9). The
+// lesson's own question always comes first — it is the one written for it.
+
+function lrQuizQuestions(lesson) {
+  const want = (state.xpConfig && state.xpConfig.quizQuestionsRequired) || 3;
+  const own = (lesson.quiz || []).map((q, i) => ({
+    id: lesson.id + "_q" + i,
+    prompt: q.prompt,
+    options: q.options,
+    correct: q.correct,
+    source: "lesson"
+  }));
+  if (own.length >= want) return own.slice(0, want);
+
+  // Top up from v2's pool, preferring questions whose lesson shares a course.
+  const pool = (state.quizQuestions || []).map(q => ({
+    id: q.id,
+    prompt: q.question,
+    options: q.choices,
+    correct: q.correct,
+    source: "pool"
+  }));
+  return own.concat(pool.slice(0, want - own.length));
+}
+
+// ── Simulations ──────────────────────────────────────────────────────────────
+// "Bias toward simulation over quiz. A sandbox a user can push numbers through
+// beats a multiple-choice question about what a rate means."
+//
+// SANDBOX ONLY — never the user's real figures. lessons.json says so explicitly
+// on the APR calculator, and it holds for all three: a lesson is a safe place
+// to try a number, which it stops being if the number is yours.
+
+function lrSimDefaults(lesson) {
+  const sim = lesson.simulation || {};
+  if (sim.defaults) return Object.assign({}, sim.defaults);
+  if (sim.type === "subscription_tally") {
+    // seedFrom names the persona, but these are illustrative rows, not the
+    // user's own subscription list — same sandbox rule.
+    return {
+      rows: (PERSONA.subscriptions.known || []).map(s => ({
+        name: s.name, monthly: s.monthly, on: true
+      }))
+    };
+  }
+  return {};
+}
+
+/** Months to clear a balance, and what the interest costs. Null if it never clears. */
+function lrSimBalance(v) {
+  const apr = (Number(v.apr) || 0) / 100 / 12;
+  let bal = Number(v.balance) || 0;
+  const pay = Number(v.monthlyPayment) || 0;
+  let months = 0, interest = 0;
+  if (pay <= bal * apr) return { monthsToPayoff: null, totalInterest: null };
+  while (bal > 0 && months < 1200) {
+    const i = bal * apr;
+    interest += i;
+    bal = bal + i - pay;
+    months++;
+  }
+  return { monthsToPayoff: months, totalInterest: Math.round(interest) };
+}
+
+function lrSimSavings(v) {
+  const target = Number(v.target) || 0;
+  const cur = Number(v.current) || 0;
+  const per = Number(v.monthlyContribution) || 0;
+  if (cur >= target) return { monthsToTarget: 0, targetDate: "already there" };
+  if (per <= 0) return { monthsToTarget: null, targetDate: null };
+  const months = Math.ceil((target - cur) / per);
+  const d = new Date(); d.setMonth(d.getMonth() + months);
+  return {
+    monthsToTarget: months,
+    targetDate: d.toLocaleDateString(undefined, { month: "long", year: "numeric" })
+  };
+}
+
+function lrSimSubscriptions(rows) {
+  const on = (rows || []).filter(r => r.on);
+  const monthly = on.reduce((t, r) => t + (Number(r.monthly) || 0), 0);
+  const off = (rows || []).filter(r => !r.on)
+    .reduce((t, r) => t + (Number(r.monthly) || 0), 0);
+  return {
+    monthlyTotal: monthly,
+    annualTotal: monthly * 12,
+    savingsIfCancelled: off * 12
+  };
+}

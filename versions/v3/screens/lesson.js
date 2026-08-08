@@ -533,7 +533,7 @@ function renderLesson() {
           </div>
           <span id="lp-total" class="lp-time-label">${totalTime}</span>
         </div>
-        <button class="button full" id="lp-next-btn" type="button" onclick="go('quiz')" ${(state.lessonPlayback.ended || state.lessonPlayback.completed) ? "" : "disabled"}>Next</button>
+        <button class="button full" id="lp-next-btn" type="button" onclick="lessonLeaveForQuiz()" ${(state.lessonPlayback.ended || state.lessonPlayback.completed) ? "" : "disabled"}>Next</button>
       </div>
 
     </div>
@@ -562,4 +562,16 @@ function renderLessonAdmin() {
       </p>
     </div>
   `;
+}
+
+
+// v3 (D38): the player's Next leads into the v3 quiz when a v3 lesson is
+// playing, and into v2's quiz otherwise. Keeps both paths alive rather than
+// repointing the button and stranding v2's lessons.
+function lessonLeaveForQuiz() {
+  if (state.lessonVariantId && typeof lessonQuizStart === "function") {
+    lessonQuizStart();
+    return;
+  }
+  go("quiz");
 }

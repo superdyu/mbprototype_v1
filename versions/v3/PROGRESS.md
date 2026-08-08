@@ -4,8 +4,7 @@
 Progress on A3's six sections; and D38's two gaps are filled — framing decision
 trees, tag-driven variant matching, and **all 15 script bodies written** (105
 lines, asserted advice-free). 108 assertions across the three.
-**Next action: Phase 5c-ii** — badges (lessons.json 5 tiers + v2 admin knobs,
-L9), quiz, one simulation per lesson, reward screen, return routing.
+**Next action: Phase 6** — the correctness sweep. Every build phase is done.
 — *updated 2026-08-07*
 
 > **Read before touching anything:**

@@ -82,7 +82,7 @@ function activeTabFor(screen) {
   // Marketplace sub-screen
   if (screen === "marketplaceDetail") return "marketplace";
   // Learn sub-screens
-  if (["topic", "reward-preview", "lessonFraming", "lesson", "quiz", "simulation"].includes(screen)) return "learn";
+  if (["topic", "reward-preview", "lessonFraming", "lesson", "lessonQuiz", "lessonSimulation", "lessonReward", "quiz", "simulation"].includes(screen)) return "learn";
   return screen;
 }
 

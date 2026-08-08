@@ -36,6 +36,9 @@ const destinations = [
   ["reward-preview", "Reward Preview"],
   ["lessonFraming",  "Lesson: Framing"],
   ["lesson",         "Lesson Player"],
+  ["lessonQuiz",     "Lesson: Quiz"],
+  ["lessonSimulation","Lesson: Simulation"],
+  ["lessonReward",   "Lesson: Reward"],
   ["quiz",           "Quiz"],
   ["simulation",     "Simulation"],
   ["marketplace",    "Marketplace"],
@@ -98,6 +101,12 @@ const state = {
   lessonFraming: null,
   lessonVariantId: null,
   lessonVariantScript: null,
+  lessonQuiz: null,
+  lessonSim: null,
+  lessonReward: null,
+  // XP per COURSE. A lesson belongs to several, and progress is on the lesson,
+  // so a cross-cutting lesson moves all of them (lessons.json).
+  courseXp: {},
 
   // ── Money Journal ─────────────────────────────────────────────────────────
   // journalSession:   the in-flight entry (null when not writing one)
