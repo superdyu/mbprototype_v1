@@ -1,10 +1,11 @@
 # v3 Build Progress
 
-**Current state:** **Phase 2 COMPLETE (2a + 2b).** Three-layer comparison live —
-plan · what you told me · peers, with both gaps labelled distinctly on every row
-(34% vs plan, 16% vs peers for dining). v2's nested budget model is **gone**;
-`state.budget` now holds only the debt instruments L14 keeps. 44 assertions pass.
-Next action: **Phase 2.5, the repaint (D36/L19).** — *updated 2026-08-07*
+**Current state:** **Phase 2.5 COMPLETE — the app is repainted.** Cream/sage/
+apricot/clay, no pure black or white, no red on any app surface. Admin panel and
+phone bezel kept on separate `--chrome-*` tokens so dev tooling stays visually
+outside the product. All 9 text/background pairs clear **AA (≥4.5:1) in both
+light and dark**. Next action: **Phase 3, the daily loop** — onboarding, login,
+home, buddy, chat, streak. — *updated 2026-08-07*
 
 > **Read before touching anything:**
 > 1. `plan.md` §0 — locked decisions **L1–L19**. Do not re-litigate them.
@@ -184,18 +185,22 @@ L2's churn concern is spent — and Phases 3–4 author the most visual surfaces
 (buddy stage, login scene, daily update), which should be built in the final
 palette rather than converted.
 
-- [ ] `css/variables.css` — app-surface tokens to the design-system palette:
-      `--cream #FBF7F0` · `--sage #A8C4A2` · `--sky #9BBFD4` · `--apricot #E8B48A`
-      · `--clay #C98B7E` · `--ink #3D3A36` · `--ink-soft #7A736B`
-- [ ] **No pure black, no pure white, no red.** A flagged bill uses clay, not danger colouring — nothing here is an emergency
-- [ ] Dark-mode scope: invent equivalents (the spec specifies none, but v2 ships dark mode and D37 says carry it forward)
-- [ ] Phone bezel and admin panel keep their own neutral tokens — dev chrome stays visually separate from the product under test
-- [ ] Admin error log keeps a real red; "no red" governs app surfaces, not tooling
-- [ ] Radius: 16px cards · 24px primary buttons · full round on pills and the buddy stage
-- [ ] Shadows `0 4px 24px rgba(61,58,54,0.06)`. No hard edges
-- [ ] Type: rounded geometric display (Nunito/Quicksand feel) + legible body. Numbers one weight heavier than their label and always larger
-- [ ] Motion: ease-out 240ms throughout
-- [ ] Verify both light and dark still work on every screen built so far
+- [x] `css/variables.css` — app-surface tokens to the design-system palette
+      ↳ raw palette + semantic layer on top, so a screen never references `--sage` directly
+- [x] **No pure black, no pure white, no red.** A flagged bill uses clay, not danger colouring
+      ↳ `--danger` now *resolves to* clay, so any inherited v2 styling lands on the right side of D36 instead of shouting. Cards are `#FFFDF9`, not white
+- [x] Dark-mode scope: invent equivalents
+      ↳ warm dark (`#26231F` base) — the palette dimmed, not a colder second theme
+- [x] Phone bezel and admin panel keep their own neutral tokens
+      ↳ `--chrome-*` scope. Admin buttons needed their own rule: the base `.button` resolves `--accent` to sage, which cannot carry white text
+- [x] Admin error log keeps a real red; "no red" governs app surfaces, not tooling
+- [x] Radius: 16px cards · 24px primary buttons · full round on pills and the buddy stage
+- [x] Shadows `0 4px 24px rgba(61,58,54,0.06)`. No hard edges
+- [x] Type: rounded geometric display + legible body. Numbers heavier and larger than their label
+      ↳ **webfonts are impossible here** — `file://`, no network at runtime (D02). Closest system stacks (`ui-rounded`/`SF Pro Rounded` → Nunito/Quicksand fallbacks). Swap in real files if they are ever bundled locally
+- [x] Motion: ease-out 240ms throughout, plus a global `prefers-reduced-motion` block
+- [x] Verify both light and dark still work on every screen built so far
+      ↳ 32 screens × 2 modes, 0 failures. **Contrast measured, not eyeballed:** 3 light tokens cleared only AA-large, so `--accent`/`--warn`/`--good` were deepened and the dark fill darkened. Worst pair is now 4.60:1
 
 ## Phase 3 — Daily loop
 

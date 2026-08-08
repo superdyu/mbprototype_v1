@@ -188,7 +188,7 @@
 .lp-stage-title {
   font-size: 22px;
   font-weight: 850;
-  color: #fff;
+  color: var(--on-dark);
   text-align: center;
   letter-spacing: -.03em;
   margin: 0;
@@ -202,7 +202,7 @@
   left: 14px;
   background: rgba(255, 255, 255, 0.2);
   border: none;
-  color: #fff;
+  color: var(--on-dark);
   font-size: 24px;
   font-weight: 850;
   border-radius: 10px;
@@ -343,12 +343,12 @@
 }
 
 .admin-card {
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: var(--chrome-card);
+  border: 1px solid var(--chrome-line);
   border-radius: 18px;
   padding: 14px;
   margin-bottom: 14px;
-  color: var(--text);
+  color: var(--chrome-text);
 }
 
 .admin-card-title {
@@ -358,8 +358,8 @@
 }
 
 .item-card {
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: var(--chrome-card);
+  border: 1px solid var(--chrome-line);
   border-radius: 18px;
   padding: 14px;
   margin-bottom: 10px;
@@ -465,7 +465,7 @@
 .button {
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: #fff;
+  color: var(--on-dark);
   padding: 10px 13px;
   border-radius: 13px;
   font-size: 13px;
@@ -477,7 +477,7 @@
 /* .primary is an alias for the default button style — explicit intent marker */
 .button.primary {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-dark);
   border-color: var(--accent);
 }
 
@@ -1153,7 +1153,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   border: 1px solid var(--accent);
   border-radius: 11px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-dark);
   font-size: 12px;
   font-weight: 850;
   text-align: left;
@@ -1349,7 +1349,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   border-radius: 0;
   cursor: pointer;
 }
-.ls-seg-btn.active { background: var(--accent); color: #fff; }
+.ls-seg-btn.active { background: var(--accent); color: var(--on-dark); }
 
 /* Review step: compact slider rows + pinned-feel totals */
 .ls-review-totals {
@@ -1540,3 +1540,106 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .cmp-compact { padding: 7px 0; border-bottom: 1px solid var(--line); gap: 8px; }
 .cmp-compact:last-of-type { border-bottom: 0; }
 .cmp-compact-name { font-size: 12px; font-weight: 700; flex: 1; }
+
+/* ─── Phase 2.5 repaint (D36 / L19) ───────────────────────────────────────────
+   Shape, depth and motion from 09-design-system, applied as overrides so the
+   v2 rules above stay readable rather than being rewritten line by line.
+
+   Radius 16 on cards, 24 on primary buttons, full round on pills and the buddy
+   stage. Shadows wide and soft. Nothing square, no hard edges, no heavy
+   elevation. Ease-out 240ms everywhere.
+
+   Scoped to .screen — the admin panel and phone bezel are chrome and keep
+   their own look (see the two scopes in variables.css). */
+
+.screen .card,
+.screen .item-card,
+.screen .task-card,
+.screen .journal-opt,
+.screen .journal-freetext,
+.screen .budget-row,
+.screen .cmp-row {
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+}
+
+.screen .button {
+  border-radius: var(--radius-button);
+  font-family: var(--font-display);
+  transition: background var(--dur) var(--ease),
+              border-color var(--dur) var(--ease),
+              color var(--dur) var(--ease);
+}
+
+/* Primary is sage FILL with ink text — the raw pastel is too light to carry
+   white type, and the design system has no darker primary to fall back on. */
+.screen .button:not(.secondary) {
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--ink);
+}
+.screen .button:not(.secondary):hover { filter: brightness(.96); }
+
+.screen .button.secondary {
+  background: transparent;
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
+}
+.screen .button.secondary:hover { background: var(--accent-soft); }
+
+.screen .pill { border-radius: var(--radius-pill); }
+
+/* Inputs and sliders pick up the warm palette rather than the browser default. */
+.screen input, .screen select, .screen textarea {
+  border-radius: var(--radius-card);
+  font-family: var(--font-body);
+  background: var(--card);
+  color: var(--text);
+  border-color: var(--line);
+}
+.screen input[type="range"] { accent-color: var(--accent-fill); }
+
+/* Focus must stay visible — 09-design-system's floor. */
+.screen :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Numbers are display face, one weight heavier than their label and always
+   larger. Financial figures are the thing people look for. */
+.screen .journal-total,
+.screen .budget-row-amt,
+.screen .journal-amount { font-family: var(--font-display); font-weight: 850; }
+
+/* The buddy stage is fully round (09-design-system). */
+.screen .stage-card { border-radius: var(--radius-pill); }
+
+/* ─── Reduced motion ──────────────────────────────────────────────────────────
+   Idle animation stops, transitions become instant. Respected globally, not
+   per-component, so nothing added later can forget. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+/* ─── Admin buttons are chrome ───────────────────────────────────────────────
+   The base .button now resolves --accent to sage, which cannot carry white
+   text. Admin lives outside .screen so the app override never reaches it —
+   point it at the chrome accent instead. */
+.admin .button {
+  background: var(--chrome-accent);
+  border-color: var(--chrome-accent);
+  color: #fff;
+  border-radius: 12px;
+}
+.admin .button.secondary {
+  background: transparent;
+  color: var(--chrome-accent);
+  border: 1px solid var(--chrome-line);
+}
+.admin .button.secondary:hover { background: rgba(49, 94, 251, .06); }

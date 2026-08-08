@@ -2,9 +2,17 @@
 
 body {
   margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
   background: var(--bg);
   color: var(--text);
+}
+
+/* Display face for headings, figures and the buddy's voice (09-design-system).
+   Numbers are display face, heavier than their label, and always larger —
+   financial figures are the thing people look for. */
+h1, h2, h3, .title, .section-title, .journal-total, .budget-row-amt,
+.journal-amount, .obs-figure, .cmp-val, .topbar-status {
+  font-family: var(--font-display);
 }
 
 .page {
@@ -25,7 +33,7 @@ body {
   background: var(--phone);
   border-radius: 38px;
   padding: 14px;
-  box-shadow: 0 24px 70px rgba(16, 24, 40, .25);
+  box-shadow: 0 24px 70px rgba(43, 39, 35, .22);
   position: sticky;
   top: 24px;
 }
@@ -160,25 +168,22 @@ body {
   bottom: 0;
   height: var(--nav-h);
   padding: 10px 10px 14px;
-  background: rgba(248, 250, 252, .98);
+  background: var(--screen);
   border-top: 1px solid var(--line);
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 6px;
 }
 
-.dark-mode .bottom-tabs {
-  background: rgba(30, 33, 40, .98);
-}
-
 .tab {
   border: 0;
   background: transparent;
   color: var(--muted);
-  border-radius: 14px;
+  border-radius: var(--radius-pill);
   font-size: 11px;
   font-weight: 850;
   cursor: pointer;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
 }
 
 .tab.active {
@@ -188,10 +193,11 @@ body {
 
 /* Admin panel */
 .admin {
+  /* Chrome, not product — see the two scopes in variables.css */
   height: 820px;
   max-height: calc(100vh - 48px);
   background: rgba(255, 255, 255, .82);
-  border: 1px solid var(--line);
+  border: 1px solid var(--chrome-line);
   border-radius: 24px;
   box-shadow: 0 12px 40px rgba(16, 24, 40, .08);
   overflow: hidden;
@@ -203,9 +209,9 @@ body {
 
 .admin-header {
   padding: 16px 18px;
-  border-bottom: 1px solid var(--line);
-  background: var(--card);
-  color: var(--text);
+  border-bottom: 1px solid var(--chrome-line);
+  background: var(--chrome-card);
+  color: var(--chrome-text);
 }
 
 .admin-title {
@@ -217,7 +223,7 @@ body {
 .admin-subtitle {
   margin: 5px 0 0;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--chrome-muted);
   line-height: 1.35;
 }
 
@@ -232,13 +238,14 @@ body {
   grid-template-columns: 420px;
 }
 .page.admin-collapsed .admin {
+  /* Chrome, not product — see the two scopes in variables.css */
   display: none;
 }
 
 .admin-collapse-btn {
   border: 0;
   background: transparent;
-  color: var(--muted);
+  color: var(--chrome-muted);
   font-size: 18px;
   font-weight: 700;
   cursor: pointer;
@@ -247,7 +254,7 @@ body {
   flex-shrink: 0;
 }
 .admin-collapse-btn:hover {
-  color: var(--text);
+  color: var(--chrome-text);
 }
 
 .admin-expand-tab {
@@ -258,18 +265,18 @@ body {
   width: 28px;
   height: 48px;
   background: rgba(255, 255, 255, .92);
-  border: 1px solid var(--line);
+  border: 1px solid var(--chrome-line);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(16, 24, 40, .1);
   font-size: 16px;
   font-weight: 700;
-  color: var(--muted);
+  color: var(--chrome-muted);
   cursor: pointer;
   align-items: center;
   justify-content: center;
 }
 .admin-expand-tab:hover {
-  color: var(--text);
+  color: var(--chrome-text);
 }
 
 /* Responsive */
