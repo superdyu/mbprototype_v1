@@ -1783,3 +1783,27 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .du-compare { display: flex; gap: 14px; justify-content: center; margin-bottom: 4px; }
 .du-compare-side { flex: 1; max-width: 130px; }
 .du-figure-muted { color: var(--muted); }
+
+/* ─── Share ───────────────────────────────────────────────────────────────── */
+.share-toggle { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 13px; }
+.share-toggle input { margin-top: 3px; flex-shrink: 0; }
+.share-expand {
+  width: 100%; min-height: 44px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  background: transparent; border: 0; padding: 0;
+  font-size: 13px; font-weight: 700; color: var(--accent); cursor: pointer;
+}
+.share-preview {
+  margin: 10px 0 0; padding: 12px;
+  background: var(--soft); border-radius: var(--radius-card);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px; line-height: 1.6; color: var(--text);
+  white-space: pre-wrap; word-break: break-word;
+}
+.share-platforms { display: flex; flex-wrap: wrap; gap: 6px; }
+.share-platform {
+  min-height: 44px; padding: 10px 14px;
+  border: 1px solid var(--line); border-radius: var(--radius-pill);
+  background: var(--card); color: var(--muted);
+  font-size: 12px; opacity: .55; cursor: not-allowed;
+}

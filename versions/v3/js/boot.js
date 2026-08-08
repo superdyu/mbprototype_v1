@@ -97,7 +97,7 @@ function bootV3() {
   // and the top bar's back arrow doubles as "skip".
   //
   // Seeding the root as the entry screen instead made login the permanent root,
-  // and navGoTab("home") returned to login forever.
+  // and navGoHome() returned to login forever.
   const entry = v3EntryScreen();
   state.nav.activeStack = "home";
   state.nav.stacks.home = entry === "home" ? ["home"] : ["home", entry];

@@ -34,7 +34,7 @@ function renderTopBar() {
   if (depth > 1) {
     left = `<button class="topbar-btn" type="button" onclick="navBack()" aria-label="Back">‹</button>`;
   } else if (!onHome && !fullBleed) {
-    left = `<button class="topbar-btn" type="button" onclick="navGoTab('home')" aria-label="Home">${TOPBAR_HOME_ICON}</button>`;
+    left = `<button class="topbar-btn" type="button" onclick="navGoHome()" aria-label="Home">${TOPBAR_HOME_ICON}</button>`;
   } else if (fullBleed) {
     // Nav is hidden here, so back is the only exit. Depth 1 on a full-bleed
     // screen means it was entered as a stack root — fall back to home.

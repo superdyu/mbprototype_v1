@@ -132,7 +132,7 @@ function renderJournalDone() {
 
       <div class="journal-foot">
         <span></span>
-        <button class="button" type="button" onclick="navGoTab('home')">Done</button>
+        <button class="button" type="button" onclick="navGoHome()">Done</button>
       </div>
     </div>
   `;

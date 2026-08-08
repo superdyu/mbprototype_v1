@@ -34,16 +34,17 @@ function renderDailySummary() {
 
       <div class="journal-foot">
         <button class="button secondary" type="button" onclick="duStart(state.du.scriptId)">Watch again</button>
-        <button class="button" type="button" onclick="dailySummaryDone()">Done</button>
+        <button class="button" type="button" onclick="go('dailyShare')">Share</button>
       </div>
     </div>
   `;
 }
 
-// Phase 4b inserts the share sheet ahead of this. The streak registration lives
-// wherever the flow actually ends, so it moves there when share lands.
+// The streak registers at the END of the share flow (03-home-daily-loop), which
+// is now screens/daily-share.js — so skipping share means skipping the streak,
+// exactly as the spec describes the ordering.
 function dailySummaryDone() {
-  navGoTab("home");
+  navGoHome();
 }
 
 function renderDailySummaryAdmin() {
@@ -59,8 +60,7 @@ function renderDailySummaryAdmin() {
           `${h(o.id)}${observationFigure(o) ? " · " + h(observationFigure(o)) : ""}`).join("<br>")}
       </div>
       <p class="helper" style="font-size:10px;margin-top:10px;">
-        Share sheet + anonymization preview: Phase 4b. The streak registers at
-        the END of that flow (03-home-daily-loop), not here.
+        The streak registers at the END of the share flow, not here.
       </p>
     </div>
   `;

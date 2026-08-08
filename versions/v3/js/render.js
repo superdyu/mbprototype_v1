@@ -20,6 +20,7 @@ function adminSubtitle() {
   if (state.screen === "login")          return "Login scene — day/night by local time, then the daily-update prompt.";
   if (state.screen === "dailyUpdate")    return "Daily update — one audio file per segment; visuals carry the numbers (D30).";
   if (state.screen === "dailySummary")   return "Completion summary — observations stacked in plain language.";
+  if (state.screen === "dailyShare")     return "Share — anonymization on by default; the preview is the literal payload (A11).";
   if (state.screen === "onboarding")     return "Onboarding — 8 steps. Only ZIP, household and income override the persona (D09).";
   if (state.screen === "learn")          return "Adjust XP config, lesson states, badge progress.";
   if (state.screen === "topic")          return "Override lesson statuses for this badge.";
@@ -51,6 +52,7 @@ function renderScreen() {
   if (state.screen === "login")             return renderLogin();
   if (state.screen === "dailyUpdate")       return renderDailyUpdate();
   if (state.screen === "dailySummary")      return renderDailySummary();
+  if (state.screen === "dailyShare")        return renderDailyShare();
   if (state.screen === "onboarding")        return renderOnboarding();
   if (state.screen === "journalEntry")      return renderJournalEntry();
   if (state.screen === "journalConfirm")    return renderJournalConfirm();
@@ -92,6 +94,7 @@ function renderAdmin() {
   if (state.screen === "login")         return renderLoginAdmin();
   if (state.screen === "dailyUpdate")   return renderDailyUpdateAdmin();
   if (state.screen === "dailySummary")  return renderDailySummaryAdmin();
+  if (state.screen === "dailyShare")    return renderDailyShareAdmin();
   if (state.screen === "onboarding")    return renderOnboardingAdmin();
   if (state.screen === "journalEntry")  return renderJournalEntryAdmin();
   if (state.screen === "journalConfirm") return renderJournalConfirmAdmin();
@@ -119,7 +122,7 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="navAdminJump(this.value)">
-          ${["streak","onboarding","login","dailyUpdate","dailySummary","home","journalEntry","journalConfirm","journalDone","aboutMe","lifestyleWizard","lifestyleWizardReview","budgetDone","myProgress","comparison",
+          ${["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home","journalEntry","journalConfirm","journalDone","aboutMe","lifestyleWizard","lifestyleWizardReview","budgetDone","myProgress","comparison",
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
              "goals","learn","topic","lesson","quiz","simulation","marketplace",
              "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
@@ -147,7 +150,7 @@ function render() {
   screenRoot.classList.toggle("streak-mode",      state.screen === "streak");
   screenRoot.classList.toggle("login-mode",       state.screen === "login");
   screenRoot.classList.toggle("du-mode",          state.screen === "dailyUpdate");
-  screenRoot.classList.toggle("journal-mode",     state.screen === "dailySummary" || screenRoot.classList.contains("journal-mode"));
+  screenRoot.classList.toggle("journal-mode",     ["dailySummary","dailyShare"].includes(state.screen) || screenRoot.classList.contains("journal-mode"));
   screenRoot.classList.toggle("journal-mode",     state.screen === "onboarding" || screenRoot.classList.contains("journal-mode"));
   screenRoot.classList.toggle("chat-mode",        state.screen === "chat");
   document.querySelector(".screen").classList.toggle("dark-mode", state.settings.colorMode === "dark");

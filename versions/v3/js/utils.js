@@ -68,6 +68,7 @@ function activeTabFor(screen) {
   if (screen === "login")             return "home";
   if (screen === "dailyUpdate")       return "home";
   if (screen === "dailySummary")      return "home";
+  if (screen === "dailyShare")        return "home";
   if (screen === "onboarding")        return "home";
   if (["journalEntry","journalConfirm","journalDone"].includes(screen)) return "home";   // splash → no nav, but keep mapping defined
   // Budget sub-screens

@@ -1,11 +1,11 @@
 # v3 Build Progress
 
-**Current state:** **Phase 4a COMPLETE** (Phase 4 split — XL). 4a = real
-narration + the animated sequence + the summary. 21 `.wav` files generated with
-macOS `say`, durations measured and written to `data/daily-timings.js`. All 8
-cue types render; all 3 variants selectable. 34 assertions pass, 36 screens in
-both modes. **Next action: Phase 4b** — share sheet, anonymization preview
-(A11's trust mechanic), and the streak registering at the end of that flow.
+**Current state:** **Phase 4 COMPLETE (4a + 4b).** The full daily loop runs:
+login → update (real narration, 8 cue types) → summary → share → streak → home.
+Anonymization is on by default and genuinely redacts — the preview is the
+literal payload, asserted character-for-character against the clipboard.
+33 assertions pass, 37 screens both modes. **Next action: Phase 5** — goals,
+My Progress, education (29 items, incl. the 15 lesson script bodies).
 — *updated 2026-08-07*
 
 > **Read before touching anything:**
@@ -348,6 +348,15 @@ models coexist deliberately and briefly:
 Porting `budget.js` / `budget-category.js` / `budget-utils.js` moves to Phase 2
 for the same reason. **0d's real deliverable was the benchmark engine**, which is
 complete and asserted.
+
+**4b — `navGoTab("home")` was the wrong primitive for "Done".** A tab tap
+*resumes* that stack's top, which is correct for tabs — leave Budget three
+screens deep, come back, pick up where you were. It is wrong for ending a flow,
+because the thing you just finished is still on top: `navGoTab("home")` after
+the share flow returned to the share screen, and with onboarding as the entry
+screen it returned to onboarding. Added `navGoHome()`, which resets the home
+stack to its root, and repointed every end-of-flow "Done" plus the top-bar home
+icon at it. Same root cause as the 3a boot bug, one level up.
 
 **0c — three state slots were deliberately not seeded.** architecture §2 maps
 `state.budget`, `state.tasks` and `state.goals` from the data, but all three

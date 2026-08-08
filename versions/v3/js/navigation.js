@@ -73,11 +73,26 @@ function navGoTab(key) {
   navCommit(navCurrent());
 }
 
+// Return to Home itself, resetting the stack — "this flow is over".
+//
+// NOT the same as navGoHome(). A tab tap RESUMES that stack's top, which
+// is right for tabs: leave Budget three screens deep, come back, pick up where
+// you were. It is wrong for ending a flow, because the thing you just finished
+// is still on top — calling navGoHome() after the share flow returns you
+// to the share screen.
+//
+// Every "Done" at the end of a flow wants this one.
+function navGoHome() {
+  state.nav.activeStack = "home";
+  state.nav.stacks.home = ["home"];
+  navCommit("home");
+}
+
 // POP. At depth 1 there is nowhere to go — the top bar shows home instead.
 function navBack() {
   const st = navStack();
   if (st.length <= 1) {
-    if (state.nav.activeStack !== "home") navGoTab("home");
+    if (state.nav.activeStack !== "home") navGoHome();
     return;
   }
   st.pop();
