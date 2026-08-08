@@ -69,7 +69,11 @@ moderate + cooks sometimes → `275 × 1.34 × 1.0 = 368.5` → **370**.
 
 **Copy** — applies to every surface
 - **No financial advice. Ever. Anywhere** (D26). Surface the number and the gap;
-  never prescribe the action.
+  never prescribe the action. **Any question asking what to do gets the
+  safeguard reply** — `chatIsAdviceSeeking()` runs before keyword scoring (L20),
+  because the library's own keywords miss most natural phrasings. Forbidden
+  shapes in any copy you write: "you should", "we recommend", "cancel your",
+  "switch to", "you must", "the best option is".
 - **Frame flags as questions, not instructions.** "Haven't heard about Hulu in a
   while" — not "cancel Hulu."
 - No exclamation marks in financial observations. Warm, plain, second person,

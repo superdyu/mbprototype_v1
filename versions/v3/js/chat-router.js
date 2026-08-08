@@ -19,6 +19,48 @@
 //
 // Neither is offered as a bubble (both have bubble: null).
 
+// ─── D26 safeguard: no financial advice, ever ────────────────────────────────
+// The response library's advice_deflect entry carries 10 keywords, which is not
+// enough on its own — "help me decide", "can I afford", "is it a good idea",
+// "what would you do" and nine other natural phrasings all slip past it and
+// would be answered by whichever topic happened to share a noun.
+//
+// So advice detection is keywords OR these shapes. This layer lives in code
+// rather than in data/*.json, which stays a byte-identical copy of the spec.
+//
+// Tuned against the eleven real bubble labels — none of them matches. Being
+// over-eager here is the safer failure: a wrongly-deflected question costs the
+// tester one retry, whereas a missed one means the prototype gave financial
+// advice, which it must never do under any phrasing.
+const ADVICE_PATTERNS = [
+  /\bshould\s+(i|we|my|the)\b/,          // should I / should we / should my
+  /\b(shall|ought)\s+(i|we)\b/,
+  /\bwhat\s+(should|would|could)\s+(i|we|you)\b/,
+  /\bwhat\s+do\s+you\s+(think|reckon|suggest|advise)\b/,
+  /\bdo\s+you\s+(think|reckon|suggest|advise|recommend)\b/,
+  /\bwould\s+you\s+\w+\s*(it|that|this|them)?\b.*\?|\bwould\s+you\s+(cancel|buy|sell|keep|pay|switch|move|invest)\b/,
+  /\b(recommend|recommendation|advise|advice|suggestion)\b/,
+  /\bis\s+it\s+(worth|smart|wise|better|ok|okay|a\s+good\s+idea)\b/,
+  /\b(a\s+)?good\s+idea\b/,
+  /\b(better|best)\s+(to|option|choice|way|idea|move)\b/,
+  /\bwhich\s+(is|one|should|would)\b/,
+  /\bhelp\s+me\s+(decide|choose|pick|work\s+out)\b/,
+  /\bcan\s+(i|we)\s+afford\b/,
+  /\btell\s+me\s+what\s+to\b/,
+  /\bwhat\s+would\s+you\s+do\b/,
+  /\b(wise|smart|sensible)\b.*\?/,
+  /\bhow\s+much\s+should\b/
+];
+
+/** True when the message is asking to be told what to do. */
+function chatIsAdviceSeeking(message) {
+  const msg = String(message || "").toLowerCase();
+  const deflect = (BUDDY_RESPONSES.responses || [])
+    .find(function (r) { return r.priority === "override"; });
+  if (deflect && chatMatches(msg, deflect.keywords)) return true;
+  return ADVICE_PATTERNS.some(function (re) { return re.test(msg); });
+}
+
 /** Whole-word / phrase match. Substring matching puts "hi" inside "this". */
 function chatMatches(message, keywords) {
   return (keywords || []).some(function (kw) {
@@ -53,11 +95,12 @@ function chatRoute(message) {
   const all = BUDDY_RESPONSES.responses || [];
 
   // 1. The D26 guardrail, ahead of scoring. An advice-shaped question must
-  //    never be answered by whichever topic happened to share a noun with it.
-  const override = all.find(function (r) {
-    return r.priority === "override" && chatMatches(msg, r.keywords);
-  });
-  if (override) return override;
+  //    never be answered by whichever topic happened to share a noun with it —
+  //    "is it worth it to cancel hulu?" contains "hulu".
+  if (chatIsAdviceSeeking(msg)) {
+    const deflect = all.find(function (r) { return r.priority === "override"; });
+    if (deflect) return deflect;
+  }
 
   // 2. Highest overlap; first declared wins a tie.
   let best = null, bestScore = 0;

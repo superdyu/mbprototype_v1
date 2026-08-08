@@ -605,8 +605,20 @@ Plus, new in v3: a **full-bleed mode class** if the screen hides the nav (§8).
 ### Copy — cross-cutting, applies to every surface
 
 - **No financial advice. Ever. Anywhere** (D26). Not in buddy replies, not in
-  observations, not in lesson scripts, not in empty states. Surface the number
-  and the gap; never prescribe the action.
+  observations, not in lesson scripts, not in empty states, not in a tip banner.
+  Surface the number and the gap; never prescribe the action.
+  - **Any question asking what to do must hit the safeguard reply.** Enforced by
+    `chatIsAdviceSeeking()` in `js/chat-router.js`, checked *before* keyword
+    scoring (L20). The response library's own keywords are a floor, not the
+    guard — they miss "help me decide", "can I afford", "is it a good idea",
+    "what would you do", and nine more.
+  - Deflection being over-eager is the **safe** failure. A wrongly-deflected
+    question costs one retry; a missed one means the prototype gave financial
+    advice.
+  - **Copy written later is bound by this too** — especially the 15 lesson
+    script bodies (L8), which are the largest block of unwritten prose left.
+    The forbidden shapes are imperatives: "you should", "we recommend",
+    "cancel your", "switch to", "you must", "the best option is".
 - **Frame flags as questions, not instructions.** "Haven't heard about Hulu in a
   while" — not "cancel Hulu." The app has no idea whether they still want it.
 - **No exclamation marks in financial observations** (A13). The buddy may be

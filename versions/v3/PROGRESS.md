@@ -312,6 +312,7 @@ Verified by clicking through, not by inspection.
 - [ ] Keyboard focus visible throughout
 - [ ] Tap targets ≥44px
 - [ ] **Copy sweep: no financial advice anywhere** (D26) — buddy replies, observations, lesson scripts, empty states
+      ↳ automatable, and was automated in Phase 3b: assert every screen's rendered text and every library reply is free of `you should` / `we recommend` / `cancel your` / `switch to` / `you must` / `best option is`, and that ~20 advice-shaped questions all deflect while legitimate ones do not (L20)
 - [ ] No exclamation marks in financial observations (A13)
 - [ ] Vocabulary consistent: Buddy · Money Journal · Kibble · Streak · Peers · Observation. Never "expense tracker", never "average users"
 - [ ] 5-point admin wiring complete for every screen (architecture §11)
