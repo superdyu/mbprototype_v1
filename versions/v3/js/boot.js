@@ -87,17 +87,28 @@ function bootV3() {
   // ── Entry point (D06/D07) ──────────────────────────────────────────────────
   // The whole seam is this one branch plus the streak above. Flipping
   // SKIP_ONBOARDING must not require unwinding anything else.
-  state.screen = v3EntryScreen();
+  // The home stack's ROOT is always "home" — it is where every task and every
+  // tab-escape lands. A pre-home entry screen (login, later onboarding) is
+  // PUSHED on top of it, so answering the prompt is a pop rather than a jump,
+  // and the top bar's back arrow doubles as "skip".
+  //
+  // Seeding the root as the entry screen instead made login the permanent root,
+  // and navGoTab("home") returned to login forever.
+  const entry = v3EntryScreen();
   state.nav.activeStack = "home";
-  state.nav.stacks.home = [state.screen];
+  state.nav.stacks.home = entry === "home" ? ["home"] : ["home", entry];
+  state.screen = entry;
 }
 
 // false → onboarding step 1 · true → straight to home.
 // Phase 3 builds the onboarding screen; until it exists both paths land on
 // home, so the flag is wired and testable now rather than retrofitted later.
 function v3EntryScreen() {
-  if (SKIP_ONBOARDING) return "home";
-  return typeof renderOnboarding === "function" ? "onboarding" : "home";
+  // Returning user: the login scene, which prompts for the daily update and
+  // then lands on home. First run: onboarding (Phase 3b) — until that exists,
+  // both paths go through login so the loop is walkable.
+  if (SKIP_ONBOARDING) return "login";
+  return typeof renderOnboarding === "function" ? "onboarding" : "login";
 }
 
 // L11 — obs_dining_over_peers ships typed `peer_gap` and headlined "than your

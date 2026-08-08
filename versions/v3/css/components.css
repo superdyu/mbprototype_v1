@@ -1643,3 +1643,67 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   border: 1px solid var(--chrome-line);
 }
 .admin .button.secondary:hover { background: rgba(49, 94, 251, .06); }
+
+/* ─── Buddy stage (L15) ───────────────────────────────────────────────────────
+   A described placeholder, not art. Fully round per 09-design-system, sage
+   ground because the buddy stage is a positive surface. */
+.buddy-stage {
+  background: var(--sage);
+  border-radius: var(--radius-pill);
+  padding: 22px 18px;
+  margin-bottom: 14px;
+  min-height: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: var(--shadow-soft);
+}
+.buddy-stage-compact { min-height: 130px; padding: 16px; }
+.buddy-inner { max-width: 240px; }
+.buddy-name { margin: 0 0 4px; font-family: var(--font-display); font-size: 17px; font-weight: 850; color: var(--ink); }
+.buddy-desc { margin: 0; font-size: 11px; color: var(--ink); opacity: .78; line-height: 1.5; }
+.buddy-pose {
+  margin: 10px 0 0; font-size: 11px; font-style: italic;
+  color: var(--ink); opacity: .62;
+  transition: opacity var(--dur) var(--ease);
+}
+.buddy-note { margin: 6px 0 0; font-size: 9px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink); opacity: .42; }
+
+/* ─── Home ────────────────────────────────────────────────────────────────── */
+.home-tip { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; }
+.home-tip-icon { font-size: 16px; line-height: 1.3; flex-shrink: 0; }
+.home-tip-text { margin: 0; font-size: 13px; line-height: 1.45; }
+
+.home-task { padding: 14px; margin-bottom: 8px; }
+.home-task-done { opacity: .62; }
+.home-task-kibble { margin: 8px 0 0; font-size: 11px; color: var(--muted); }
+
+/* ─── Login scene ─────────────────────────────────────────────────────────── */
+.login-scene {
+  min-height: 100%;
+  padding: calc(var(--topbar-h) + 12px) 18px 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+}
+.login-day   { background: linear-gradient(180deg, var(--sky) 0%, var(--cream) 62%); }
+.login-night { background: linear-gradient(180deg, #3B4A63 0%, #6B6480 100%); }
+.login-night .login-hello, .login-night .helper, .login-night .login-bg-note { color: var(--on-dark); }
+
+.login-bg-note {
+  font-size: 10px;
+  text-align: center;
+  color: var(--ink);
+  opacity: .55;
+  line-height: 1.5;
+}
+.login-greeting { text-align: center; }
+.login-hello { margin: 0; font-family: var(--font-display); font-size: 26px; font-weight: 850; }
+.login-prompt { margin: 0; }
+.login-remember {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 12px; font-size: 11px; color: var(--muted); cursor: pointer;
+}
+.login-notice { text-align: center; margin: 0; }

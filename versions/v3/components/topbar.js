@@ -69,13 +69,31 @@ function renderTopBarMenu() {
   return `
     <div class="topbar-menu-scrim" onclick="topbarToggleMenu()"></div>
     <div class="topbar-menu" role="dialog" aria-label="Menu">
-      <p class="section-title" style="margin:0 0 8px;">Money Buddy</p>
-      <p class="helper" style="margin:0 0 14px;">
-        ${h(state.profile ? state.profile.name : "")} · ${h(state.profile ? state.profile.zip : "")}
+      <p class="section-title" style="margin:0 0 2px;">Money Buddy</p>
+      <p class="helper" style="margin:0 0 16px;">
+        ${h(state.profile ? state.profile.name : "")}${state.profile && state.profile.zip ? " · " + h(state.profile.zip) : ""}
       </p>
-      <button class="button secondary full" type="button" onclick="topbarToggleMenu();navAdminJump('settings')">Settings</button>
-      <p class="helper" style="margin:14px 0 0;font-size:10px;">
-        Prototype build — nothing here is financial advice.
+
+      <div class="row" style="margin-bottom:6px;">
+        <span class="helper">Kibble</span><span style="font-weight:850;">🦴 ${h(state.kibble)}</span>
+      </div>
+      <div class="row" style="margin-bottom:6px;">
+        <span class="helper">Streak</span><span style="font-weight:850;">🔥 ${h(state.streak)} day${state.streak === 1 ? "" : "s"}</span>
+      </div>
+      <div class="row" style="margin-bottom:6px;">
+        <span class="helper">Buddy level</span><span style="font-weight:850;">${h(state.buddyLevel)}</span>
+      </div>
+      <div class="row" style="margin-bottom:16px;">
+        <span class="helper">Journal entries</span><span style="font-weight:850;">${h(state.journalEntries.length)}</span>
+      </div>
+
+      <button class="button secondary full" style="margin-bottom:8px;" type="button"
+              onclick="topbarToggleMenu();navAdminJump('settings')">Settings</button>
+      <button class="button secondary full" type="button"
+              onclick="topbarToggleMenu();navAdminJump('comparison')">Where my money goes</button>
+
+      <p class="helper" style="margin:16px 0 0;font-size:10px;">
+        Prototype build. Nothing here is financial advice.
       </p>
     </div>
   `;

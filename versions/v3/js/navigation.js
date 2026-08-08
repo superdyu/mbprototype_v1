@@ -106,7 +106,12 @@ function taskGo(destination) {
       state.postResultContext = "budget";
     }
   }
+  // Reset the home stack to its root before pushing, so the contract holds
+  // literally: a screen reached from a Home task ALWAYS backs to Home. Tasks
+  // are only tappable at home-stack depth 1 today, but relying on that makes
+  // the guarantee incidental rather than enforced.
   state.nav.activeStack = "home";
+  state.nav.stacks.home = ["home"];
   go(destination);
 }
 

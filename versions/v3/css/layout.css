@@ -348,3 +348,6 @@ h1, h2, h3, .title, .section-title, .journal-total, .budget-row-amt,
   top: var(--topbar-h);   /* keeps the bare back bar; nav is hidden */
   bottom: 0;
 }
+
+/* Login is a full-bleed scene — the bare top bar floats over it. */
+.screen-scroll.login-mode { padding: 0; bottom: 0; }

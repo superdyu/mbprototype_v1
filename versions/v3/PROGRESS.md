@@ -1,11 +1,10 @@
 # v3 Build Progress
 
-**Current state:** **Phase 2.5 COMPLETE — the app is repainted.** Cream/sage/
-apricot/clay, no pure black or white, no red on any app surface. Admin panel and
-phone bezel kept on separate `--chrome-*` tokens so dev tooling stays visually
-outside the product. All 9 text/background pairs clear **AA (≥4.5:1) in both
-light and dark**. Next action: **Phase 3, the daily loop** — onboarding, login,
-home, buddy, chat, streak. — *updated 2026-08-07*
+**Current state:** **Phase 3a COMPLETE** (Phase 3 split — XL). 3a = the
+returning-user loop: login scene (day/night by real local time) → daily-update
+prompt → home with tip banner, buddy stage, four routing tasks → journal.
+45 assertions pass. **Next action: Phase 3b** — onboarding's 8 steps, the trial
+popup, and swapping chat onto `BUDDY_RESPONSES`. — *updated 2026-08-07*
 
 > **Read before touching anything:**
 > 1. `plan.md` §0 — locked decisions **L1–L19**. Do not re-litigate them.
@@ -211,21 +210,31 @@ palette rather than converted.
 - [ ] Trial popup fires immediately after buddy creation. Accept or decline → identical experience afterward (D32)
 - [ ] Lands on home with a 1-day streak and the tester's own ZIP reflected in peer numbers
 
-### Login and home
-- [ ] Login scene, day or night by local time, described placeholder (L15). Animated greeting
-- [ ] Daily update prompt: yes / no + "remember my choice". If checked on first use, say once it's changeable; never mention again
-- [ ] Home top bar (kibble · streak · buddy level · hamburger)
-- [ ] Tip banner — **hard 90-character limit**, puppy icon alongside
-- [ ] Buddy stage: labelled placeholder frame describing breed · fur · eyes · nose · size · current pose (L15)
-- [ ] Idle pose cycle across poses 1, 3, 4, 5 on a 4–6s cadence. Poses 2 and 6 event-driven (chat open, reward). **Stops under `prefers-reduced-motion`**
-- [ ] Four daily tasks, each routing somewhere real and paying kibble
-- [ ] Route map: `money_journal` · `subscription_confirm` → journal @ `q_watched` · `budget` → `aboutMe` · `lesson:<id>`
-- [ ] Hulu task enters the journal **visibly differently** (pre-focused) or it reads as a duplicate of the journal task
+### 3a — Login and home
+- [x] Login scene, day or night by local time, described placeholder (L15). Animated greeting
+      ↳ the day/night **switch is real** (local hour); only the artwork is a described placeholder
+- [x] Daily update prompt: yes / no + "remember my choice". If checked on first use, say once it's changeable; never mention again
+- [x] Home top bar (kibble · streak · buddy level · hamburger) — from 0e's shared bar
+- [x] Tip banner — **hard 90-character limit**, puppy icon alongside
+      ↳ enforced in `renderHomeTip()`, not trusted: a 200-char tip truncates with an ellipsis
+- [x] Buddy stage: labelled placeholder frame describing breed · fur · eyes · nose · size · current pose (L15)
+- [x] Idle pose cycle across poses 1, 3, 4, 5 on a 4–6s cadence. Poses 2 and 6 event-driven. **Stops under `prefers-reduced-motion`**
+      ↳ the tick repaints `#buddyStage` in place rather than calling `render()`, so it cannot steal focus every 5 seconds
+- [x] Four daily tasks, each routing somewhere real and paying kibble
+- [x] Route map: `money_journal` · `subscription_confirm` → journal @ `q_watched` · `budget` → `aboutMe` · `lesson:<id>`
+- [x] Hulu task enters the journal **visibly differently** (pre-focused)
+      ↳ `q_watched` is pinned first AND bypasses its 2-day cooldown
+- [x] Hamburger → half-screen overlay
+- [ ] Streak registers after a completed entry, at the end of the share flow — **Phase 4** (that IS the share flow)
+
+### 3b — Onboarding and chat
+- [ ] Onboarding, 8 steps: name · ZIP · household size · income band · lifestyle wizard · strategic goal · buddy creation · trial popup
+- [ ] Only ZIP, household size, income override the persona (D09)
+- [ ] Buddy creation: **all five attributes** (L18) — the stage already reflects them
+- [ ] Trial popup fires immediately after buddy creation; accept or decline is identical afterward (D32)
 - [ ] Chat with Buddy — keep v2's `chat-router.js` matcher, swap in `BUDDY_RESPONSES`
 - [ ] Opening bubbles + `followUp` chains; bubbles are the primary input path
-- [ ] Two responses have `bubble: null` — treat as keyword-only, no bubble
-- [ ] Hamburger → half-screen overlay
-- [ ] Streak registers after a completed entry, at the end of the share flow
+- [ ] Two responses have `bubble: null` (`advice_deflect`, `catch_all`) — keyword-only, no bubble
 
 ### Assets — no generation (L15)
 - [ ] Buddy, login backgrounds (day/night), kibble bowl all ship as described placeholders

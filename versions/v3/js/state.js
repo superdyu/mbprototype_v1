@@ -17,6 +17,8 @@
 
 const destinations = [
   ["streak",         "Streak Splash"],
+  ["login",          "Login Scene"],
+  ["home",           "Home"],
   ["journalEntry",   "Money Journal"],
   ["journalConfirm", "Journal: Confirm"],
   ["journalDone",    "Journal: Done"],
@@ -62,6 +64,17 @@ const state = {
 
   // Top-bar hamburger overlay
   topbarMenuOpen: false,
+
+  // ── Daily loop ────────────────────────────────────────────────────────────
+  // buddyPose cycles 1/3/4/5 ambiently; 2 and 6 are event-driven (chat, reward).
+  buddyPose: 1,
+  buddyIdleTimer: null,
+  activeTaskId: null,
+  dailyPromptAnswered: false,
+  dailyPromptWatch: null,
+  rememberDailyChoice: false,
+  dailyPromptNoticeSeen: false,
+  dailyPromptNoticeShown: false,
 
   // ── Money Journal ─────────────────────────────────────────────────────────
   // journalSession:   the in-flight entry (null when not writing one)
