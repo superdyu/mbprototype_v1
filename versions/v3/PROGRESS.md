@@ -1,18 +1,52 @@
 # v3 Build Progress
 
-**Current state:** **v3 IS BUILT — phases 0 → 6 complete**, plus the four-theme
-change (L21) that landed after the sweep.
-**Next action: the owner's click-through.** `bash scripts/sweep.sh` passes
-**60/60 with 0 warnings**, but seven items are not machine-checkable and the
-sweep prints them explicitly rather than passing them silently — see below.
-— *updated 2026-08-07*
+**Current state:** **v3 IS BUILT — phases 0 → 6 complete**, plus four themes
+(L21) and three rounds of review fixes. `bash scripts/sweep.sh` → **60 checks,
+0 failed, 0 warnings.** Tree clean at `6cb62ad`.
+— *updated 2026-08-12*
+
+## ▶ RESUME HERE
+
+**Next action is not a code change — it is opening v3 in a browser.**
+
+Nothing in this repo has ever been rendered. Two rounds of fixes (`plan.md`
+§18, §19) reworked **drag interaction** — pointer capture, slider ceilings,
+live readout painting — and no one has watched a slider move. The reasoning
+found a real bug and then a real regression in its own fix, which is some
+evidence it is sound, but it is not observation. The sweep is structurally
+blind here: it asserts a handler *queues a debounced render*; it cannot see a
+thumb.
+
+1. Open `index.html` at the repo root, passcode `1337`, pick **v3 (alpha)**.
+2. **Drag the Dining slider on the Budget tab**, and **drag a journal entry's
+   amount** on the journal confirm screen. Watch for: thumb tracking the
+   pointer smoothly, the figure moving with it, and no snap-back on release.
+   If it stutters or recoils, the mechanism was wrong twice — say so.
+3. Then the rest of the loop: login → daily update → summary → share → home →
+   journal → budget → comparison → a lesson.
+4. Six more items the sweep prints and cannot settle — see §8 of its output.
+
+### Open threads, in priority order
+
+| | |
+|---|---|
+| **Browser click-through** | above. Highest value by a distance |
+| **`6cb62ad` is unreviewed** | the largest of the three commits. Both prior rounds found that fixes introduce defects |
+| **6 of 8 review angles never ran** | `/code-review max` died on a session limit; only "conventions" and "cross-file tracer" completed. Line-by-line, language pitfalls, efficiency and harness correctness never reported |
+| **4 refactor targets** | logged in `plan.md` §18.3, deliberately not fixed — wide diffs the owner should eyeball |
+| **Lesson narration audio** | deferred, not blocked. Every variant plays on the virtual clock; only recorded voice is missing. `scripts/gen-audio.sh` has the pipeline |
+
+Re-running `/code-review max` is worth it, but **after** the browser — a
+rendering finding would change what is worth reviewing.
 
 > **Read before touching anything:**
 > 1. `plan.md` §0 — locked decisions **L1–L21**. Do not re-litigate them.
-> 2. `versions/v3/docs/architecture.md` — cross-cutting contracts.
-> 3. `plan.md` §13 — the session-start protocol.
+> 2. `plan.md` §17–§19 — why the recent work looks the way it does.
+> 3. `versions/v3/docs/architecture.md` — cross-cutting contracts.
+> 4. `plan.md` §13 — the session-start protocol.
 >
-> Spec lives at `v3 Files/spec/` (already unpacked, read-only).
+> Spec lives at `v3 Files/spec/` (already unpacked, read-only, **tracked in
+> git** so it travels with a clone).
 > `docs/DECISIONS.md` beats every other spec doc; `plan.md` §0 beats that where
 > they conflict.
 
