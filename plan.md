@@ -1115,7 +1115,7 @@ behind the state it reports on.
 - **74 of 337 CSS classes are unreferenced (~22%)**, concentrated in
   `budget-tile-*`, `bb-iframe` and `lifestyle-img-*` — residue from Phase 0b,
   where the markup went and the CSS stayed. Biggest cleanup available, in the
-  biggest file (`components.css`, 1,862 lines).
+  biggest file (`components.css`, ~1,870 lines).
 - **`state.budget` is misnamed.** It holds `fixedOverhead` and `debts`; the
   budget is `state.plan`. `state.budget.monthly` has no readers at all. Anyone
   reaching for the obvious name gets debts.
@@ -1136,3 +1136,91 @@ hardcoded hex values in 13,000 lines. The gate is sound.
      `${...}` that is escaped one line later at the output site, and a caller
      analysis that missed onclick handlers and dispatch tables entirely. In a
      codebase where behaviour hides in strings, grep is a lead, not a verdict. -->
+
+---
+
+## 19. Review of §18 — the fixes had their own bugs
+
+`/code-review max` run against `8ea4f79`. Six of eight angles died on a session
+limit; two completed and returned 14 findings. All 14 verified before acting —
+they hold. Scope note: the run reviewed **the last commit only**, not v3.
+
+### 19.1 I repeated the exact defect I was fixing
+
+§18 rewrote `copyAppState()` because it named `budget.status` and
+`budget.wizardInputs`, keys that do not exist. The rewrite then read
+**`state.goals` and `state.tasks`** — which `boot.js` documents as v2's parked
+arrays. v3 uses `state.strategicGoal` / `state.tacticalGoals` /
+`state.dailyTasks`. So the new snapshot reported keys that look authoritative
+and describe nothing on screen: the same defect, one level up.
+
+It also captured `journalSession`, which is null everywhere except mid-journal,
+while the journal data that persists (`state.journal`, `state.journalEntries`)
+went uncaptured — and reduced observations to bare ids, dropping the computed
+figures that are the only quantification of the plan-vs-reported gap.
+
+The parked-name table now sits in a comment directly above `appStateSnapshot()`,
+because the obvious spelling is the dead one and that will catch someone again.
+
+### 19.2 The check written to prove the fix proved nothing
+
+§18's "state snapshot carries the three layers" check built **its own object**
+from `state` and asserted on that. `copyAppState`'s output was never inspected.
+It was a tautology over `bootV3()` — deleting `plan` from the snapshot left it
+green. Now `appStateSnapshot()` is a separate function returning the object, and
+the sweep asserts on what it actually emits, including that the v2 names do
+*not* appear at top level.
+
+### 19.3 The slider fix traded one visible bug for two
+
+Debouncing stopped the dragged element being destroyed, but three of the four
+sliders derive `max` from the value they control (`plan * 2.2`). Undebounced
+that merely churned; debounced it **recoils** — drag 200 → 400 and 400ms later
+the ceiling doubles and the thumb springs back to the same 45% while the number
+reads 400. And because only `render()` painted the figure, the readout was dead
+for the whole gesture.
+
+Fixed properly: `budgetSliderMax()` derives the ceiling from the seeded plan and
+the peer figure, neither of which a drag can move; journal entries freeze a
+`baseAmount` at build time. Each handler paints its own readout directly, so the
+number tracks the thumb while the debounce owns the rest of the repaint.
+
+### 19.4 A 400ms window that could eat a keystroke
+
+`debouncedRender`'s timer was never cleared, so a drag left a repaint pending
+for up to 400ms. Focus a text field inside that window and the queued render
+wipes it — silently, since removing a focused input fires no `change` and every
+non-slider input here commits on `onchange`. The window did not exist before
+§18: with a synchronous render there was never anything pending. `render()` now
+calls `debouncedRenderCancel()` first, so a queued repaint can never land after
+a newer one.
+
+### 19.5 The slider fix shipped with zero coverage
+
+The DOM stub's `setTimeout` discarded its callback, so `debouncedRender()` was a
+no-op under the sweep — and no check called any of the four handlers. A
+misspelled `debouncedRender` would have passed 54/54 and thrown in a browser on
+the first pointer move. The stub now queues timers with a `flushTimers()`, and
+each handler is asserted **individually** to debounce. Checked per handler on
+purpose: an aggregate "something queued" assertion stays green while three
+debounce and the fourth does not.
+
+### 19.6 Two checks that lied about themselves
+
+The duplicate-declaration check appended per occurrence, so a name declared
+twice in **one** file printed as `x.js , x.js — last one wins`, reading as a
+cross-file shadow. It now reports distinct files and labels the scope. And
+`sweep.sh` asserted "§7b cannot catch this" one line from the check where §7b
+does catch it — the missing word was *reference count*.
+
+### 19.7 Stale prose the fix created
+
+"Admin sliders are the exception" survived in three binding docs — root
+`CLAUDE.md`, `versions/v3/CLAUDE.md` (one line above its own correction) and
+`architecture.md` §12 — after product sliders became exceptions too. All three
+now say sliders, and carry the frozen-`max` rule.
+
+<!-- The pattern across §18 and §19 is the same one §16 named: the fix was
+     correct and its surroundings were not revisited. Worth noting that the
+     review agent found this by grepping for the rule it had just seen changed,
+     which is the mechanical version of "grep for the decision's id". -->

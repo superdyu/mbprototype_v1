@@ -45,7 +45,15 @@ var sessionStorage={getItem:function(){return null;},setItem:function(){}};
 var localStorage=sessionStorage;
 var location={href:"",replace:function(){}};
 var alert=function(){},prompt=function(){},confirm=function(){return true;};
-var setTimeout=function(){return 0;},clearTimeout=function(){},setInterval=function(){return 0;},clearInterval=function(){};
+// setTimeout QUEUES rather than discarding, so debounced work can be flushed.
+// It used to be `function(){return 0;}` — which made debouncedRender() a silent
+// no-op and left every slider handler untested: misspell the call and the sweep
+// still passed 54/54 while a browser threw on the first pointer move.
+var __timers=[],__timerId=0;
+var setTimeout=function(fn,ms){__timers.push({id:++__timerId,fn:fn,ms:ms||0});return __timerId;};
+var clearTimeout=function(id){__timers=__timers.filter(function(t){return t.id!==id;});};
+function flushTimers(){var q=__timers;__timers=[];q.forEach(function(t){if(typeof t.fn==="function")t.fn();});return q.length;}
+var setInterval=function(){return 0;},clearInterval=function(){};
 var requestAnimationFrame=function(){return 0;},cancelAnimationFrame=function(){};
 var Audio=function(){return new El("audio");};
 var console={warn:function(){},log:function(){},error:function(){}};
@@ -97,8 +105,9 @@ printf ';\n' >> "$OUT"
 # namespace, so two files declaring the same function name is not an error —
 # the later <script> silently wins and the earlier one becomes unreachable.
 #
-# §7b cannot catch this. A shadowed function is still *referenced*, so its
-# reference count looks healthy; it just never runs. Different query, own check.
+# §7b's REFERENCE COUNT cannot catch this — a shadowed function is still
+# referenced, so its count looks healthy; it just never runs. Hence a separate
+# query, reported under the same §7b heading.
 printf '\nvar __DUPLICATE_DECLS = ' >> "$OUT"
 python3 - "$APP" <<'PY' >> "$OUT"
 import re, sys, glob, json, os, collections
@@ -111,7 +120,17 @@ for rel in order:
     s = open(p, encoding='utf-8').read()
     for m in re.finditer(r'^(?:function\s+([A-Za-z_]\w*)|(?:const|let|var)\s+([A-Za-z_]\w*)\s*=)', s, re.M):
         seen[m.group(1) or m.group(2)].append(rel)
-json.dump([{"name": k, "files": v} for k, v in sorted(seen.items()) if len(v) > 1], sys.stdout)
+# Report DISTINCT files. Appending per-occurrence made a name declared twice in
+# one file print as "x.js , x.js — last one wins", which reads as a cross-file
+# shadow and is a false positive on a check whose whole worth is being trusted.
+# Both are still worth flagging, so `scope` says which it is.
+out = []
+for k, v in sorted(seen.items()):
+    if len(v) < 2: continue
+    files = sorted(set(v))
+    out.append({"name": k, "files": files,
+                "scope": "one file" if len(files) == 1 else "across files"})
+json.dump(out, sys.stdout)
 PY
 printf ';\n' >> "$OUT"
 

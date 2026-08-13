@@ -352,13 +352,73 @@ chk(noTab.length === 0, "every screen maps to a real nav stack", noTab.join(", "
 var adminActionErr = null;
 try { copyAppState(); } catch (e) { adminActionErr = String(e); }
 chk(adminActionErr === null, "copyAppState() runs without throwing", adminActionErr);
+
+// Assert on what appStateSnapshot() ACTUALLY emits. The first version of this
+// check built its own object from `state` and tested that — a tautology over
+// bootV3() that stayed green no matter what the snapshot contained.
 var snap = {};
-try { snap = JSON.parse(JSON.stringify({
-  plan: state.plan, mtd: state.mtd, nav: state.nav, theme: state.settings.colorMode
-})); } catch (e) { /* reported below */ }
-chk(!!(snap.plan && snap.mtd && snap.nav && snap.theme),
-    "state snapshot carries the three layers + nav + theme",
-    "missing: " + ["plan","mtd","nav","theme"].filter(function (k) { return !snap[k]; }).join(", "));
+try { snap = JSON.parse(JSON.stringify(appStateSnapshot())); } catch (e) { adminActionErr = String(e); }
+var WANT = ["plan","mtd","nav","theme","journal","journalEntries","observations",
+            "strategicGoal","tacticalGoals","dailyTasks"];
+var missing = WANT.filter(function (k) {
+  return snap[k] === undefined || snap[k] === null;
+});
+chk(missing.length === 0, "snapshot carries the three layers, goals, tasks and nav",
+    "missing/null: " + missing.join(", "));
+
+// The v2 names are parked and vestigial (boot.js). Reporting them as if they
+// were v3's is the defect this snapshot was rewritten to fix, and it shipped
+// once doing exactly that — so pin the spelling.
+chk(snap.goals === undefined && snap.tasks === undefined,
+    "snapshot does not report v2's parked goals/tasks as v3's",
+    "found top-level: " + ["goals","tasks"].filter(function (k) { return snap[k] !== undefined; }).join(", "));
+chk(!!(snap.legacy && "goals" in snap.legacy && "tasks" in snap.legacy),
+    "v2's parked arrays are still captured, under legacy");
+
+// ── Slider handlers ─────────────────────────────────────────────────────────
+// These had zero coverage: the DOM stub's setTimeout used to discard its
+// callback, so debouncedRender() was a no-op and no test ever called them.
+// A misspelled debouncedRender would have passed the sweep and thrown in a
+// browser on the first pointer move.
+// Checked PER HANDLER, not in aggregate: an "any of them queued" assertion
+// stays green while three handlers debounce and the fourth calls render()
+// directly, which is precisely the regression worth catching.
+state.screen = "aboutMe";
+var SLIDERS = [
+  ["budgetSetPlan",      function () { budgetSetPlan("Dining out", 250, true); }],
+  ["lwAdjust",           function () {
+      state.lifestyleWizard = { preview: { "Dining out": 200 } };
+      lwAdjust("Dining out", 240); }],
+  ["journalAdjustEntry", function () {
+      state.journalSession = { entries: [{ id: "e1", label: "x", category: "Dining out",
+                                           amount: 20, baseAmount: 20 }] };
+      journalAdjustEntry("e1", 35); }],
+  ["lessonSimSet",       function () {
+      state.lessonSim = { values: {} }; lessonSimSet("balance", 4200); }]
+];
+var sliderErr = [], notDebounced = [];
+SLIDERS.forEach(function (pair) {
+  flushTimers();                               // empty the queue first
+  try { pair[1](); } catch (e) { sliderErr.push(pair[0] + ": " + e); return; }
+  if (flushTimers() === 0) notDebounced.push(pair[0]);
+});
+chk(sliderErr.length === 0, SLIDERS.length + " slider handlers run", sliderErr.join("\n          "));
+chk(notDebounced.length === 0, "every slider handler debounces its render",
+    "called render() directly (destroys the dragged element): " + notDebounced.join(", "));
+
+// The non-live path must still repaint immediately — the admin number field
+// shares budgetSetPlan and would otherwise wait 400ms for no reason.
+flushTimers();
+budgetSetPlan("Dining out", 260);
+chk(flushTimers() === 0, "budgetSetPlan without `live` renders immediately");
+
+// The ceiling must not move when the value does, or the thumb recoils on release.
+var maxBefore = budgetSliderMax("Dining out");
+budgetSetPlan("Dining out", 999, true);
+var maxAfter = budgetSliderMax("Dining out");
+budgetSetPlan("Dining out", 250);
+chk(maxBefore === maxAfter, "slider ceiling is stable as the value changes",
+    "max moved " + maxBefore + " -> " + maxAfter + " (thumb would snap back)");
 
 // ─────────────────────────────────────────────────────────────────────────────
 section("7. Data integrity");
@@ -411,9 +471,10 @@ var DEAD_BASELINE = [
 // This is invisible to the count above: a shadowed function is still
 // referenced, it just never runs. It is how chatResetConversation() sat dead in
 // chat-router.js while a second copy in screens/chat.js quietly did less.
-chk(__DUPLICATE_DECLS.length === 0, "no name declared in two files",
+chk(__DUPLICATE_DECLS.length === 0, "no name declared twice",
     __DUPLICATE_DECLS.map(function (d) {
-      return d.name + "  →  " + d.files.join(" , ") + "   (last one wins)";
+      return d.name + "  →  " + d.files.join(" , ") + "   (" + d.scope +
+             "; last one wins for function/var, SyntaxError for const/let)";
     }).join("\n          "));
 
 var deadNames = __UNREFERENCED.map(function (d) { return d.name; });

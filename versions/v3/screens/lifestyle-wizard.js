@@ -95,10 +95,13 @@ function lwBuildPreview() {
 }
 
 // debouncedRender, not render: fires on every pointer move of the slider, and
-// a full render replaces the element being dragged (see budgetSetPlan).
+// a full render replaces the element being dragged (see budgetSetPlan). The
+// readout is painted directly so the figure still tracks during the gesture.
 function lwAdjust(category, amount) {
   const w = state.lifestyleWizard;
   w.preview[category] = Math.max(0, Math.round(Number(amount) || 0));
+  const el = document.getElementById("lwAmt" + CATEGORIES.indexOf(category));
+  if (el) el.textContent = budgetFmt(w.preview[category]);
   debouncedRender();
 }
 
@@ -200,13 +203,17 @@ function renderLifestyleWizardReview() {
 }
 
 // Shared by the wizard review and the Budget tab.
+// max comes from budgetSliderMax(), which is derived from the seeded plan and
+// the peer figure — never from `amount`, which is what the drag changes. A
+// value-derived ceiling moves under the thumb and makes it recoil on release.
 function renderBudgetSliderRow(category, amount, _fmt) {
-  const max = Math.max(Math.ceil((amount || 0) * 2.2), 100);
+  const max = budgetSliderMax(category);
+  const idx = CATEGORIES.indexOf(category);
   return `
     <div class="card budget-row">
       <div class="row" style="align-items:baseline;margin-bottom:6px;">
         <span class="budget-row-name">${h(category)}</span>
-        <span class="budget-row-amt">${budgetFmt(amount || 0)}</span>
+        <span class="budget-row-amt" id="lwAmt${idx}">${budgetFmt(amount || 0)}</span>
       </div>
       <input class="journal-slider" type="range" min="0" max="${max}" step="5"
              value="${amount || 0}"

@@ -61,9 +61,9 @@ moderate + cooks sometimes → `275 × 1.34 × 1.0 = 368.5` → **370**.
 - One global `state`; mutate it then call `render()`. No partial updates.
 - **Always `h()`-escape** anything interpolated into an HTML template literal.
 - **Inputs use `onchange`, not `oninput`** — a full re-render mid-keystroke
-  destroys focus. Admin sliders are the exception, paired with `debouncedRender()`.
+  destroys focus. Sliders are the exception, paired with `debouncedRender()`.
 - **A `type="range"` slider on `oninput` must use `debouncedRender()`, never
-  `render()`.** This applies to product sliders too, not just admin ones.
+  `render()`** — product sliders as much as admin ones.
   `render()` reassigns `.screen`'s innerHTML, destroying the element being
   dragged — the browser's pointer capture dies with the old node and the thumb
   stops tracking. State still updates immediately; only the repaint waits.

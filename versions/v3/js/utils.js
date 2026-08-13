@@ -3,7 +3,10 @@
 //
 //   h(value)          — HTML-escape for safe injection into template strings
 //   scrollTop()       — resets screenRoot scroll position after navigation
-//   debouncedRender() — 400ms debounced render for admin input fields
+//   debouncedRender() — 400ms debounced render. Required for any `type="range"`
+//                       on `oninput` (product sliders included, not just admin
+//                       fields): render() reassigns .screen's innerHTML, which
+//                       destroys the element being dragged.
 //   activeTabFor(screen) — single source of truth for which bottom tab highlights
 //                          on a given screen; used by renderNav() in nav.js
 
@@ -27,12 +30,32 @@ function scrollTop() {
 }
 
 // Debounced render — waits 400ms after the last call before rendering.
-// Used on admin number/text inputs so mid-typing keystrokes don't fire animations
-// on partial values. Select dropdowns still use render() directly (no debounce needed).
+//
+// Two callers, same reason: replacing .screen's innerHTML mid-interaction
+// destroys the element the user is working in.
+//   · admin number/text inputs — so mid-typing keystrokes don't re-render
+//   · any `type="range"` on `oninput` — the dragged node would be replaced and
+//     the browser's pointer capture dies with it (see budgetSetPlan)
+// Select dropdowns still use render() directly (no debounce needed).
 let _debouncedRenderTimer = null;
 function debouncedRender() {
   clearTimeout(_debouncedRenderTimer);
   _debouncedRenderTimer = setTimeout(render, 400);
+}
+
+/**
+ * Drop any render queued by debouncedRender(). Called at the top of render()
+ * so a pending repaint can never land AFTER a newer one.
+ *
+ * Without this, a slider drag leaves a render queued for up to 400ms; if the
+ * user focuses a text input inside that window the queued render wipes the
+ * field mid-keystroke. Removing a focused input from the DOM fires no `change`
+ * event, so the typed value is lost silently — and every non-slider input here
+ * commits on `onchange`.
+ */
+function debouncedRenderCancel() {
+  clearTimeout(_debouncedRenderTimer);
+  _debouncedRenderTimer = null;
 }
 
 // Map a screen name to its active bottom-tab identifier
@@ -41,28 +64,49 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// Copies a diagnostic state snapshot to the clipboard for sharing/debugging.
-// Called from the admin panel "Copy State" button.
-//
-// This dumps the THREE-LAYER model (architecture §5) plus what drives the
-// screens. It used to emit v2's shape — `budget.status` and
-// `budget.wizardInputs`, neither of which exists in v3 (nothing writes them, so
-// JSON.stringify dropped them silently) — and none of v3's own state. A
-// snapshot that cannot see state.plan or state.mtd is no use for diagnosing a
-// prototype whose whole point is the plan-vs-reported gap.
-function copyAppState() {
+/**
+ * The diagnostic state snapshot, as an object. Separate from copyAppState() so
+ * the sweep can assert on what actually gets emitted — a check that rebuilds
+ * its own object from `state` proves nothing about this function.
+ *
+ * ── READ boot.js §"parked v2 names" BEFORE ADDING A KEY ──────────────────────
+ * v2's names survive alongside v3's and several are vestigial. The obvious
+ * spelling is usually the dead one:
+ *
+ *     v3 (live)                        v2 (parked, do NOT report)
+ *     state.dailyTasks                 state.tasks
+ *     state.strategicGoal              state.goals
+ *     state.tacticalGoals
+ *     state.journal / .journalEntries  —
+ *
+ * This shipped once reading `state.goals` and `state.tasks`, which are the v2
+ * arrays no v3 screen renders. That is the same defect it was written to fix —
+ * a snapshot naming keys that look authoritative and describe nothing on
+ * screen — so it is worth the noise of spelling the trap out here.
+ */
+function appStateSnapshot() {
   var s = {
     screen: state.screen,
     nav: state.nav,
     // The three layers, never blurred (architecture §5)
     plan: state.plan,
     planTotal: state.planTotal,
+    planStatus: state.planStatus,
     mtd: state.mtd,
+    // Journal: the SEEDED history and the tester's own submissions, which are
+    // what feed month-to-date (L17). journalSession is the in-flight entry and
+    // is null everywhere except mid-journal, so it is useless on its own.
+    journal: state.journal,
+    journalEntries: state.journalEntries,
     journalSession: state.journalSession,
-    // Derived / display
-    observations: (state.observations || []).map(function (o) { return o.id; }),
-    goals: state.goals,
-    tasks: state.tasks,
+    // Observations carry the computed figures, not just ids — the id says which
+    // observation fired, the figures say what it fired on, and "the dining
+    // number looks wrong" is the report this exists to answer.
+    observations: state.observations,
+    // v3 goals + tasks. NOT state.goals / state.tasks — see the table above.
+    strategicGoal: state.strategicGoal,
+    tacticalGoals: state.tacticalGoals,
+    dailyTasks: state.dailyTasks,
     buddy: state.buddy,
     kibble: state.kibble,
     streak: state.streak,
@@ -70,9 +114,16 @@ function copyAppState() {
     theme: state.settings && state.settings.colorMode,
     // Inherited v2 surfaces still reachable from the admin jump (L14)
     legacy: { debts: state.budget.debts, fixedOverhead: state.budget.fixedOverhead,
+              goals: state.goals, tasks: state.tasks,
               selectedBadge: state.selectedBadge, selectedDebt: state.selectedDebt,
               selectedOffer: state.selectedOffer }
   };
+  return s;
+}
+
+// Copies the snapshot to the clipboard. Admin panel "Copy State" button.
+function copyAppState() {
+  var s = appStateSnapshot();
   navigator.clipboard.writeText(JSON.stringify(s, null, 2))
     .then(function() { alert('State copied to clipboard'); })
     .catch(function() { prompt('Copy this state (Ctrl+A, Ctrl+C):', JSON.stringify(s, null, 2)); });

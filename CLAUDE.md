@@ -165,8 +165,11 @@ they conflict — several spec decisions are deliberately overridden.
   rule (it would shift every screen).
 - **Inputs use `onchange`, not `oninput`.** `oninput` + full re-render destroys
   the focused element mid-keystroke and loses focus/cursor. Commit on blur with
-  `onchange`. (Live-tuning admin sliders are the deliberate exception, paired with
-  `debouncedRender()`.)
+  `onchange`. (**Sliders** are the deliberate exception, paired with
+  `debouncedRender()` — product sliders as much as admin ones. A `type="range"`
+  on `oninput` + `render()` destroys the element being dragged, so the thumb
+  stops tracking the pointer. Also freeze the slider's `max`: deriving it from
+  the value it controls makes the thumb recoil on release.)
 - **Always `h()`-escape** any string interpolated into an HTML template literal.
 
 ## Goals V2 module — **`versions/v2/` only**

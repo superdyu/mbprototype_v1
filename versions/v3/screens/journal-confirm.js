@@ -38,13 +38,13 @@ function renderJournalConfirm() {
           <div class="card journal-entry-card">
             <div class="row" style="align-items:baseline;margin-bottom:2px;">
               <p class="task-title" style="margin:0;">${h(e.label)}</p>
-              <p class="journal-amount">${budgetFmt(e.amount)}</p>
+              <p class="journal-amount" id="jAmt${h(e.id)}">${budgetFmt(e.amount)}</p>
             </div>
             <p class="helper" style="margin:0 0 10px;">
               ${h(e.category)}${e.estimated && !e.adjusted ? " · estimated" : ""}${e.adjusted ? " · adjusted" : ""}
             </p>
             <input class="journal-slider" type="range" min="0"
-                   max="${Math.max(Math.ceil(e.amount * 2.5), 20)}" step="0.5"
+                   max="${Math.max(Math.ceil((e.baseAmount != null ? e.baseAmount : e.amount) * 2.5), 20)}" step="0.5"
                    value="${e.amount}"
                    oninput="journalAdjustEntry('${e.id}', this.value)"
                    aria-label="Adjust ${h(e.label)}">

@@ -595,7 +595,10 @@ Plus, new in v3: a **full-bleed mode class** if the screen hides the nav (§8).
 - **`.item-card` is `display:block`, not flex.** Trailing children drop to their
   own line. Fix per-instance with scoped inline flex; never change the global rule.
 - **Inputs use `onchange`, not `oninput`.** Full re-render on every keystroke
-  destroys focus. Admin sliders are the deliberate exception, paired with
+  destroys focus. **Sliders** are the deliberate exception — product sliders as
+  much as admin ones, because a `type="range"` on `oninput` + `render()`
+  destroys the element being dragged. Freeze the slider's `max` too: a ceiling
+  derived from the value it controls makes the thumb recoil. Paired with
   `debouncedRender()`.
 - **Always `h()`-escape** anything interpolated into an HTML template literal.
 - **Style with CSS variables only**, never hardcoded hex — **all four themes**

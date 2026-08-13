@@ -193,6 +193,10 @@ function journalBuildEntries() {
           // a zeroReason. That money was captured at the supermarket — never ask
           // someone to price a slice of toast.
           amount: typeof opt.estimate === "number" ? opt.estimate : (opt.amount || 0),
+          // Frozen at build time so the confirm slider's ceiling is stable.
+          // Deriving max from `amount` — the thing the slider changes — makes
+          // the ceiling move under the thumb, and it recoils on release.
+          baseAmount: typeof opt.estimate === "number" ? opt.estimate : (opt.amount || 0),
           estimated: typeof opt.estimate === "number",
           zeroReason: opt.zeroReason || null
         });
@@ -247,6 +251,10 @@ function journalAdjustEntry(entryId, amount) {
   if (!e) return;
   e.amount = Math.max(0, Number(amount) || 0);
   e.adjusted = true;
+  // Paint the figure directly so it tracks the thumb; the debounce owns the
+  // rest of the repaint.
+  const el = document.getElementById("jAmt" + e.id);
+  if (el) el.textContent = budgetFmt(e.amount);
   debouncedRender();
 }
 

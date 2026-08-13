@@ -3,7 +3,7 @@
 **Current state:** **v3 IS BUILT — phases 0 → 6 complete**, plus the four-theme
 change (L21) that landed after the sweep.
 **Next action: the owner's click-through.** `bash scripts/sweep.sh` passes
-**54/54 with 0 warnings**, but seven items are not machine-checkable and the
+**60/60 with 0 warnings**, but seven items are not machine-checkable and the
 sweep prints them explicitly rather than passing them silently — see below.
 — *updated 2026-08-07*
 
@@ -396,7 +396,33 @@ Full read of 62 v3 files plus the shared surfaces, ahead of the refactor.
       declarations (§7b's reference count is blind to shadowing — a dead copy is
       still referenced), and a behavioural guard that chat reset restores the
       opening bubbles, written so it fails rather than passes vacuously
-- [x] `bash scripts/sweep.sh` → **54 checks, 0 failed, 0 warnings**
+- [x] `bash scripts/sweep.sh` → 54 checks, 0 failed, 0 warnings
+
+## Review of the review (plan.md §19)
+
+`/code-review max` on `8ea4f79`. 14 findings, all verified, all fixed. **The §18
+fixes had bugs of their own** — worth reading before trusting a green sweep.
+
+- [x] `copyAppState` **repeated the defect it fixed** — read `state.goals` /
+      `state.tasks`, which `boot.js` documents as v2's parked arrays. v3 uses
+      `strategicGoal` / `tacticalGoals` / `dailyTasks`. Also captured the
+      almost-always-null `journalSession` instead of `journal` / `journalEntries`
+- [x] The check written to prove that fix was a **tautology** — it built its own
+      object from `state` and never inspected the snapshot. Split out
+      `appStateSnapshot()`; the sweep now asserts on what is actually emitted
+- [x] Debouncing traded one visible bug for two: sliders derived `max` from the
+      value they control, so the thumb **recoiled** on release, and the readout
+      was dead for the whole drag. `budgetSliderMax()` now derives from the
+      seeded plan + peer figure; handlers paint their own readout
+- [x] `debouncedRender`'s timer was never cleared — a queued repaint could wipe a
+      focused text field up to 400ms later, silently. `render()` cancels first
+- [x] **The slider fix had zero coverage**: the DOM stub's `setTimeout` discarded
+      its callback, so `debouncedRender()` was a no-op. Stub now queues +
+      `flushTimers()`; each handler asserted individually
+- [x] Duplicate-check reported same-file dupes as cross-file shadows; `sweep.sh`
+      claimed "§7b cannot catch this" beside the check that does
+- [x] "Admin sliders are the exception" was stale in **three** binding docs
+- [x] `bash scripts/sweep.sh` → **60 checks, 0 failed, 0 warnings**
 
 ### Refactor targets — logged, deliberately not fixed (wide diffs)
 - [ ] 74 of 337 CSS classes unreferenced (~22%) — Phase 0b residue in `components.css`

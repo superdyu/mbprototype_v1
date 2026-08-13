@@ -61,13 +61,14 @@ function renderBudgetCategoryRow(category) {
   const actual = catValue(state.mtd, category);
   const pct    = plan ? Math.round(((actual - plan) / plan) * 100) : null;
   const over   = pct != null && pct > 0;
-  const max    = Math.max(Math.ceil(plan * 2.2), 100);
+  const max    = budgetSliderMax(category);
+  const idx    = CATEGORIES.indexOf(category);
 
   return `
     <div class="card budget-row">
       <div class="row" style="align-items:baseline;margin-bottom:2px;">
         <span class="budget-row-name">${h(category)}</span>
-        <span class="budget-row-amt">${budgetFmt(plan)}</span>
+        <span class="budget-row-amt" id="planAmt${idx}">${budgetFmt(plan)}</span>
       </div>
       <div class="row" style="align-items:baseline;margin-bottom:6px;">
         <span class="helper" style="font-size:11px;">
@@ -86,6 +87,24 @@ function renderBudgetCategoryRow(category) {
   `;
 }
 
+/**
+ * The slider's ceiling. Derived ONLY from things a drag cannot change — the
+ * seeded plan and the peer benchmark, both stable for the session.
+ *
+ * It used to be `Math.ceil(plan * 2.2)`, i.e. a function of the value the
+ * slider controls. Undebounced that just churned; debounced it recoils — drag
+ * 200 to 400 and 400ms later the re-render doubles the ceiling and the thumb
+ * springs back to the same 45% while the number reads 400. Every drag ended
+ * with the handle jumping.
+ */
+function budgetSliderMax(category) {
+  const seeded = catValue(SEED_STATE.budget.monthly, category) || 0;
+  let peer = 0;
+  try { peer = benchPeerValue(category, benchOptsForUser()) || 0; } catch (e) { peer = 0; }
+  // Round to a 50 grid so the ceiling is a stable, readable number.
+  return Math.max(200, Math.ceil((Math.max(seeded, peer) * 2.2) / 50) * 50);
+}
+
 // Direct slider edits are a tweak, not a rebuild — they do not go through the
 // seam, which exists to gate whole-budget replacement.
 //
@@ -99,7 +118,14 @@ function budgetSetPlan(category, amount, live) {
   state.plan[category] = Math.max(0, Math.round(Number(amount) || 0));
   state.planTotal = catTotal(state.plan);
   observationsRecompute();
-  if (live) debouncedRender(); else render();
+  if (!live) { render(); return; }
+  // Live drag: paint the readout directly so the number tracks the thumb, and
+  // leave the full repaint to the debounce. Deferring everything would freeze
+  // the figure for the whole gesture — the slider would move and nothing else
+  // would, which reads as broken in a different way.
+  const el = document.getElementById("planAmt" + CATEGORIES.indexOf(category));
+  if (el) el.textContent = budgetFmt(state.plan[category]);
+  debouncedRender();
 }
 
 function renderBudgetObservationCards(surface) {

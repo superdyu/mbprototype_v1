@@ -151,6 +151,11 @@ function renderAdmin() {
 }
 
 function render() {
+  // Drop any repaint queued by a slider. Without this, a drag leaves a render
+  // pending for up to 400ms, and if the user focuses a text input inside that
+  // window the queued render wipes it mid-keystroke — silently, because
+  // removing a focused input from the DOM fires no `change`.
+  debouncedRenderCancel();
   const screenRoot = document.getElementById("screenRoot");
   const navRoot    = document.getElementById("navRoot");
   const topbarRoot = document.getElementById("topbarRoot");
