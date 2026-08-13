@@ -31,7 +31,10 @@ All verified against the raw JSON on 2026-08-07.
 - **Cost of living is a two-step lookup** — `zipPrefixes[zip3]` gives a tier
   *name*, then `tiers[name][cat]` gives the multiplier.
 - **Lifestyle is a product across six dimensions**, not one lookup.
-- **`paysRent` keys are the strings `"true"` / `"false"`**, not booleans.
+- **`paysRent` data keys are the strings `"true"` / `"false"` / `"shared"`**,
+  not booleans. The wizard's option values map onto them via `benchLifestyleKey`:
+  rent/mortgage → `"true"` (×1.0), family → `"false"` (×0.22, rent-free),
+  other → `"shared"` (×0.6, the middle housing tier).
   **`commute`'s key for "mostly walk" is `none`.** A missed key silently
   contributes 1.0.
 - **`_note` keys sit alongside real data** in `monthToDateActuals`,

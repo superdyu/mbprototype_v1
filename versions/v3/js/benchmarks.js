@@ -63,15 +63,59 @@ function benchColTierName(zip) {
 }
 
 /**
+ * Is this ZIP's prefix actually modeled, or does it fall through to the
+ * `moderate` default? A12 seeds only CA/AR/NY/VA prefixes — every other ZIP in
+ * the country lands on the fallback. This distinguishes a genuinely-moderate
+ * area from an unmodeled one; both compute the same multiplier, so the tier name
+ * alone cannot tell them apart.
+ */
+function benchZipSupported(zip) {
+  const prefix = String(zip == null ? "" : zip).trim().slice(0, 3);
+  const tier = PEER_BENCHMARKS.colTiers.zipPrefixes[prefix];
+  return typeof tier === "string" && tier.charAt(0) !== "_"
+      && !!PEER_BENCHMARKS.colTiers.tiers[tier];
+}
+
+/**
+ * Single cost-of-living index for a ZIP: the mean of its tier's 12 category
+ * multipliers. The `moderate` tier is 1.0 across the board — the national
+ * baseline — so index 1.0 == national average. Iterate CATEGORIES, never
+ * Object.keys(tier), so the `_note` key never contaminates the mean.
+ * Returns { tierName, index, pct, supported }; pct = round((index - 1) * 100).
+ */
+function benchColIndex(zip) {
+  const tierName = benchColTierName(zip);
+  const tier = PEER_BENCHMARKS.colTiers.tiers[tierName] || {};
+  let sum = 0, n = 0;
+  for (let i = 0; i < CATEGORIES.length; i++) {
+    const v = Number(tier[CATEGORIES[i]]);
+    if (isFinite(v)) { sum += v; n++; }
+  }
+  const index = n ? sum / n : 1;
+  return {
+    tierName,
+    index,
+    pct: Math.round((index - 1) * 100),
+    supported: benchZipSupported(zip)
+  };
+}
+
+/**
  * TRAP 3a — the wizard's answer labels do not all match the data keys, and a
  * missed key silently contributes 1.0 instead of the real multiplier.
- *   paysRent: keys are the STRINGS "true" / "false", not booleans
+ *   paysRent: DATA keys are the STRINGS "true" / "false" / "shared", not
+ *             booleans. Option values map onto them: rent/mortgage → "true"
+ *             (carries full housing), family → "false" (minimal, living
+ *             rent-free), other → "shared" (a middle housing tier).
  *   commute:  "mostly walk" is stored as `none` — the label appears nowhere
  */
 function benchLifestyleKey(dim, value) {
   if (dim === "paysRent") {
-    if (value === true  || value === "yes" || value === "true")  return "true";
-    if (value === false || value === "no"  || value === "false") return "false";
+    if (value === true  || value === "yes" || value === "true"
+        || value === "rent" || value === "mortgage")             return "true";
+    if (value === false || value === "no"  || value === "false"
+        || value === "family")                                   return "false";
+    if (value === "other" || value === "shared")                 return "shared";
     return String(value);
   }
   if (dim === "commute") {

@@ -108,8 +108,9 @@ const PEER_BENCHMARKS =
       "high":     { "Entertainment": 1.55, "Shopping": 1.25 }
     },
     "paysRent": {
-      "true":  { "Housing": 1.0 },
-      "false": { "Housing": 0.22 }
+      "true":   { "Housing": 1.0 },
+      "false":  { "Housing": 0.22 },
+      "shared": { "Housing": 0.6 }
     },
     "commute": {
       "car":     { "Transport": 1.0 },

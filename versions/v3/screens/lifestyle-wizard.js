@@ -12,9 +12,10 @@
 // which is why no question asks for a figure. That is the pitch: you never have
 // to guess at a number.
 
-// The six dimensions, in spec order. `value` is the DATA key, which is not
-// always the label — paysRent keys are the strings "true"/"false", and
-// "mostly walk" is stored as `none`. A missed key silently contributes 1.0.
+// The six dimensions, in spec order. `value` is usually the DATA key, but not
+// always — paysRent values (rent/mortgage/family/other) map to the data keys
+// "true"/"false"/"shared" via benchLifestyleKey, and "mostly walk" is stored as
+// `none`. A value that resolves to no key silently contributes 1.0.
 const LW_QUESTIONS = [
   { dim: "foodie", prompt: "How into food are you?",
     help: "Eating out, good coffee, trying places.",
@@ -37,11 +38,15 @@ const LW_QUESTIONS = [
       { label: "Moderate",  value: "moderate" },
       { label: "A lot",     value: "high" }
     ] },
-  { dim: "paysRent", prompt: "Do you pay rent or a mortgage?",
+  { dim: "paysRent", prompt: "What's your housing setup?",
     help: "Housing is the single biggest swing between households.",
+    // These values are NOT the data keys — benchLifestyleKey maps them:
+    // rent/mortgage → "true", family → "false", other → "shared".
     options: [
-      { label: "Yes", value: "true" },
-      { label: "No",  value: "false" }
+      { label: "Rent",             value: "rent" },
+      { label: "Mortgage",         value: "mortgage" },
+      { label: "Live with family", value: "family" },
+      { label: "Other",            value: "other" }
     ] },
   { dim: "commute", prompt: "How do you get around?",
     help: null,
@@ -236,8 +241,8 @@ function renderLifestyleWizardAdmin() {
           </div>
         </div>
         <p class="helper" style="font-size:10px;">
-          paysRent is "true"/"false" as strings; "mostly walk" is stored as
-          <code>none</code>. A missed key contributes 1.0 silently.
+          paysRent values map to "true"/"false"/"shared"; "mostly walk" is stored
+          as <code>none</code>. A missed key contributes 1.0 silently.
         </p>
         ${w.preview ? `
           <div class="input-group">
