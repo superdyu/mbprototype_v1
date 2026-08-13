@@ -27,6 +27,31 @@ const BUDDY_POSES = [
 
 const BUDDY_IDLE_POSES = BUDDY_POSES.filter(p => p.idle).map(p => p.id);
 
+// ─── Customization options (single source — creator + admin both read these) ──
+// No art (L15): these drive the labelled placeholder and the picker controls.
+// Values may carry underscores/spaces; the stage renders them with _ → space.
+const BUDDY_BREEDS = [
+  "golden_retriever", "corgi", "beagle", "labrador",
+  "poodle", "dachshund", "husky", "shiba_inu"
+];
+const BUDDY_FUR_PATTERNS = ["solid", "patches", "spots", "brindle", "merle", "tuxedo"];
+const BUDDY_FUR_COLORS = ["cream", "golden", "chocolate", "grey", "tan and white", "tricolor"];
+const BUDDY_EYE_COLORS = ["brown", "amber", "blue", "green"];
+
+// value → CSS background for the circular swatches. Multi-tone coats use a
+// gradient so the swatch still reads as that coat.
+const BUDDY_FUR_COLOR_CSS = {
+  "cream":         "#EFE3C6",
+  "golden":        "#D9A441",
+  "chocolate":     "#5A3A22",
+  "grey":          "#9BA1A6",
+  "tan and white": "linear-gradient(90deg,#D9A441 50%,#F2ECDD 50%)",
+  "tricolor":      "linear-gradient(90deg,#3A2A20 33%,#D9A441 33% 66%,#F2ECDD 66%)"
+};
+const BUDDY_EYE_COLOR_CSS = {
+  "brown": "#6B4423", "amber": "#D99B2B", "blue": "#4A90D9", "green": "#4A9D5B"
+};
+
 // 09-design-system: "a small movement every four to six seconds, never
 // constant." Randomised inside that window so the cadence never feels metronomic.
 const BUDDY_IDLE_MIN_MS = 4000;
@@ -72,11 +97,15 @@ function v3PrefersReducedMotion() {
   } catch (e) { return false; }
 }
 
-/** The stage. `opts.compact` shrinks it for surfaces that are not Home. */
+/**
+ * The stage. `opts.compact` shrinks it; `opts.square` makes it a 1:1 tile (used
+ * by the character creator).
+ */
 function renderBuddyStage(opts) {
   const compact = !!(opts && opts.compact);
+  const square  = !!(opts && opts.square);
   return `
-    <div class="buddy-stage ${compact ? "buddy-stage-compact" : ""}">
+    <div class="buddy-stage ${compact ? "buddy-stage-compact" : ""} ${square ? "buddy-stage-square" : ""}">
       <div id="buddyStage" class="buddy-inner">${renderBuddyInner()}</div>
     </div>
   `;
@@ -88,9 +117,10 @@ function renderBuddyInner() {
   const b = state.buddy || {};
   const pose = buddyCurrentPose();
   const breed = String(b.breed || "").replace(/_/g, " ");
+  const coat = [b.furColor && h(b.furColor), b.furPattern && h(b.furPattern)].filter(Boolean).join(" ");
   return `
     <p class="buddy-name">${h(b.name || "Your buddy")}</p>
-    <p class="buddy-desc">${h(breed)}${b.furColor ? " · " + h(b.furColor) + " fur" : ""}</p>
+    <p class="buddy-desc">${h(breed)}${coat ? " · " + coat + " fur" : ""}</p>
     <p class="buddy-desc">${b.eyeColor ? h(b.eyeColor) + " eyes · " : ""}${b.noseColor ? h(b.noseColor) + " nose" : ""}</p>
     <p class="buddy-desc">${h(b.size || "medium")}</p>
     <p class="buddy-pose">${h(pose.name)}</p>
@@ -108,9 +138,10 @@ function buddyDescription() {
 function renderBuddyAdmin() {
   const b = state.buddy || {};
   const fields = [
-    ["breed", ["golden_retriever", "corgi", "beagle"]],
-    ["furColor", ["cream", "golden", "chocolate", "grey", "tan and white", "tricolor"]],
-    ["eyeColor", ["brown", "amber", "blue", "green"]],
+    ["breed", BUDDY_BREEDS],
+    ["furColor", BUDDY_FUR_COLORS],
+    ["furPattern", BUDDY_FUR_PATTERNS],
+    ["eyeColor", BUDDY_EYE_COLORS],
     ["noseColor", ["black", "brown", "pink"]],
     ["size", ["small", "medium", "large"]]
   ];
@@ -118,8 +149,9 @@ function renderBuddyAdmin() {
     <div class="admin-card">
       <p class="admin-card-title">Buddy (placeholder, L15)</p>
       <p class="helper" style="margin-bottom:10px;">
-        All five attributes are live — D40 dropped eyes/nose only because raster
-        sheets cannot recolour, and there are no sheets.
+        All attributes are live — D40 dropped eyes/nose only because raster
+        sheets cannot recolour, and there are no sheets. The creator sets breed,
+        fur colour, pattern, eyes and name; nose and size live here.
       </p>
       <div class="input-group">
         <label>Name</label>
