@@ -68,8 +68,13 @@ function applyBudgetBaseline(baseline) {
   (state.tasks || []).forEach(t => {
     if (t.destination === "lifestyleWizard") t.completed = true;
   });
+  // Route through homeCompleteTask rather than setting the flag directly —
+  // doing it by hand marked the task done but skipped the Charity Points it
+  // pays, so building a budget silently earned nothing.
   (state.dailyTasks || []).forEach(t => {
-    if (t.route === "budget") t.completed = true;
+    if (t.route !== "budget") return;
+    if (typeof homeCompleteTask === "function") homeCompleteTask(t.id);
+    else t.completed = true;
   });
 }
 

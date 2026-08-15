@@ -190,6 +190,17 @@ function journalSetNumber(qid, field, value) {
   const a = state.journalSession.answers;
   if (!a[qid] || typeof a[qid] !== "object") a[qid] = { amount: null, category: null };
   a[qid][field] = field === "amount" ? (value === "" ? null : Number(value)) : value;
+  // Repaint just the footer label. This is the ONE answer setter that must not
+  // call render(): the input commits on blur (onchange), which fires on
+  // pointerdown — a full re-render there destroys the button being pressed and
+  // the click never lands. Painting the label directly is the same trick
+  // journalAdjustEntry uses for its amount readout.
+  const btn = document.getElementById("journalNextBtn");
+  const s = state.journalSession;
+  if (btn && s) {
+    const q = s.questions[s.qIndex];
+    if (q) btn.textContent = journalNextLabel(q, s);
+  }
 }
 
 function journalSetFreeText(value) {
@@ -294,6 +305,12 @@ function journalBuildEntries() {
         label: q.prompt,
         category: ans.category || "Other",
         amount: amt,
+        // Frozen ceiling for the confirm slider, exactly as the multi_select
+        // path does above. Without it, journal-confirm falls back to `amount` —
+        // the value the slider itself changes — so every release recomputed
+        // max = amount × 2.5 and snapped the thumb to 40% of a track that grew
+        // each time. A typed 350 would not stay where it was put.
+        baseAmount: amt,
         estimated: false,
         zeroReason: null
       });
@@ -358,6 +375,16 @@ function journalSubmit() {
   s.questions.forEach(q => { if (!q.alwaysLast) state.journalAsked[q.id] = journalDayIndex(); });
 
   state.journalEntriesCount = (state.journalEntriesCount || 0) + 1;
+
+  // The daily task that sent us here is now done. Without this the Money
+  // Journal task never greyed out on Home and the "n of 3 done" counter never
+  // moved, because homeCompleteTask had exactly one caller in the whole app
+  // (the lesson tail). Keyed off activeTaskId rather than a hardcoded id, since
+  // both the money_journal task and the subscription_confirm deep link land here.
+  if (state.activeTaskId && typeof homeCompleteTask === "function") {
+    homeCompleteTask(state.activeTaskId);
+    state.activeTaskId = null;   // or the next screen still thinks it is in a task
+  }
 
   // D12 — the free text is dropped here, unread. Nothing acknowledges it.
   state.journalSession = null;

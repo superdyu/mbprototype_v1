@@ -191,6 +191,10 @@ function currentOffer() {
 function selectLesson(id) {
   const lesson = state.lessons.find(l => l.id === id);
   if (!lesson) return;
+  // Drop the previous lesson's script, video, quiz and calculator before this
+  // one starts, or it inherits them — see lessonV3ClearSession. A v3 lesson
+  // re-populates them a moment later in lessonOpenPlayer, which runs after this.
+  if (typeof lessonV3ClearSession === "function") lessonV3ClearSession();
   state.currentLesson = lesson;
   // Mark in-progress only if not already completed — a revisit that gets
   // abandoned should not downgrade a completed lesson's status
@@ -333,6 +337,8 @@ function completeLesson() {
   state.activeQuizChoice       = null;
   state.activeQuizWrongChoices = [];
   state.currentLesson          = null;
+  // Same for the v3 side — this is the one funnel every lesson exits through.
+  if (typeof lessonV3ClearSession === "function") lessonV3ClearSession();
 
   go("reward");
 }

@@ -431,11 +431,11 @@ function onbStepBody(key, o) {
         const on = o.improveAreas.indexOf(g) !== -1;
         const dim = !on && atMax;   // greyed once 3 are chosen
         return `
-        <button class="journal-opt onb-check ${on ? "picked" : ""} ${dim ? "onb-check-dim" : ""}" type="button"
+        <button class="journal-opt opt-check ${on ? "picked" : ""} ${dim ? "opt-check-dim" : ""}" type="button"
                 ${dim ? "disabled" : ""}
                 onclick="onbToggleGoal('${h(g).replace(/'/g, "\\'")}')">
           <span class="journal-opt-label">${h(g)}</span>
-          <span class="onb-check-box" aria-hidden="true">${on ? "✓" : ""}</span>
+          <span class="opt-check-box" aria-hidden="true">${on ? "✓" : ""}</span>
         </button>`;
       }).join("")}
     </div>`;
@@ -582,6 +582,11 @@ function onbVideoClearTimer() {
 // Cancel any narration and the fallback timer — on pause or on leaving the step.
 function onbVideoStop() {
   const o = state.onboarding;
+  // Was THIS surface using the shared narration seam? render() calls this on
+  // every render that is not the onboarding video step, and the lesson player
+  // starts its own speech a few lines EARLIER in that same render — so
+  // cancelling unconditionally killed the lesson's voice before it could speak.
+  const wasNarrating = !!(o && o.video && o.video.playing);
   if (o && o.video) {
     o.video.playing = false;
     // A media `ended`/`error` handler or a pending timer can still be queued
@@ -594,7 +599,7 @@ function onbVideoStop() {
   }
   onbVideoClearTimer();
   onbVideoReleaseAudio();
-  narrationCancel();
+  if (wasNarrating) narrationCancel();   // only silence what we started
 }
 
 /** Where gen-audio.sh writes this segment's narration. */

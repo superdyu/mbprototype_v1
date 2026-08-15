@@ -51,14 +51,18 @@ function narrationVoice() {
   if (!voices.length) return null;
   const en = voices.filter(v => /^en(-|_|$)/i.test(v.lang || ""));
   const pool = en.length ? en : voices;
-  // Named voices that sound least like a 1998 screen reader, in preference order.
-  const preferred = ["Samantha", "Google US English", "Microsoft Aria",
-                     "Microsoft Jenny", "Microsoft Zira", "Alex"];
+  // Named voices that sound least like a 1998 screen reader, in preference
+  // order. The Microsoft ones are what a Windows/WSL machine actually ships.
+  const preferred = ["Samantha", "Microsoft Aria", "Microsoft Jenny",
+                     "Microsoft Zira", "Google US English", "Alex"];
   for (const name of preferred) {
     const hit = pool.find(v => (v.name || "").indexOf(name) !== -1);
     if (hit) return hit;
   }
-  return pool.find(v => !v.localService) || pool[0];
+  // Prefer a LOCAL voice. The app runs on file:// with no network at runtime
+  // (D02/D03), so a cloud voice is the one thing guaranteed not to speak —
+  // this previously preferred exactly that.
+  return pool.find(v => v.localService) || pool[0];
 }
 
 /**

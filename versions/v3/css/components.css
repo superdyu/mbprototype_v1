@@ -1871,16 +1871,19 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 }
 .onb-col-text { text-align: left; margin: 0; }
 
-/* Goal step — multi-select checklist (max 3). Checkbox on the right of the
-   .item-card-style option; unselected options dim once the cap is hit. */
-.onb-check-box {
+/* Multi-select checkbox — the shared affordance for "pick as many as apply".
+   A .journal-opt on its own looks identical whether one or many are allowed,
+   so every multi-select in the app carries this box: the onboarding goal step
+   and the Money Journal both use it. `-dim` greys unselected options once a
+   cap is reached (onboarding's max-3). */
+.opt-check-box {
   width: 22px; height: 22px; flex-shrink: 0;
   border: 2px solid var(--line); border-radius: 7px;
   display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 800; color: var(--on-accent);
 }
-.onb-check.picked .onb-check-box { background: var(--accent); border-color: var(--accent); }
-.onb-check-dim { opacity: .5; }
+.opt-check.picked .opt-check-box { background: var(--accent); border-color: var(--accent); }
+.opt-check-dim { opacity: .5; }
 
 /* Character creator (Mii-style) — square live stage + per-element controls. */
 .buddy-stage-square { aspect-ratio: 1 / 1; min-height: 0; border-radius: var(--radius-card); }

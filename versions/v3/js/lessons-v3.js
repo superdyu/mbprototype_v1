@@ -352,6 +352,32 @@ function lessonV3LearnRow(lesson) {
   };
 }
 
+/**
+ * Clear the per-run state a v3 lesson leaves behind.
+ *
+ * These fields had writers and no owner: `lessonOpenPlayer` sets the script,
+ * the storyboard and the variant, the outcome screens set the quiz and the
+ * calculator, and nothing on the shared path ever cleared them. Because
+ * screens/lesson.js falls back through `state.lessonVariantScript ||
+ * LP_SCRIPTS[id]` and gates its video on `state.lessonVisualPlan`, one APR run
+ * left EVERY other lesson playing APR's narration over APR's video — and
+ * `lessonLeaveForQuiz`'s branch on `lessonVariantId` sent them all into the v3
+ * outcome chain, where a stale `lessonFraming.lessonId` handed them APR's quiz
+ * and APR's calculator too.
+ *
+ * `state.lessonProfile` is deliberately NOT cleared: the framing answers are
+ * durable for the prototype's lifetime, so re-opening a lesson does not re-ask
+ * (owner's decision). Only resetUserData() drops those.
+ */
+function lessonV3ClearSession() {
+  state.lessonVariantId     = null;
+  state.lessonVariantScript = null;
+  state.lessonVisualPlan    = null;
+  state.lessonFraming       = null;
+  state.lessonQuiz          = null;
+  state.lessonSim           = null;
+}
+
 /** Append the v3 catalog to state.lessons. Idempotent — safe on re-boot. */
 function lessonV3MergeIntoCatalog() {
   if (typeof LESSONS_V3 === "undefined" || !LESSONS_V3.lessons) return;

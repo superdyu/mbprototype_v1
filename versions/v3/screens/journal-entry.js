@@ -45,12 +45,22 @@ function renderJournalEntry() {
         ${s.qIndex > 0
           ? `<button class="button secondary" type="button" onclick="journalPrev()">Back</button>`
           : `<span></span>`}
-        <button class="button" type="button" onclick="journalNext()">
-          ${journalIsLastQuestion() ? "Review" : (journalAnswered(q, s) ? "Next" : "Skip")}
+        <!-- id lets journalSetNumber repaint the label without a re-render:
+             the amount input commits on blur, and a full render() there would
+             destroy this button before its own click could land. -->
+        <button class="button" type="button" id="journalNextBtn" onclick="journalNext()">
+          ${journalNextLabel(q, s)}
         </button>
       </div>
     </div>
   `;
+}
+
+// "Skip" is a promise that nothing is being recorded, so it must stop saying
+// that the moment the question has an answer.
+function journalNextLabel(q, s) {
+  if (journalIsLastQuestion()) return "Review";
+  return journalAnswered(q, s) ? "Next" : "Skip";
 }
 
 function journalAnswered(q, s) {
@@ -71,13 +81,20 @@ function renderJournalInput(q, s) {
     return `
       <p class="helper" style="margin:0 0 10px;">Pick as many as apply.</p>
       <div class="journal-options">
-        ${journalQuestionOptions(q).map((o, i) => `
-          <button class="journal-opt ${picked.indexOf(i) !== -1 ? "picked" : ""}"
-                  type="button" onclick="journalToggleOption('${q.id}', ${i})">
+        ${journalQuestionOptions(q).map((o, i) => {
+          const on = picked.indexOf(i) !== -1;
+          // The checkbox is the only thing that distinguishes this from a
+          // single_select — the button markup is otherwise identical, so
+          // "pick as many as apply" was a claim the UI never backed up.
+          return `
+          <button class="journal-opt opt-check ${on ? "picked" : ""}"
+                  type="button" role="checkbox" aria-checked="${on ? "true" : "false"}"
+                  onclick="journalToggleOption('${q.id}', ${i})">
             <span class="journal-opt-label">${h(o.label)}</span>
             ${journalOptionHint(q, o)}
-          </button>
-        `).join("")}
+            <span class="opt-check-box" aria-hidden="true">${on ? "✓" : ""}</span>
+          </button>`;
+        }).join("")}
       </div>
     `;
   }
