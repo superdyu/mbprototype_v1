@@ -66,10 +66,12 @@ function renderJournalInput(q, s) {
   // breakfast can be BOTH "ate at home" and "coffee out".
   if (q.type === "multi_select") {
     const picked = Array.isArray(s.answers[q.id]) ? s.answers[q.id] : [];
+    // Options can be derived from an earlier answer (journalQuestionOptions),
+    // so "watch anything?" lists the services this person actually pays for.
     return `
       <p class="helper" style="margin:0 0 10px;">Pick as many as apply.</p>
       <div class="journal-options">
-        ${q.options.map((o, i) => `
+        ${journalQuestionOptions(q).map((o, i) => `
           <button class="journal-opt ${picked.indexOf(i) !== -1 ? "picked" : ""}"
                   type="button" onclick="journalToggleOption('${q.id}', ${i})">
             <span class="journal-opt-label">${h(o.label)}</span>
@@ -84,7 +86,7 @@ function renderJournalInput(q, s) {
     const picked = s.answers[q.id];
     return `
       <div class="journal-options">
-        ${q.options.map((o, i) => `
+        ${journalQuestionOptions(q).map((o, i) => `
           <button class="journal-opt ${picked === i ? "picked" : ""}"
                   type="button" onclick="journalSetSingle('${q.id}', ${i})">
             <span class="journal-opt-label">${h(o.label)}</span>
@@ -153,9 +155,42 @@ function journalOptionHint(q, o) {
   return "";
 }
 
+// The statement-photo question is a DEMAND TEST — nothing uploads and nothing
+// is analysed, so the only output is what people answered. That has to be
+// visible somewhere or the test produces no result.
+function renderJournalDemandAdmin() {
+  const prof = state.journalProfile || {};
+  const log = Array.isArray(prof.statementInterest) ? prof.statementInterest : [];
+  const tally = log.reduce((m, s) => { m[s] = (m[s] || 0) + 1; return m; }, {});
+  const streaming = Array.isArray(prof.streaming) ? prof.streaming : [];
+  const week = Array.isArray(prof.statementWeek) ? prof.statementWeek[0] : null;
+
+  return `
+    <div class="admin-card">
+      <p class="admin-card-title">Setup answers &amp; demand test</p>
+      <div class="helper" style="line-height:1.8;">
+        Pays for: <strong>${streaming.length ? h(streaming.join(", ")) : "—"}</strong>
+        ${streaming.length ? "" : ` <em>(q_watched stays locked until answered)</em>`}<br>
+        Statements arrive: <strong>${week ? h(week) : "—"}</strong>
+        ${week ? "" : ` <em>(q_statement_photo stays locked)</em>`}
+      </div>
+      <div class="input-group" style="margin-top:10px;">
+        <label>Statement-photo appetite (${log.length} answer${log.length === 1 ? "" : "s"})</label>
+        <div class="helper" style="line-height:1.8;">
+          ${log.length
+            ? Object.keys(tally).map(k => `${h(k)} × <strong>${tally[k]}</strong>`).join(" · ")
+            : "Not asked yet."}
+          ${(tally.not_yet || 0) >= 2
+            ? `<br><em>Repeated "not yet" — the stated week may be wrong.</em>` : ""}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderJournalEntryAdmin() {
   const s = state.journalSession;
-  return `
+  return renderJournalDemandAdmin() + `
     <div class="admin-card">
       <p class="admin-card-title">Journal Session</p>
       ${!s ? `<p class="helper">No active session.</p>` : `

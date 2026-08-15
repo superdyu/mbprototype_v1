@@ -144,6 +144,18 @@ const state = {
   // goalEvents:       emitted by q_balance, consumed by Phase 5's goals
   journalSession: null,
   journalAsked: {},
+
+  // journalProfile:   profileKey → the signals answered, for the few questions
+  //                   whose answer has to OUTLIVE the entry. journalAsked
+  //                   records when a question was asked; this records what came
+  //                   back, which is what lets one question unlock another.
+  //                     streaming          → services the user pays for; becomes
+  //                                          the option list for q_watched
+  //                     statementWeek      → roughly when statements arrive
+  //                     statementInterest  → appended, not replaced: the log of
+  //                                          answers to the statement-photo
+  //                                          demand test (L: no upload exists)
+  journalProfile: {},
   journalRecurring: {},
   journalEntriesCount: 0,
   goalEvents: [],
@@ -926,6 +938,10 @@ function resetUserData() {
   state.estimator            = null;
   state.estimatorAsked       = {};
   state.selectedCategory     = null;
+  // Setup answers that unlock follow-ups — without this, a reset leaves the
+  // streaming list and statement week behind and the follow-ups stay unlocked
+  // against questions the user no longer appears to have answered.
+  state.journalProfile       = {};
   // Re-seed from the v3 data files so reset returns to the seeded start state
   // rather than an empty one (D03: refresh does the same thing via the gate).
   bootV3();

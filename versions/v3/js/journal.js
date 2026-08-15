@@ -30,6 +30,59 @@ function journalTriggerFires(q) {
   return false;
 }
 
+// ── Durable answers: setup questions that unlock follow-ups ──────────────────
+// Cooldowns record WHEN a question was asked; this records WHAT was answered,
+// for the handful of questions whose answer has to outlive the entry. Two use
+// it today: which streaming services you pay for (which becomes the option list
+// for "watch anything?"), and roughly when your statements arrive.
+
+/** Signals stored against a profile key, always an array. */
+function journalProfileSignals(key) {
+  if (!key || !state.journalProfile) return [];
+  const v = state.journalProfile[key];
+  return Array.isArray(v) ? v : (v == null ? [] : [v]);
+}
+
+/** Record a question's answers under its profileKey. Latest answer wins. */
+function journalRecordProfile(q, signals) {
+  if (!q || !q.profileKey) return;
+  if (!state.journalProfile) state.journalProfile = {};
+  const key = q.profileKey;
+  // The demand-test question accumulates instead of replacing — the shape of
+  // repeated answers IS the signal ("not yet" three times means something).
+  if (key === "statementInterest") {
+    const log = journalProfileSignals(key).slice();
+    signals.forEach(s => log.push(s));
+    state.journalProfile[key] = log;
+    return;
+  }
+  state.journalProfile[key] = signals.slice();
+}
+
+/** A dependent question stays out of the pool until its setup question lands. */
+function journalDependencyMet(q) {
+  if (!q.dependsOn || !q.dependsOn.profileKey) return true;
+  return journalProfileSignals(q.dependsOn.profileKey).length > 0;
+}
+
+/**
+ * The options to show for a question.
+ *
+ * `optionsFrom` rebuilds the list from a profile key, so "watch anything?" asks
+ * about the services this person actually pays for rather than a fixed list —
+ * that is what makes the Hulu option (and the observation behind it) reachable.
+ * Falls back to the authored options when the profile is empty, so a task
+ * deep-link still shows a usable question.
+ */
+function journalQuestionOptions(q) {
+  if (!q.optionsFrom) return q.options || [];
+  const picked = journalProfileSignals(q.optionsFrom).filter(s => s);
+  if (!picked.length) return q.options || [];
+  const opts = picked.map(name => ({ label: name, signal: name }));
+  opts.push({ label: "None of them", signal: null });
+  return opts;
+}
+
 // "Coffee out five days running" — counted from the seeded history plus any
 // coffee the tester has logged this session. All six seeded days mention it.
 function journalCoffeeRunLength() {
@@ -59,6 +112,7 @@ function journalSelectQuestions(opts) {
 
   const eligible = pool.filter(q => {
     if (q.id === o.focusQuestionId) return true;          // deep-link bypasses cooldown
+    if (!journalDependencyMet(q)) return false;           // setup question not answered yet
     if (q.triggeredBy) return journalTriggerFires(q) && !journalOnCooldown(q);
     return !journalOnCooldown(q);
   });
@@ -176,13 +230,18 @@ function journalBuildEntries() {
   s.questions.forEach(q => {
     const ans = s.answers[q.id];
     if (ans == null) return;
+    // Options may be derived (see journalQuestionOptions), so resolve the same
+    // list the user was actually shown — indexing q.options would mis-map.
+    const opts = journalQuestionOptions(q);
+    const qSignals = [];
 
     if (q.type === "multi_select") {
+      const recordAfter = () => journalRecordProfile(q, qSignals);
       (ans || []).forEach(i => {
-        const opt = q.options[i];
+        const opt = opts[i];
         if (!opt) return;
         // signalOnly questions produce engagement signals, never money.
-        if (q.signalOnly) { if (opt.signal) signals.push(opt.signal); return; }
+        if (q.signalOnly) { if (opt.signal) { signals.push(opt.signal); qSignals.push(opt.signal); } return; }
         if (opt.category == null && !opt.estimate) return;   // "Skipped it" etc.
         entries.push({
           id: generateId("je"),
@@ -201,18 +260,21 @@ function journalBuildEntries() {
           zeroReason: opt.zeroReason || null
         });
       });
+      recordAfter();
       return;
     }
 
     if (q.type === "single_select") {
-      const opt = q.options[ans];
+      const opt = opts[ans];
       if (!opt) return;
+      if (q.signalOnly && opt.signal) { signals.push(opt.signal); qSignals.push(opt.signal); }
       // Pattern follow-up: the answer sets a recurring assumption so future
       // entries pre-fill. TRI-STATE — true | "weekdays" | false. A truthiness
       // check gets "weekdays" wrong.
       if (Object.prototype.hasOwnProperty.call(opt, "setsRecurring")) {
         state.journalRecurring[q.id] = opt.setsRecurring;
       }
+      journalRecordProfile(q, qSignals);
       return;
     }
 
