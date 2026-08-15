@@ -5,21 +5,34 @@
 // js/config.js. Flipping it must not require unwinding anything here.
 //
 //   1 name   2 ZIP   3 household   4 income band
-//   5 lifestyle (a 3-question SUBSET of the budget builder — housing, commute,
-//     travel; food and hobby questions belong to the wizard, not install)
-//   6 strategic goal   7 buddy creation   8 trial popup
+//   5 lifestyle (a 2-question SUBSET of the budget builder — housing, commute;
+//     food/hobby/travel questions belong to the wizard, not install)
+//   6 improvement areas (multi-select)   7 buddy creation
+//   8 intro video (how it works)   9 trial popup
 //
 // PERSONA OVERRIDE (D09): steps 2, 3 and 4 override the hardcoded persona.
 // Everything else falls back to persona.json. If a tester skips a field, the
 // persona value stands — NEVER block progress to collect data.
 
-const ONB_STEPS = ["name", "zip", "household", "income", "lifestyle", "goal", "buddy", "trial"];
+const ONB_STEPS = ["name", "zip", "household", "income", "lifestyle", "goal", "buddy", "video", "trial"];
 
 // Onboarding asks only the install-relevant lifestyle dimensions. The full six
 // live in the standalone lifestyle wizard (LW_QUESTIONS); the dims not asked
 // here keep their persona defaults (D09). Same dims and keys either way, so an
 // answer means the same thing in both places.
 const ONB_LIFESTYLE_DIMS = ["paysRent", "commute"];
+
+// Intro "video" narration — one caption per segment, spoken by live Web Speech
+// and advanced on each utterance's `onend` so text and voice stay in sync (the
+// spec's D04 intent; no recorded asset). Generalised, no figures. Buddy's voice.
+const ONB_VIDEO_SEGMENTS = [
+  "Here's the short version of how this works — no pressure, no jargon.",
+  "Each day I'll ask you a few quick questions about your money. That's your Money Journal.",
+  "Every answer fills in a little more of your picture — what you spend on, what matters to you, where things feel tight.",
+  "The more you tell me, the more your lessons and check-ins shape around your life, not some generic average.",
+  "So the read you get, and the peers I hold you up against, actually fit you.",
+  "That's it. Answer a little each day and I'll handle the rest. Let's get you set up."
+];
 function onbLifestyleQuestions() {
   return LW_QUESTIONS.filter(q => ONB_LIFESTYLE_DIMS.indexOf(q.dim) !== -1);
 }
@@ -56,6 +69,7 @@ function onbStart() {
     step: 0,
     lwIndex: 0,
     buddyIndex: 0,         // sub-step within the character creator
+    video: { index: 0, playing: false, finished: false, timer: null },
     skipPrompt: false,     // name-step "skip this / skip all" confirmation
     name: "",
     zip: "",
@@ -76,6 +90,7 @@ function onbStart() {
 
 function onbNext() {
   const o = state.onboarding;
+  if (ONB_STEPS[o.step] === "video") onbVideoStop();   // silence narration on exit
   // Step 5 is the lifestyle subset — advance within it before moving on.
   if (ONB_STEPS[o.step] === "lifestyle" && o.lwIndex < onbLifestyleQuestions().length - 1) {
     o.lwIndex++; render(); return;
@@ -90,6 +105,7 @@ function onbNext() {
 
 function onbBack() {
   const o = state.onboarding;
+  if (ONB_STEPS[o.step] === "video") onbVideoStop();
   if (ONB_STEPS[o.step] === "lifestyle" && o.lwIndex > 0) { o.lwIndex--; render(); return; }
   if (ONB_STEPS[o.step] === "buddy" && o.buddyIndex > 0) { o.buddyIndex--; render(); return; }
   if (o.step > 0) { o.step--; render(); return; }
@@ -101,6 +117,7 @@ function onbBack() {
 function onbSkip() {
   const o = state.onboarding;
   const key = ONB_STEPS[o.step];
+  if (key === "video") onbVideoStop();
   if (key === "name") { o.skipPrompt = true; render(); return; }
   o.lwIndex = 0;   // skip the entire lifestyle block in one go
   if (o.step < ONB_STEPS.length - 1) { o.step++; render(); return; }
@@ -173,24 +190,13 @@ function onbFinish() {
     setDuringOnboarding: true
   };
 
-  // The wizard's answers produce the starting budget, same as the standalone
-  // builder — straight through the seam, never into state.plan directly (L6).
+  // The budget is NOT built here — the setup wizard is the first thing the
+  // Budget tab shows (spec 04: "the wizard, before the budget exists"). We only
+  // carry the lifestyle answers forward (written above), which pre-fill the
+  // wizard when the tester opens Budget or taps the "Set up your budget" task.
+  // Leaving planStatus empty is what makes renderBudgetEmpty (the wizard door)
+  // appear on first visit.
   state.planStatus = "empty";
-  submitBudgetBaseline({
-    source: "lifestyleWizard",
-    profile: {
-      zip: state.profile.zip,
-      householdSize: state.profile.householdSize,
-      incomeAnnual: state.profile.incomeAnnual
-    },
-    lifestyle: Object.assign({}, o.lifestyle),
-    monthly: benchAllPeerValues({
-      annualIncome: state.profile.incomeAnnual,
-      householdSize: state.profile.householdSize,
-      zip: state.profile.zip,
-      lifestyle: o.lifestyle
-    })
-  });
 
   state.streak = PERSONA.state.streakDaysIfOnboarded;   // 1 day (D06)
   state.onboarding = null;
@@ -265,6 +271,7 @@ function onbAnswered(key, o) {
   if (key === "household") return !!o.householdSize;
   if (key === "income")    return !!o.incomeBand;
   if (key === "goal")      return o.improveAreas.length > 0;
+  if (key === "video")     return true;   // watch or skip — Continue always proceeds
   // Attribute sub-steps always have a default; only naming the buddy is required.
   if (key === "buddy")     return ONB_BUDDY_STEPS[o.buddyIndex] !== "name"
                                   || !!(o.buddy.name && o.buddy.name.trim());
@@ -415,6 +422,8 @@ function onbStepBody(key, o) {
 
   if (key === "buddy") return onbBuddyStep(o);
 
+  if (key === "video") return onbVideoBody(o);
+
   // D32 — the trial popup still appears. Accept or decline, the experience
   // afterward is identical. No paywalls, no gated features anywhere (D31).
   return `
@@ -512,6 +521,113 @@ function onbBuddySwatches(key, options, cssMap, current) {
         </button>`).join("")}
     </div>
     <p class="helper buddy-swatch-label">${current ? h(String(current)) : "&nbsp;"}</p>`;
+}
+
+// ─── Intro video (live Web Speech, captions synced on utterance end) ─────────
+function onbVideoBody(o) {
+  if (!o.video) o.video = { index: 0, playing: false, finished: false, timer: null };
+  const segs = ONB_VIDEO_SEGMENTS;
+  const v = o.video;
+  const seg = segs[v.index] || segs[segs.length - 1];
+  const pct = Math.round(((v.index + (v.finished ? 1 : 0)) / segs.length) * 100);
+  const playLabel = v.playing ? "Pause" : (v.finished ? "Replay" : (v.index === 0 ? "Play" : "Resume"));
+  return `
+    <p class="helper" style="margin:0 0 4px;">How Money Buddy works</p>
+    <h1 class="title" style="font-size:20px;margin:0 0 12px;">A quick hello before we start</h1>
+    <div class="onb-video">
+      ${renderBuddyStage({ square: true })}
+      <p class="onb-video-caption">${h(seg)}</p>
+      <div class="onb-video-progress" aria-hidden="true"><span style="width:${pct}%;"></span></div>
+      <div class="onb-video-controls">
+        <button class="button secondary" type="button" onclick="onbVideoRestart()">Restart</button>
+        <button class="button" type="button" onclick="${v.playing ? "onbVideoPause()" : "onbVideoPlay()"}">${playLabel}</button>
+      </div>
+    </div>`;
+}
+
+function onbVideoSegMs(seg) {
+  const words = String(seg || "").trim().split(/\s+/).length;
+  // Same narration pace as the daily update (DU_WPM, architecture §10) so
+  // retuning it moves both surfaces. Floor 1.6s so a two-word line still reads.
+  const wpm = (typeof DU_WPM !== "undefined" && DU_WPM) || 165;
+  return Math.max(1600, Math.round((words / wpm) * 60000));
+}
+
+function onbVideoClearTimer() {
+  const o = state.onboarding;
+  if (o && o.video && o.video.timer) { clearTimeout(o.video.timer); o.video.timer = null; }
+}
+
+// Cancel any narration and the fallback timer — on pause or on leaving the step.
+function onbVideoStop() {
+  const o = state.onboarding;
+  if (o && o.video) o.video.playing = false;
+  onbVideoClearTimer();
+  try { if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
+}
+
+// Speak the current segment. Live Web Speech fires onend for spoken utterances
+// (unlike recorded audio), so the caption advances exactly when the voice does.
+// No speech (unsupported / reduced motion / blocked) → a word-count timer keeps
+// the captions moving silently.
+function onbVideoSpeak() {
+  const o = state.onboarding;
+  if (!o || !o.video || !o.video.playing) return;
+  onbVideoClearTimer();
+  const seg = ONB_VIDEO_SEGMENTS[o.video.index];
+  if (!seg) { onbVideoFinish(); return; }
+  const ms = onbVideoSegMs(seg);
+  const synth = (typeof window !== "undefined") ? window.speechSynthesis : null;
+  const canSpeak = synth && typeof SpeechSynthesisUtterance !== "undefined" && !v3PrefersReducedMotion();
+  if (canSpeak) {
+    try {
+      synth.cancel();
+      const u = new SpeechSynthesisUtterance(seg);
+      u.rate = 1; u.pitch = 1;
+      u.onend = onbVideoAdvance;
+      u.onerror = function () { o.video.timer = setTimeout(onbVideoAdvance, ms); };
+      synth.speak(u);
+      return;
+    } catch (e) { /* fall through to the timer */ }
+  }
+  o.video.timer = setTimeout(onbVideoAdvance, ms);
+}
+
+function onbVideoAdvance() {
+  const o = state.onboarding;
+  if (!o || !o.video || !o.video.playing) return;
+  if (o.video.index >= ONB_VIDEO_SEGMENTS.length - 1) { onbVideoFinish(); return; }
+  o.video.index++;
+  render();
+  onbVideoSpeak();
+}
+
+function onbVideoFinish() {
+  const o = state.onboarding;
+  onbVideoStop();
+  if (o && o.video) o.video.finished = true;
+  render();
+}
+
+function onbVideoPlay() {
+  const o = state.onboarding;
+  if (!o.video) o.video = { index: 0, playing: false, finished: false, timer: null };
+  if (o.video.finished) { o.video.index = 0; o.video.finished = false; }
+  o.video.playing = true;
+  render();
+  onbVideoSpeak();
+}
+
+function onbVideoPause() {
+  onbVideoStop();
+  render();
+}
+
+function onbVideoRestart() {
+  const o = state.onboarding;
+  onbVideoStop();
+  o.video = { index: 0, playing: false, finished: false, timer: null };
+  onbVideoPlay();
 }
 
 function onbTrial(accepted) {

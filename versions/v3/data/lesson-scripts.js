@@ -27,70 +27,81 @@
 const LESSON_SCRIPTS = {
 
   // ── APR ────────────────────────────────────────────────────────────────────
-  // apr_v1 · high_apr · emphasis: cost_of_carrying
-  apr_v1: [
-    "So your card is over 25%. That is worth sitting with for a second.",
-    "At that rate, a balance you carry for a year costs about a quarter of itself again.",
-    "Say you owe a thousand. Left alone for twelve months, that becomes roughly twelve hundred and fifty.",
-    "The card did not do anything unusual. That is simply what the number means.",
-    "Interest is charged on what is left after each payment, so a balance that barely moves keeps costing the same each month.",
-    "That is the part people find surprising — not the rate itself, but how little a minimum payment changes it.",
-    "You now know what your rate is doing. What you do with that is entirely yours."
+  // Bucketed by the inferred rate vs the market average (lessons-v3.js). The
+  // AUDIO stays GENERAL — "well below", "a little above", never their exact
+  // rate; the specific figure and the gap are shown in the staging visuals
+  // (lessonVisualPlan), not spoken. No advice (D26/L20). ~7 lines each, in range.
+
+  // The first four lines are shared across the buckets on purpose: they run over
+  // the shared spine of the video (the card, the rate, the scale), so the
+  // narration and the picture stay in step. Lines five and six land on the
+  // bucket beat, and seven closes over the settle frame.
+
+  // apr_deeply_below · bucket: deeply_below
+  apr_deeply_below: [
+    "Hey there buddies, let's take a look at the card you use most.",
+    "That figure on screen is its APR — the yearly cost of borrowing on it.",
+    "It is not charged once a year. It gets divided down and applied to whatever balance is still there each month.",
+    "Here is where your rate sits, against the range for cards like yours and against what is typical.",
+    "Yours lands well below the middle, which is a genuinely comfortable place to be.",
+    "At a rate this low, a balance that lingers builds up far more slowly than it would for most people.",
+    "That is where you stand, and it is a good spot to be standing in."
   ],
 
-  // apr_v2 · mid_apr, low_apr · emphasis: mechanics
-  apr_v2: [
-    "Your rate is in the range most cards sit in, so this is a good moment to look at how it actually works.",
-    "APR is the yearly cost of borrowing, quoted as a percentage of what you owe.",
-    "It is not charged once a year, though. It is divided down and applied to your balance every month.",
-    "That is why the timing matters more than the headline number.",
-    "If you clear the balance before the statement is due, most cards charge nothing at all.",
-    "If any of it stays, interest starts on the part that stayed, and then on that interest.",
-    "So the rate tells you the price. Whether you ever pay it depends on what is left at the end of the month."
+  // apr_slightly_below · bucket: slightly_below
+  apr_slightly_below: [
+    "Hey there buddies, let's take a look at the card you use most.",
+    "That figure on screen is its APR — the yearly cost of borrowing on it.",
+    "It is not charged once a year. It gets divided down and applied to whatever balance is still there each month.",
+    "Here is where your rate sits, against the range for cards like yours and against what is typical.",
+    "Yours comes in a little under the middle, which quietly works in your favour.",
+    "A slightly lower rate means anything you carry adds up a touch slower than it would elsewhere.",
+    "A small edge, but a real one — and now you know it is there."
   ],
 
-  // apr_v3 · carries_balance, sometimes_balance · emphasis: compounding
-  apr_v3: [
-    "You mentioned a balance sometimes rolls over. That is the situation where interest gets interesting.",
-    "Here is the mechanism. Interest is added to what you owe, and next month's interest is worked out on the new, larger figure.",
-    "That is compounding. It is the same thing that makes savings grow, running in the other direction.",
-    "In the first month or two it is small enough to ignore. Over a year it stops being small.",
-    "The lever is not the rate — you rarely control that. It is how much stays on the card after each payment.",
-    "A balance that drops steadily costs a fraction of one that hovers.",
-    "That is the whole mechanic. No trick to it."
+  // apr_about_average · bucket: about_average
+  apr_about_average: [
+    "Hey there buddies, let's take a look at the card you use most.",
+    "That figure on screen is its APR — the yearly cost of borrowing on it.",
+    "It is not charged once a year. It gets divided down and applied to whatever balance is still there each month.",
+    "Here is where your rate sits, against the range for cards like yours and against what is typical.",
+    "Yours lands right about the middle — the same place most cards sit.",
+    "Clear the balance in time and, on most cards, none of it costs anything. Leave some, and interest starts on the part that stayed.",
+    "So the rate sets the price, and what is left at the end of the month decides whether you pay it."
   ],
 
-  // apr_v4 · pays_full · emphasis: why_it_still_matters
-  apr_v4: [
-    "You clear it every month, so interest is not currently costing you anything. That is genuinely the hard part done.",
-    "It is still worth knowing what the rate is, for two reasons.",
-    "The first is that circumstances change. A month you cannot clear it is exactly when the number starts to matter.",
-    "The second is that the same mechanic shows up everywhere — car finance, a mortgage, buy now pay later.",
-    "The rate on any of those is answering the same question: what does it cost to not pay this yet.",
-    "Knowing your card's number gives you something to compare the others against.",
-    "You are already ahead of where most of this lesson is aimed."
+  // apr_slightly_above · bucket: slightly_above
+  apr_slightly_above: [
+    "Hey there buddies, let's take a look at the card you use most.",
+    "That figure on screen is its APR — the yearly cost of borrowing on it.",
+    "It is not charged once a year. It gets divided down and applied to whatever balance is still there each month.",
+    "Here is where your rate sits, against the range for cards like yours and against what is typical.",
+    "Yours runs a little above the middle — not alarming, but worth knowing about.",
+    "A bit above typical means a balance that lingers costs a little more, and next month's interest is worked out on the larger figure.",
+    "That is the whole mechanic. Nothing hidden in it, and now it is not a mystery either."
   ],
 
-  // apr_v5 · no_debt, nocard · emphasis: before_you_borrow
-  apr_v5: [
-    "No card and nothing outstanding, so this one is about what to look for later rather than what to fix now.",
-    "APR is the yearly cost of borrowing money, written as a percentage.",
-    "When you see it on an offer, it is telling you what carrying that debt costs over a year.",
-    "The number is worked out monthly, on whatever is still owed.",
-    "Two offers can look similar and behave very differently once you carry a balance across months.",
-    "The rate is the part that tells you which is which.",
-    "Nothing to act on today. It is just a number that will show up eventually, and now you know what it means."
+  // apr_deeply_above · bucket: deeply_above
+  apr_deeply_above: [
+    "Hey there buddies, let's take a look at the card you use most.",
+    "That figure on screen is its APR — the yearly cost of borrowing on it.",
+    "It is not charged once a year. It gets divided down and applied to whatever balance is still there each month.",
+    "Here is where your rate sits, against the range for cards like yours and against what is typical.",
+    "Yours sits well above the middle, and that is worth sitting with for a second.",
+    "Up here, anything left on the card builds faster, and next month's interest is worked out on the bigger number — that is compounding.",
+    "The card is not doing anything unusual; that is simply what a high rate means. Now you know where yours stands."
   ],
 
-  // apr_default · fallback, also every "I don't know" path · emphasis: mechanics
+  // apr_default · fallback — no card, or nothing to point at. Plays with the
+  // waveform rather than the video, since there is no figure to draw.
   apr_default: [
-    "Not knowing your rate is completely normal — it is buried in a statement almost nobody reads.",
-    "APR is the yearly cost of borrowing, quoted as a percentage of what you owe.",
-    "It is applied a bit at a time, each month, on whatever balance is still there.",
-    "Clear the balance and it usually costs nothing. Leave some, and interest starts on the part that stayed.",
-    "Then next month's interest is worked out on the slightly larger figure. That is compounding.",
-    "The rate is on your statement and in your banking app, usually near the bottom.",
-    "Worth a look at some point, so the number is not a mystery."
+    "Hey there buddies, let's talk about APR — we will keep it general, since there is no particular card in front of us.",
+    "APR is the yearly cost of borrowing, written as a percentage of what you owe.",
+    "It is not charged once a year. It gets divided down and applied to whatever balance is still there each month.",
+    "Clear the balance in time and, on most cards, it costs nothing at all.",
+    "Leave some, and interest starts on the part that stayed — and then on that interest.",
+    "That last part is compounding, and it is the bit people find surprising.",
+    "Nothing to act on this second. It is a number that will turn up eventually, and now you know what it is saying."
   ],
 
   // ── EMERGENCY FUND ─────────────────────────────────────────────────────────

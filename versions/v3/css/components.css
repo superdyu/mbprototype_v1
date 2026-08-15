@@ -172,6 +172,29 @@
   height: 100%;
 }
 
+/* ── Banner ──
+   Back control and the lesson title, above the stage. The stage keeps its own
+   height, so the banner takes its space from .lp-subtitle (flex: 1). */
+.lp-banner {
+  flex: 0 0 auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 10px 56px;
+  background: var(--accent);
+}
+.lp-banner-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 850;
+  letter-spacing: -.02em;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--on-dark);
+}
+
 /* ── Stage ── */
 .lp-stage {
   flex: 0 0 42%;
@@ -184,6 +207,10 @@
   padding: 24px 20px;
   position: relative;
 }
+
+/* Video mode: the animation owns the whole stage, edge to edge. */
+.lp-stage-video { padding: 4px 10px 12px; gap: 0; }
+.lp-hyperframes { width: 100%; height: 100%; display: block; }
 
 .lp-stage-title {
   font-size: 22px;
@@ -314,14 +341,23 @@
   min-width: 30px;
 }
 
-/* Progress track */
+/* Progress track — also the scrubber. */
 .lp-progress {
   flex: 1;
   height: 6px;
   background: var(--progress-bg);
   border-radius: 999px;
-  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  touch-action: none;          /* the drag is ours, not the browser's scroll */
 }
+/* Invisible grab area, so a 6px bar is still a comfortable target. */
+.lp-progress::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: -15px; bottom: -15px;
+}
+.lp-progress:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; }
 
 .lp-progress-fill {
   height: 100%;
@@ -331,6 +367,23 @@
      bar reads as continuous motion rather than 10 discrete steps per second. */
   transition: width 0.12s linear;
 }
+
+.lp-progress-knob {
+  position: absolute;
+  top: 50%;
+  width: 14px; height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--screen);
+  transform: translateY(-50%);
+  transition: left 0.12s linear;
+  pointer-events: none;
+}
+
+/* While dragging, the smoothing transition would trail the finger. */
+.lp-progress.scrubbing .lp-progress-fill,
+.lp-progress.scrubbing .lp-progress-knob { transition: none; }
 
 /* Cards */
 .card {
@@ -1481,6 +1534,19 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .budget-row { margin-bottom: 8px; padding: 12px 14px; }
 .budget-row-name { font-size: 14px; font-weight: 700; }
 .budget-row-amt  { font-size: 15px; font-weight: 850; }
+/* Tappable category header → detail. The name button carries the label; the
+   chevron is a second, obvious tap target. Neither overlaps the slider below. */
+.budget-row-head { gap: 8px; }
+.budget-row-open {
+  flex: 1; min-width: 0; text-align: left;
+  background: none; border: none; padding: 0; margin: 0;
+  color: inherit; cursor: pointer;
+}
+.budget-row-chev {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 20px; line-height: 1; padding: 0 2px;
+}
+.budget-row-chev:hover { color: var(--accent); }
 
 /* Plan-vs-take-home fill. Uses --warn when the plan exceeds income. */
 .budget-bar {
@@ -1564,6 +1630,12 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-soft);
 }
+
+/* The base .item-card paints with the chrome (frame) palette, which is fixed
+   white in every theme — a bright block on a dark screen. Inside the screen it
+   must follow the active theme, so it blends in all four. */
+.screen .item-card { background: var(--soft); border-color: var(--line); }
+.screen .item-card:hover { background: var(--accent-soft); }
 
 .screen .button {
   border-radius: var(--radius-button);
@@ -1680,6 +1752,22 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .buddy-note { margin: 6px 0 0; font-size: 9px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink); opacity: .42; }
 
 /* ─── Home ────────────────────────────────────────────────────────────────── */
+/* Square dog stage with the chat button overhanging its bottom edge (v2 look).
+   The wrapper anchors the absolute button; the bottom margin is the overhang's
+   room. The stage's own margin is zeroed here so the overhang measures cleanly. */
+.home-stage-wrap { position: relative; margin-bottom: 40px; }
+.home-stage-wrap .buddy-stage { margin-bottom: 0; }
+.home-chat-btn {
+  position: absolute;
+  bottom: -20px; left: 50%; transform: translateX(-50%);
+  background: var(--card); color: var(--text);
+  border: 1px solid var(--line); border-radius: var(--radius-pill);
+  padding: 12px 26px; font-size: 15px; font-weight: 850;
+  white-space: nowrap; cursor: pointer; box-shadow: var(--shadow-soft);
+}
+.home-chat-btn:hover  { background: var(--soft); }
+.home-chat-btn:active { opacity: .86; }
+
 .home-tip { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; }
 .home-tip-icon { font-size: 16px; line-height: 1.3; flex-shrink: 0; }
 .home-tip-text { margin: 0; font-size: 13px; line-height: 1.45; }
@@ -1831,6 +1919,22 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   text-align: center; text-transform: capitalize;
   margin: 10px 0 0; min-height: 16px; font-weight: 700;
 }
+
+/* Intro "video" — captioned narration synced to live Web Speech. */
+.onb-video { display: flex; flex-direction: column; gap: 12px; }
+.onb-video-caption {
+  font-size: 15px; line-height: 1.5; color: var(--text);
+  min-height: 68px; margin: 0;
+}
+.onb-video-progress {
+  height: 4px; background: var(--progress-bg); border-radius: 99px; overflow: hidden;
+}
+.onb-video-progress > span {
+  display: block; height: 100%; background: var(--accent);
+  transition: width var(--dur) var(--ease);
+}
+.onb-video-controls { display: flex; gap: 10px; }
+.onb-video-controls .button { flex: 1; }
 
 .onb-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
 .onb-swatch {

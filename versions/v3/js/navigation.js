@@ -150,6 +150,12 @@ function currentBadge() {
 }
 
 
+function goToCategory(category) {
+  if (!isCategory(category)) return;
+  state.selectedCategory = category;
+  go("budgetCategory");
+}
+
 function goMyDebts(editId) {
   state.selectedDebt = editId || null;
   go("myDebts");

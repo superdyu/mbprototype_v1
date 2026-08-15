@@ -95,7 +95,7 @@ function renderGoalCardV3(goal) {
  * meaningful action — pass a context so the suggestions are scoped to it.
  * "Create your own" is ALWAYS last (05-goals).
  */
-function renderGoalSuggestions(context) {
+function renderGoalSuggestions(context, title) {
   if (goalsAtCapacity()) {
     return `
       <div class="card" style="margin-top:14px;">
@@ -111,10 +111,20 @@ function renderGoalSuggestions(context) {
   // onclick attribute is a quoting bug waiting to happen.
   const sugs = goalsSuggestFor(context || {});
   state.goalSuggestions = sugs;
+  // No journal data for this category yet → a goal has nothing to measure
+  // against, so offer the behavioral estimator first (a set of quick questions
+  // that triangulates where the month is at).
+  const cat = context && context.category;
+  const noData = cat && catValue(state.mtd, cat) === 0 &&
+                 typeof estimatorHasQuestions === "function" && estimatorHasQuestions(cat);
   return `
     <div class="card" style="margin-top:14px;">
-      <p class="task-title" style="margin:0 0 8px;">Want to track something?</p>
+      <p class="task-title" style="margin:0 0 8px;">${h(title || "Want to track something?")}</p>
       <div class="journal-options">
+        ${noData ? `
+          <button class="journal-opt" type="button" onclick="estimatorStart('${h(cat).replace(/'/g, "\\'")}')">
+            <span class="journal-opt-label">First, estimate your ${h(cat.toLowerCase())} spend</span>
+          </button>` : ""}
         ${sugs.map((s, i) => `
           <button class="journal-opt" type="button" onclick="goalsAddSuggestedAt(${i})">
             <span class="journal-opt-label">${h(s.label)}</span>

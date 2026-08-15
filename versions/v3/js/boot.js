@@ -31,9 +31,12 @@ function bootV3() {
   state.buddy = v3Clone(PERSONA.buddy);
 
   // ── Engagement counters (display-only, L16) ────────────────────────────────
-  // Kibble accrues and shows; nothing spends it. Buddy level is a shown number
-  // with no progression rule. Every kibble sink is on the spec's deferred list.
+  // Charity Points accrue and show; nothing spends them. Two non-converting
+  // tiers: bones (state.kibble internally — the free/ad tier, accrues from
+  // tasks) and diamonds (subscriber tier, seeded and shown, no accrual rule for
+  // now). Buddy level is a shown number with no progression rule.
   state.kibble = PERSONA.state.kibbleBalance;
+  state.charityDiamonds = PERSONA.state.diamondBalance || 0;
   state.buddyLevel = PERSONA.state.buddyLevel;
 
   // D06/D07 — the only thing SKIP_ONBOARDING changes at boot.

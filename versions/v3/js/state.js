@@ -49,6 +49,8 @@ const destinations = [
   // Phase 6 sweep checks this list against every routable screen, so a screen
   // that drops out is a visible warning rather than a quiet orphan.
   ["comparison",     "Where it's going"],
+  ["budgetCategory", "Budget — one category"],
+  ["spendEstimator", "Spend estimator"],
   ["goals",          "Goals"],
   ["chat",           "Chat with Buddy"],
   ["budgetUpdateConfirm", "Budget: Update Confirm"],
@@ -120,6 +122,12 @@ const state = {
   lessonFraming: null,
   lessonVariantId: null,
   lessonVariantScript: null,
+  // Per-lesson framing result for THIS session (answers, inferred figure,
+  // bucket, chosen variant). Skips re-asking on re-entry; cleared on refresh
+  // (D03 — in-memory only, no persistent cooldown).
+  lessonProfile: {},
+  // Parked hyperframe plan + runtime figures for the later staging-area video.
+  lessonVisualPlan: null,
   lessonQuiz: null,
   lessonSim: null,
   lessonReward: null,
@@ -140,6 +148,14 @@ const state = {
   journalEntriesCount: 0,
   goalEvents: [],
 
+  // ── Spend estimator (behavioral, extends the journal) ─────────────────────
+  // estimator:       the in-flight category estimate (null when not running)
+  // estimatorAsked:  question id → day last asked, so a behavioral question is
+  //                  not re-asked the same day (shares the journal's day clock)
+  estimator: null,
+  estimatorAsked: {},
+  selectedCategory: null,
+
   // ── Plan (12-category budget) ─────────────────────────────────────────────
   // "empty" until a builder saves through the seam. v2's state.budget is
   // vestigial and read only by my-progress until Phase 2b moves it.
@@ -156,7 +172,10 @@ const state = {
   // an animated waveform that does not correspond to the audio is decoration
   // pretending to be a visualisation. "waveform" remains as the non-default
   // admin option.
-  lpStageStyle: "clean",
+  // Lesson staging area: "video" (hyperframes, the default), "waveform" or
+  // "clean". Video needs a storyboard and a personalized figure; without them
+  // the player falls back to the waveform on its own.
+  lpStageStyle: "video",
 
   // ── Lesson playback session state ─────────────────────────────────────────
   // All playback variables consolidated here so navigation resets them cleanly
@@ -174,7 +193,8 @@ const state = {
     currentLessonId: null,
     pendingAutoPlay: false,
     timer:           null,
-    speed:           1
+    speed:           1,
+    scrubWasPlaying: false   // was it playing when the scrub started? resume after
   },
 
   // Theme — picked from the admin panel, resets on page refresh (D03: no
@@ -887,8 +907,19 @@ function resetUserData() {
   state.monthlyUpdateGap     = null;
   state.editingGoalId        = null;
   state.pendingBaseline      = null;
-  state.lessonPlayback       = { sentences: [], cues: [], total: 0, elapsed: 0, lastTick: 0, index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1 };
+  state.lessonPlayback       = { sentences: [], cues: [], total: 0, elapsed: 0, lastTick: 0, index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1, scrubWasPlaying: false };
   state.chat                 = { messages: [], bubbles: [] };
+  // Lesson framing answers and the derived visual plan. Without these a reset
+  // re-seeds the figures but the lesson never re-asks its framing questions.
+  state.lessonFraming        = null;
+  state.lessonProfile        = {};
+  state.lessonVisualPlan     = null;
+  // Estimator cooldowns are keyed to the day clock, which bootV3() re-seeds —
+  // leaving them behind makes every category open on "All caught up" with no
+  // data behind it.
+  state.estimator            = null;
+  state.estimatorAsked       = {};
+  state.selectedCategory     = null;
   // Re-seed from the v3 data files so reset returns to the seeded start state
   // rather than an empty one (D03: refresh does the same thing via the gate).
   bootV3();

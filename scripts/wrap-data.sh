@@ -27,6 +27,8 @@ global_for() {
     persona)           echo "PERSONA" ;;
     seed-state)        echo "SEED_STATE" ;;
     journal-questions) echo "JOURNAL_QUESTIONS" ;;
+    estimator-questions) echo "ESTIMATOR_QUESTIONS" ;;
+    card-apr)          echo "CARD_APR" ;;
     peer-benchmarks)   echo "PEER_BENCHMARKS" ;;
     daily-scripts)     echo "DAILY_SCRIPTS" ;;
     buddy-responses)   echo "BUDDY_RESPONSES" ;;

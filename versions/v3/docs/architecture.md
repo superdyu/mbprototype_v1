@@ -721,7 +721,8 @@ test. A flat colour swatch would test nothing.
   fur, eyes, nose, size — as 01-onboarding step 7 originally specified.
   Selections write to `state.buddy` and the description re-renders. Nothing is
   faked. The persona's default is `PERSONA.buddy` (golden retriever, cream,
-  brown eyes, black nose, medium, named Biscuit).
+  brown eyes, black nose, medium). The name is intentionally blank — naming the
+  buddy is required in onboarding, and it falls back to "Buddy" until then.
 - **The idle cycle is real too.** Pose text changes on the 4–6 second cadence
   the design system specifies, cycling poses 1, 3, 4, 5. Stops under
   `prefers-reduced-motion`.

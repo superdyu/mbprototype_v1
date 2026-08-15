@@ -36,6 +36,7 @@ const PERSONA =
     "streakDaysIfOnboarded": 1,
     "buddyLevel": 3,
     "kibbleBalance": 240,
+    "diamondBalance": 12,
     "journalEntriesCompleted": 6
   },
 
@@ -45,7 +46,7 @@ const PERSONA =
     "eyeColor": "brown",
     "noseColor": "black",
     "size": "medium",
-    "name": "Biscuit"
+    "name": ""
   },
 
   "goals": {

@@ -3,7 +3,7 @@
 
   "config": {
     "maxFramingQuestions": 5,
-    "minFramingQuestions": 3,
+    "minFramingQuestions": 1,
     "dontKnowIsValid": true,
     "_note": "'I don't know' is a first-class answer and routes to its own script variant. It is never treated as a wrong answer or a skip."
   },
@@ -14,64 +14,145 @@
       "title": "What APR actually costs you",
       "courses": ["interest-rates", "credit-cards", "mortgages"],
       "linkedObservation": null,
+      "bucketDimension": {
+        "kind": "apr",
+        "reference": "market_average",
+        "_note": "Framing infers the user's APR (card lookup in CARD_APR, an entered %, or the market average). lessonInferFigure + lessonBucketFor compare it to CARD_APR.marketAverage and pick the bucket variant; no-info paths play the fallback."
+      },
+      "visualTemplate": {
+        "kind": "hyperframes",
+        "_note": "Storyboard for the staging-area video (components/hyperframes.js). Beats are FRACTIONS of the lesson runtime, so the whole thing re-fits any duration. One shared spine; the `bucket` beat resolves to bucketSegments[bucket] so each outcome differs, but every segment renders from the user's own figures rather than baked art. Coordinates are in a 100 x 72 viewBox. Tokens ({userApr}, {marketAvg}, {bandLow}, {bandHigh}, {gapPhrase}, {cardName}) resolve at render time.",
+
+        "spine": [
+          {
+            "id": "open", "from": 0.0, "to": 0.16,
+            "elements": [
+              { "type": "icon",  "name": "card", "x": 50, "y": 26, "size": 22, "anim": "rise" },
+              { "type": "label", "text": "{cardName}", "x": 50, "y": 50, "size": 5.5, "anim": "fade" },
+              { "type": "label", "text": "the card you use most", "x": 50, "y": 59, "size": 3.6, "tone": "muted", "anim": "fade" }
+            ]
+          },
+          {
+            "id": "rate", "from": 0.16, "to": 0.38,
+            "elements": [
+              { "type": "icon",  "name": "card", "x": 50, "y": 14, "size": 13, "anim": "fade" },
+              { "type": "label", "text": "{userApr}%", "x": 50, "y": 44, "size": 14, "anim": "rise" },
+              { "type": "label", "text": "your rate", "x": 50, "y": 56, "size": 3.8, "tone": "muted", "anim": "fade" }
+            ]
+          },
+          {
+            "id": "compare", "from": 0.38, "to": 0.64,
+            "elements": [
+              { "type": "label", "text": "where your rate sits", "x": 50, "y": 12, "size": 4.6, "anim": "fade" },
+              { "type": "scale", "x": 12, "y": 40, "w": 76, "anim": "draw" }
+            ]
+          },
+          { "id": "bucket", "from": 0.64, "to": 0.86, "slot": "bucket" },
+          {
+            "id": "settle", "from": 0.86, "to": 1.0, "hold": true,
+            "elements": [
+              { "type": "icon",  "name": "spark", "x": 50, "y": 16, "size": 12, "anim": "pop" },
+              { "type": "label", "text": "{userApr}% vs {marketAvg}% typical", "x": 50, "y": 40, "size": 5.2, "anim": "fade" },
+              { "type": "label", "text": "{gapPhrase}", "x": 50, "y": 54, "size": 6.4, "anim": "rise" }
+            ]
+          }
+        ],
+
+        "bucketSegments": {
+          "deeply_below": {
+            "elements": [
+              { "type": "icon",  "name": "shield", "x": 50, "y": 20, "size": 16, "anim": "pop" },
+              { "type": "label", "text": "well below typical", "x": 50, "y": 44, "size": 6.2, "anim": "rise" },
+              { "type": "label", "text": "interest builds slowly at this rate", "x": 50, "y": 56, "size": 3.6, "tone": "muted", "anim": "fade" }
+            ]
+          },
+          "slightly_below": {
+            "elements": [
+              { "type": "icon",  "name": "shield", "x": 50, "y": 20, "size": 15, "anim": "pop" },
+              { "type": "label", "text": "a little below typical", "x": 50, "y": 44, "size": 6.2, "anim": "rise" },
+              { "type": "label", "text": "interest builds a touch slower", "x": 50, "y": 56, "size": 3.6, "tone": "muted", "anim": "fade" }
+            ]
+          },
+          "about_average": {
+            "elements": [
+              { "type": "icon",  "name": "spark", "x": 50, "y": 20, "size": 15, "anim": "pop" },
+              { "type": "label", "text": "right about typical", "x": 50, "y": 44, "size": 6.2, "anim": "rise" },
+              { "type": "label", "text": "the middle of the pack", "x": 50, "y": 56, "size": 3.6, "tone": "muted", "anim": "fade" }
+            ]
+          },
+          "slightly_above": {
+            "elements": [
+              { "type": "stack", "count": 5, "x": 50, "y": 30, "anim": "accumulate" },
+              { "type": "label", "text": "a little above typical", "x": 50, "y": 48, "size": 6.2, "anim": "rise" },
+              { "type": "label", "text": "a carried balance grows a bit faster", "x": 50, "y": 59, "size": 3.6, "tone": "muted", "anim": "fade" }
+            ]
+          },
+          "deeply_above": {
+            "elements": [
+              { "type": "stack", "count": 8, "x": 50, "y": 30, "anim": "accumulate" },
+              { "type": "label", "text": "well above typical", "x": 50, "y": 48, "size": 6.2, "anim": "rise" },
+              { "type": "label", "text": "a carried balance grows faster here", "x": 50, "y": 59, "size": 3.6, "tone": "muted", "anim": "fade" }
+            ]
+          }
+        }
+      },
       "framing": [
         {
-          "id": "f1",
-          "prompt": "Do you know the APR on your main credit card?",
-          "options": [
-            { "label": "Yes, roughly", "next": "f2_known" },
-            { "label": "No", "next": "f2_unknown" },
-            { "label": "I don't have a credit card", "next": "f2_nocard" }
-          ]
-        },
-        {
-          "id": "f2_known",
-          "prompt": "Roughly what is it?",
+          "id": "f_issuer",
+          "prompt": "Which card do you use most?",
           "type": "single_select",
           "options": [
-            { "label": "Under 15%", "tag": "low_apr" },
-            { "label": "15–25%", "tag": "mid_apr" },
-            { "label": "Over 25%", "tag": "high_apr" },
-            { "label": "Not sure enough to say", "tag": "unsure_apr" }
-          ],
-          "next": "f3"
-        },
-        {
-          "id": "f2_unknown",
-          "prompt": "Do you carry a balance from month to month?",
-          "options": [
-            { "label": "Usually", "tag": "carries_balance", "next": "f3" },
-            { "label": "Sometimes", "tag": "sometimes_balance", "next": "f3" },
-            { "label": "Never, I pay it off", "tag": "pays_full", "next": "f3" },
-            { "label": "I don't know", "tag": "unknown_balance", "next": "f3" }
+            { "label": "Chase",              "issuer": "Chase",             "next": "f_card" },
+            { "label": "American Express",    "issuer": "American Express",  "next": "f_card" },
+            { "label": "Capital One",         "issuer": "Capital One",       "next": "f_card" },
+            { "label": "Citi",                "issuer": "Citi",              "next": "f_card" },
+            { "label": "Discover",            "issuer": "Discover",          "next": "f_card" },
+            { "label": "Wells Fargo",         "issuer": "Wells Fargo",       "next": "f_card" },
+            { "label": "Bank of America",     "issuer": "Bank of America",   "next": "f_card" },
+            { "label": "A store or retail card", "directRate": "store_retail" },
+            { "label": "A credit union card",    "directRate": "credit_union" },
+            { "label": "Another card",        "next": "f_know" },
+            { "label": "I don't have a credit card", "next": "f_nocard" }
           ]
         },
         {
-          "id": "f2_nocard",
+          "id": "f_card",
+          "prompt": "Which one?",
+          "type": "card_select",
+          "_note": "Options are generated at render time from CARD_APR.issuers[chosen issuer]. Terminal — the card sets the inferred APR."
+        },
+        {
+          "id": "f_know",
+          "prompt": "Do you know its APR, roughly?",
+          "options": [
+            { "label": "Yes", "next": "f_enter" },
+            { "label": "No", "useAverage": true }
+          ]
+        },
+        {
+          "id": "f_enter",
+          "prompt": "Roughly what is it?",
+          "type": "fill_number",
+          "placeholder": "e.g. 24",
+          "suffix": "%"
+        },
+        {
+          "id": "f_nocard",
           "prompt": "Any other borrowing — car loan, student loan, buy now pay later?",
           "options": [
-            { "label": "Yes", "tag": "other_debt", "next": "f3" },
-            { "label": "No", "tag": "no_debt", "next": "f3" },
-            { "label": "I don't know", "tag": "unknown_debt", "next": "f3" }
-          ]
-        },
-        {
-          "id": "f3",
-          "prompt": "Has anyone explained how interest gets charged?",
-          "options": [
-            { "label": "Yes, I get it", "tag": "confident" },
-            { "label": "Sort of", "tag": "partial" },
-            { "label": "Not really", "tag": "new" }
+            { "label": "Yes", "tag": "other_debt" },
+            { "label": "No", "tag": "no_debt" },
+            { "label": "I'd rather not say", "tag": "unknown_debt" }
           ]
         }
       ],
       "scriptVariants": [
-        { "id": "apr_v1", "matchTags": ["high_apr"], "audioId": "apr_v1", "emphasis": "cost_of_carrying" },
-        { "id": "apr_v2", "matchTags": ["mid_apr", "low_apr"], "audioId": "apr_v2", "emphasis": "mechanics" },
-        { "id": "apr_v3", "matchTags": ["carries_balance", "sometimes_balance"], "audioId": "apr_v3", "emphasis": "compounding" },
-        { "id": "apr_v4", "matchTags": ["pays_full"], "audioId": "apr_v4", "emphasis": "why_it_still_matters" },
-        { "id": "apr_v5", "matchTags": ["no_debt", "nocard"], "audioId": "apr_v5", "emphasis": "before_you_borrow" },
-        { "id": "apr_default", "matchTags": [], "isFallback": true, "audioId": "apr_v2", "emphasis": "mechanics", "_note": "Also serves every 'I don't know' path." }
+        { "id": "apr_deeply_below",   "bucket": "deeply_below",   "audioId": "apr_deeply_below",   "emphasis": "well_below_typical" },
+        { "id": "apr_slightly_below", "bucket": "slightly_below", "audioId": "apr_slightly_below", "emphasis": "a_little_below" },
+        { "id": "apr_about_average",  "bucket": "about_average",  "audioId": "apr_about_average",  "emphasis": "right_around_typical" },
+        { "id": "apr_slightly_above", "bucket": "slightly_above", "audioId": "apr_slightly_above", "emphasis": "a_little_above" },
+        { "id": "apr_deeply_above",   "bucket": "deeply_above",   "audioId": "apr_deeply_above",   "emphasis": "well_above_typical" },
+        { "id": "apr_default", "bucket": null, "isFallback": true, "audioId": "apr_default", "emphasis": "before_you_borrow", "_note": "No card / don't know / no info — the fallback, doubling as the 'before you borrow' framing." }
       ],
       "quiz": [
         {

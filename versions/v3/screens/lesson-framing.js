@@ -17,9 +17,12 @@ function renderLessonFraming() {
   if (!f || !lesson || !q) return lessonOutcomeNoSession("lesson",
     "These questions decide which version of a lesson you get.");
 
+  // The tree branches, so the path length varies (1–5). Show a soft, growing
+  // indicator rather than a fixed total that would over-promise questions.
   const asked = f.path.length + 1;
-  const total = Math.max(3, Math.min(LESSONS_V3.config.maxFramingQuestions || 5,
-                                     (lesson.framing || []).length));
+  const maxQ = LESSONS_V3.config.maxFramingQuestions || 5;
+  const total = Math.min(maxQ, Math.max(2, asked));
+  const isNumber = q.type === "fill_number";
 
   return `
     <div class="journal-shell">
@@ -36,17 +39,28 @@ function renderLessonFraming() {
       </div>
 
       <div class="journal-body">
-        <div class="journal-options">
-          ${q.options.map((o, i) => `
-            <button class="journal-opt" type="button" onclick="lessonFramingAnswer(${i})">
-              <span class="journal-opt-label">${h(o.label)}</span>
-            </button>`).join("")}
-        </div>
+        ${isNumber ? `
+          <div class="input-group">
+            <input id="lfNum" type="number" inputmode="decimal" min="0" step="0.1"
+                   placeholder="${h(q.placeholder || "")}">
+            ${q.suffix === "%" ? `<p class="helper" style="margin:6px 0 0;">A rough number is fine — as a percent.</p>` : ""}
+          </div>
+        ` : `
+          <div class="journal-options">
+            ${lessonEffectiveOptions(f, q).map((o, i) => `
+              <button class="journal-opt" type="button" onclick="lessonFramingAnswer(${i})">
+                <span class="journal-opt-label">${h(o.label)}</span>
+              </button>`).join("")}
+          </div>
+        `}
       </div>
 
       <div class="journal-foot">
         <button class="button secondary" type="button" onclick="navBack()">Back</button>
-        <button class="button secondary" type="button" onclick="lessonSkipFraming()">Skip</button>
+        ${isNumber
+          ? `<button class="button" type="button"
+                     onclick="lessonFramingEnterNumber(document.getElementById('lfNum').value)">Continue</button>`
+          : `<button class="button secondary" type="button" onclick="lessonSkipFraming()">Skip</button>`}
       </div>
     </div>
   `;
@@ -57,7 +71,9 @@ function renderLessonFramingAdmin() {
   if (!f) return `<div class="admin-card"><p class="admin-card-title">Framing</p>
     <p class="helper">Not running.</p></div>`;
   const lesson = lessonV3(f.lessonId);
-  const would = lessonSelectVariant(lesson, f.tags);
+  const would = lessonSelectVariant(lesson, f.tags, f.inputs);
+  const figure = lessonInferFigure(lesson, f.inputs);
+  const avg = (typeof CARD_APR !== "undefined" && CARD_APR.marketAverage) || null;
 
   return `
     <div class="admin-card">
@@ -66,14 +82,23 @@ function renderLessonFramingAdmin() {
         <label>Answers so far</label>
         <div class="helper" style="line-height:1.7;">
           ${f.path.length ? f.path.map(p =>
-            `${h(p.questionId)}: ${h(p.label)}${p.tag ? " → <strong>" + h(p.tag) + "</strong>" : " <em>(no tag — routing only)</em>"}`
+            `${h(p.questionId)}: ${h(p.label)}${p.tag ? " → <strong>" + h(p.tag) + "</strong>" : ""}`
           ).join("<br>") : "none yet"}
         </div>
       </div>
-      <div class="input-group">
-        <label>Tags collected</label>
-        <div class="helper">${f.tags.join(", ") || "none"}</div>
-      </div>
+      ${lesson.bucketDimension ? `
+        <div class="input-group">
+          <label>Inferred (${h(lesson.bucketDimension.kind)})</label>
+          <div class="helper">
+            figure ${figure == null ? "— (no info → fallback)" : figure + "%"} ·
+            avg ${avg == null ? "—" : avg + "%"} ·
+            bucket <strong>${h(lessonBucketFor(lesson, figure) || "—")}</strong>
+          </div>
+        </div>` : `
+        <div class="input-group">
+          <label>Tags collected</label>
+          <div class="helper">${f.tags.join(", ") || "none"}</div>
+        </div>`}
       <div class="input-group">
         <label>Variant that would play</label>
         <div class="helper">

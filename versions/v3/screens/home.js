@@ -15,10 +15,11 @@ const TIP_MAX_CHARS = 90;
 function renderHome() {
   return `
     ${renderHomeTip()}
-    ${renderBuddyStage({})}
-
-    <button class="button secondary full" style="margin-bottom:18px;" type="button"
-            onclick="homeOpenChat()">Chat with ${h(state.buddy.name || "Buddy")}</button>
+    <div class="home-stage-wrap">
+      ${renderBuddyStage({ square: true })}
+      <button class="home-chat-btn" type="button"
+              onclick="homeOpenChat()">Chat with ${h(state.buddy.name || "Buddy")}</button>
+    </div>
 
     <div class="row" style="margin-bottom:10px;">
       <div class="section-title" style="margin:0;">Today</div>
@@ -63,7 +64,7 @@ function renderHomeTask(task) {
           : `<button class="button" style="font-size:12px;padding:8px 14px;" type="button"
                      onclick="homeDoTask('${h(task.id)}')">Open</button>`}
       </div>
-      <p class="home-task-kibble">🦴 ${task.kibble} kibble</p>
+      <p class="home-task-kibble">🦴 ${task.kibble} bones</p>
     </div>
   `;
 }
@@ -101,7 +102,7 @@ function renderHomeAdmin() {
         <div class="input-group">
           <label>${i + 1}. ${h(t.label)}</label>
           <div class="helper">
-            route <code>${h(t.route)}</code> · ${t.kibble} kibble${t.observationId ? " · " + h(t.observationId) : ""}
+            route <code>${h(t.route)}</code> · ${t.kibble} bones${t.observationId ? " · " + h(t.observationId) : ""}
           </div>
           <select onchange="state.dailyTasks[${i}].completed=(this.value==='true');render()">
             <option value="false" ${!t.completed ? "selected" : ""}>not done</option>
@@ -110,9 +111,14 @@ function renderHomeAdmin() {
         </div>
       `).join("")}
       <div class="input-group">
-        <label>Kibble (display-only, L16)</label>
+        <label>Charity Points — 🦴 bones (display-only, L16)</label>
         <input type="number" value="${state.kibble}"
                onchange="state.kibble=parseInt(this.value,10)||0;render()">
+      </div>
+      <div class="input-group">
+        <label>Charity Points — 💎 diamonds (display-only, L16)</label>
+        <input type="number" value="${state.charityDiamonds}"
+               onchange="state.charityDiamonds=parseInt(this.value,10)||0;render()">
       </div>
       <div class="input-group">
         <label>Tip banner — ${String(state.tipBanner || "").length}/${TIP_MAX_CHARS} chars</label>

@@ -37,6 +37,8 @@ function adminSubtitle() {
   if (state.screen === "goals")          return "Goals — one strategic, several tactical. Pace is computed; the two types invert.";
   if (state.screen === "myProgress")     return "My Progress tab — output hub for profile, results, comparisons, goals.";
   if (state.screen === "comparison")     return "Three layers — plan, what you told me, peers. Both gaps labelled distinctly.";
+  if (state.screen === "budgetCategory") return "One category — comparison, editable plan, actuals via the estimator, scoped goals.";
+  if (state.screen === "spendEstimator") return "Behavioral spend estimator — habits, not dollars → month-to-date into 'what you told me'.";
   if (state.screen === "accountBalances") return "Account balance snapshots — point-in-time entries.";
   if (state.screen === "debtBalances")   return "Debt balance snapshots — point-in-time entries.";
   if (state.screen === "postResult")     return "Post-result reaction prompt.";
@@ -74,6 +76,8 @@ function renderScreen() {
   if (state.screen === "budgetUpdateConfirm") return renderBudgetUpdateConfirm();
   if (state.screen === "myProgress")        return renderMyProgress();
   if (state.screen === "comparison")        return renderComparison();
+  if (state.screen === "budgetCategory")    return renderBudgetCategory();
+  if (state.screen === "spendEstimator")    return renderSpendEstimator();
   if (state.screen === "accountBalances")   return renderAccountBalances();
   if (state.screen === "debtBalances")      return renderDebtBalances();
   if (state.screen === "postResult")        return renderPostResult();
@@ -118,6 +122,8 @@ function renderAdmin() {
   if (state.screen === "topic")         return renderTopicAdmin();
   if (state.screen === "myProgress")    return renderMyProgressAdmin();
   if (state.screen === "comparison")    return renderComparisonAdmin();
+  if (state.screen === "budgetCategory") return renderBudgetCategoryAdmin();
+  if (state.screen === "spendEstimator") return renderSpendEstimatorAdmin();
   if (state.screen === "marketplace")   return renderMarketplaceAdmin();
   if (state.screen === "lessonFraming") return renderLessonFramingAdmin();
   if (state.screen === "lesson")        return renderLessonAdmin();
@@ -137,7 +143,7 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="navAdminJump(this.value)">
-          ${["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home","journalEntry","journalConfirm","journalDone","aboutMe","lifestyleWizard","lifestyleWizardReview","budgetDone","myProgress","comparison",
+          ${["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home","journalEntry","journalConfirm","journalDone","aboutMe","budgetCategory","spendEstimator","lifestyleWizard","lifestyleWizardReview","budgetDone","myProgress","comparison",
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
              "goals","learn","topic","lessonFraming","lesson","lessonQuiz","lessonSimulation","lessonReward","quiz","simulation","marketplace",
              "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",

@@ -20,7 +20,13 @@
 // is wrong once the same screen can be reached from two places — that is the
 // whole point of the per-stack model in architecture §7.
 
-const TOPBAR_HIDDEN_SCREENS = ["streak"];   // full-bleed splash owns the viewport
+// streak: full-bleed splash owns the viewport.
+// chat: it has its own header + Back (top-right); a top-bar back too would be a
+// second, competing escape in the top-left — hide the bar so there's one Back.
+// lesson: the accent stage has its own boxed back (.lp-back-btn); the top-bar
+// back would stack a second chevron over it (and reads low-contrast on the sage
+// stage in the dark themes). Hide the bar so the boxed icon is the only back.
+const TOPBAR_HIDDEN_SCREENS = ["streak", "chat", "lesson"];
 
 function renderTopBar() {
   if (TOPBAR_HIDDEN_SCREENS.includes(state.screen)) return "";
@@ -50,8 +56,10 @@ function renderTopBar() {
   return `
     <div class="topbar">
       ${left}
-      <div class="topbar-status" aria-label="Kibble, streak and level">
-        <span class="topbar-stat" title="Kibble">${TOPBAR_KIBBLE_ICON}${h(state.kibble)}</span>
+      <div class="topbar-status" aria-label="Charity Points, streak and level">
+        <span class="topbar-stat" title="Charity Points — diamonds">${TOPBAR_DIAMOND_ICON}${h(state.charityDiamonds)}</span>
+        <span class="topbar-dot">·</span>
+        <span class="topbar-stat" title="Charity Points — bones">${TOPBAR_KIBBLE_ICON}${h(state.kibble)}</span>
         <span class="topbar-dot">·</span>
         <span class="topbar-stat" title="Day streak">${TOPBAR_STREAK_ICON}${h(state.streak)}</span>
         <span class="topbar-dot">·</span>
@@ -75,7 +83,7 @@ function renderTopBarMenu() {
       </p>
 
       <div class="row" style="margin-bottom:6px;">
-        <span class="helper">Kibble</span><span style="font-weight:850;">🦴 ${h(state.kibble)}</span>
+        <span class="helper">Charity Points</span><span style="font-weight:850;">💎 ${h(state.charityDiamonds)} · 🦴 ${h(state.kibble)}</span>
       </div>
       <div class="row" style="margin-bottom:6px;">
         <span class="helper">Streak</span><span style="font-weight:850;">🔥 ${h(state.streak)} day${state.streak === 1 ? "" : "s"}</span>
@@ -111,5 +119,7 @@ const TOPBAR_HOME_ICON =
   'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
   '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg>';
 
+// Charity Points, two tiers: 💎 diamond (subscriber) and 🦴 bone (free/ad).
+const TOPBAR_DIAMOND_ICON = '<span class="topbar-ico" aria-hidden="true">💎</span>';
 const TOPBAR_KIBBLE_ICON = '<span class="topbar-ico" aria-hidden="true">🦴</span>';
 const TOPBAR_STREAK_ICON = '<span class="topbar-ico" aria-hidden="true">🔥</span>';

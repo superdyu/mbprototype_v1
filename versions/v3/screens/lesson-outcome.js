@@ -257,7 +257,7 @@ function renderLessonReward() {
             ${r.award.correctCount} right · ${LESSONS_V3.badges.xpLessonComplete} for finishing
             ${r.award.bonus ? " · " + r.award.bonus + " daily-task bonus" : ""}
           </p>
-          <p class="helper" style="margin:8px 0 0;">🦴 ${r.kibble} kibble</p>
+          <p class="helper" style="margin:8px 0 0;">🦴 ${r.kibble} bones</p>
         </div>
 
         <div class="section-title" style="margin:18px 0 8px;">Courses this moved</div>
@@ -337,7 +337,7 @@ function renderLessonOutcomeAdmin() {
         </div>
       </div>
       ${r ? `<div class="input-group"><label>Last award</label>
-        <div class="helper">${r.award.base} base + ${r.award.bonus} bonus = ${r.award.total} · ${r.kibble} kibble</div></div>` : ""}
+        <div class="helper">${r.award.base} base + ${r.award.bonus} bonus = ${r.award.total} · ${r.kibble} bones</div></div>` : ""}
     </div>
   `;
 }

@@ -44,6 +44,8 @@ function renderBudgetV3() {
       </p>
     </div>
 
+    ${renderGoalSuggestions({ source: "budget" }, "Suggested Budget Goals")}
+
     ${renderBudgetObservationCards("budget_comparison")}
 
     <button class="button secondary full" style="margin-top:12px;" type="button"
@@ -64,11 +66,16 @@ function renderBudgetCategoryRow(category) {
   const max    = budgetSliderMax(category);
   const idx    = CATEGORIES.indexOf(category);
 
+  const catArg = h(category).replace(/'/g, "\\'");
   return `
     <div class="card budget-row">
-      <div class="row" style="align-items:baseline;margin-bottom:2px;">
-        <span class="budget-row-name">${h(category)}</span>
+      <div class="row budget-row-head" style="align-items:baseline;margin-bottom:2px;">
+        <button class="budget-row-open" type="button" onclick="goToCategory('${catArg}')">
+          <span class="budget-row-name">${h(category)}</span>
+        </button>
         <span class="budget-row-amt" id="planAmt${idx}">${budgetFmt(plan)}</span>
+        <button class="budget-row-chev" type="button" onclick="goToCategory('${catArg}')"
+                aria-label="Open ${h(category)}">›</button>
       </div>
       <div class="row" style="align-items:baseline;margin-bottom:6px;">
         <span class="helper" style="font-size:11px;">

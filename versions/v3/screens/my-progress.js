@@ -213,11 +213,11 @@ function renderMPKibble() {
   return `
     <div class="card mp-kibble">
       <div>
-        <p class="helper" style="margin:0 0 2px;">Kibble</p>
-        <p class="journal-total">🦴 ${h(state.kibble)}</p>
+        <p class="helper" style="margin:0 0 2px;">Charity Points</p>
+        <p class="journal-total">💎 ${h(state.charityDiamonds)} · 🦴 ${h(state.kibble)}</p>
       </div>
       <p class="helper" style="margin:0;text-align:right;max-width:150px;font-size:11px;">
-        Earned from daily tasks and lessons.
+        Diamonds and bones donated on your behalf.
       </p>
     </div>
   `;

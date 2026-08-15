@@ -154,10 +154,9 @@ const SEED_STATE =
   "dailyTasks": {
     "_note": "Precomputed order (A7). Scoring engine specified in 03-home-daily-loop.md but not run at runtime.",
     "today": [
-      { "id": "t_journal", "label": "Tell Biscuit about yesterday", "route": "money_journal", "kibble": 20, "priority": 1 },
-      { "id": "t_hulu", "label": "Still watching Hulu?", "route": "subscription_confirm", "kibble": 10, "priority": 2, "observationId": "obs_hulu_unused" },
-      { "id": "t_insurance", "label": "Make room for car insurance", "route": "budget", "kibble": 15, "priority": 3, "observationId": "obs_insurance_unbudgeted" },
-      { "id": "t_lesson_apr", "label": "Learn what APR actually costs you", "route": "lesson:apr", "kibble": 25, "priority": 4 }
+      { "id": "t_journal", "label": "Do your money journal for yesterday", "route": "money_journal", "kibble": 20, "priority": 1 },
+      { "id": "t_budget", "label": "Set up your budget", "route": "budget", "kibble": 15, "priority": 2 },
+      { "id": "t_lesson_apr", "label": "See what APR really costs you", "route": "lesson:apr", "kibble": 25, "priority": 3 }
     ]
   },
 

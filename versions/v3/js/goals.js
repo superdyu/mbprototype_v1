@@ -177,10 +177,13 @@ function goalsSuggestFor(context) {
     if (plan) push(`Keep ${ctx.category.toLowerCase()} under ${budgetFmt(plan)} a month`,
                    plan, "monthly", ctx.category);
   } else {
-    // Overall: the categories most over plan, so the suggestion is earned.
+    // Overall: the categories with the biggest gap — over plan OR over peers —
+    // so each suggestion is earned and tied to the comparison observations.
+    const impact = r => Math.max(r.vsPlan || 0, r.vsPeer || 0);
     cmpAllRows()
-      .filter(r => r.vsPlan != null && r.vsPlan > 10 && r.plan > 0)
-      .sort((a, b) => b.vsPlan - a.vsPlan)
+      .filter(r => r.plan > 0 &&
+                   ((r.vsPlan != null && r.vsPlan > 10) || (r.vsPeer != null && r.vsPeer > 10)))
+      .sort((a, b) => impact(b) - impact(a))
       .slice(0, 2)
       .forEach(r => push(`Keep ${r.category.toLowerCase()} under ${budgetFmt(r.plan)} a month`,
                          r.plan, "monthly", r.category));

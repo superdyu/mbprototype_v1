@@ -34,9 +34,9 @@ const BUDDY_RESPONSES =
     },
     {
       "id": "how_kibble",
-      "bubble": "How does kibble work?",
-      "keywords": ["kibble", "points", "currency", "reward", "earn"],
-      "text": "You earn kibble by showing up — journaling, finishing lessons, checking in on your goals. Levelling up earns you a bonus batch.",
+      "bubble": "How do Charity Points work?",
+      "keywords": ["charity", "points", "diamond", "diamonds", "bone", "bones", "kibble", "currency", "reward", "earn"],
+      "text": "You earn Charity Points by showing up — journaling, finishing lessons, checking in on your goals. There are two kinds: bones from everyday check-ins and diamonds that lean on your plan tier. They turn into real donations on your behalf.",
       "followUp": ["what_is_level"]
     },
     {

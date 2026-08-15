@@ -230,11 +230,103 @@ function lpUpdateProgress() {
   // rather than jumping once per line.
   const lp  = state.lessonPlayback;
   const pct = lp.total > 0 ? (lp.elapsed / lp.total) * 100 : 0;
+  const clamped = Math.max(0, Math.min(100, pct));
   const bar = document.getElementById("lp-bar");
-  if (bar) bar.style.width = Math.max(0, Math.min(100, pct)).toFixed(2) + "%";
+  if (bar) bar.style.width = clamped.toFixed(2) + "%";
+
+  const knob = document.getElementById("lp-knob");
+  if (knob) knob.style.left = clamped.toFixed(2) + "%";
+  const track = document.getElementById("lp-progress");
+  if (track) track.setAttribute("aria-valuenow", String(Math.round(clamped)));
 
   const timeEl = document.getElementById("lp-time");
   if (timeEl) timeEl.textContent = lpFmtTime(Math.round(lp.elapsed));
+}
+
+// ─── Hyperframes stage ────────────────────────────────────────────────────────
+// The visual is a function of the clock, so nothing here paints frames — it
+// hands the animations the current time and lets the compositor run them.
+
+function lpHyperframesMarkup() {
+  const plan = state.lessonVisualPlan;
+  if (typeof hyperframesCanRender !== "function" || !hyperframesCanRender(plan)) return "";
+  return hyperframesMarkup(plan.storyboard, plan, state.lessonPlayback.total,
+                           { staticFrame: v3PrefersReducedMotion() });
+}
+
+function lpSyncHyperframes() {
+  const el = document.getElementById("lp-hyperframes");
+  if (!el || typeof hyperframesSync !== "function") return;
+  const lp = state.lessonPlayback;
+  hyperframesSync(el, {
+    elapsedSec: lp.elapsed,
+    playing: lp.playing && !lp.ended,
+    rate: lp.speed
+  });
+}
+
+// ─── Scrubbing ────────────────────────────────────────────────────────────────
+// The progress bar is a real control. Every update here is a direct DOM write:
+// calling render() mid-drag would replace the element the pointer is captured
+// on and the gesture would die on the first move — the same rule the budget and
+// journal sliders are built on.
+
+function lpScrubStart(e) {
+  const track = document.getElementById("lp-progress");
+  const lp = state.lessonPlayback;
+  if (!track) return;
+  lp.scrubWasPlaying = lp.playing;
+  if (lp.playing) lpPause();
+  track.classList.add("scrubbing");   // drop the smoothing so the bar tracks the finger
+  try { track.setPointerCapture(e.pointerId); } catch (err) {}
+  track.onpointermove   = lpScrubTo;
+  track.onpointerup     = lpScrubEnd;
+  track.onpointercancel = lpScrubEnd;
+  lpScrubTo(e);
+}
+
+function lpScrubTo(e) {
+  const track = document.getElementById("lp-progress");
+  const lp = state.lessonPlayback;
+  if (!track || !lp.total) return;
+  const r = track.getBoundingClientRect();
+  if (!r.width) return;
+  const frac = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+  lpApplyElapsed(frac * lp.total);
+}
+
+function lpScrubEnd(e) {
+  const track = document.getElementById("lp-progress");
+  const lp = state.lessonPlayback;
+  if (track) {
+    try { track.releasePointerCapture(e.pointerId); } catch (err) {}
+    track.classList.remove("scrubbing");
+    track.onpointermove = null; track.onpointerup = null; track.onpointercancel = null;
+  }
+  if (lp.scrubWasPlaying && !lp.ended) lpPlay();
+  lp.scrubWasPlaying = false;
+}
+
+/** Arrow keys nudge the scrubber, so the control is reachable without a pointer. */
+function lpScrubKey(e) {
+  const step = 5;
+  if (e.key === "ArrowRight" || e.key === "ArrowUp")   { e.preventDefault(); lpApplyElapsed(state.lessonPlayback.elapsed + step); }
+  if (e.key === "ArrowLeft"  || e.key === "ArrowDown") { e.preventDefault(); lpApplyElapsed(state.lessonPlayback.elapsed - step); }
+}
+
+/** Seek to an absolute time and repaint everything that follows the clock. */
+function lpApplyElapsed(sec) {
+  const lp = state.lessonPlayback;
+  lp.elapsed = Math.max(0, Math.min(lp.total, sec));
+  if (lp.ended && lp.elapsed < lp.total) { lp.ended = false; lpLockNext(); }
+  lp.index = lpIndexForElapsed(lp.elapsed, lp.cues);
+  const audio = lpHasAudio() ? lpAudioEl() : null;
+  if (audio) { try { audio.currentTime = lp.elapsed; } catch (err) {} }
+  lpHighlight(lp.index);
+  lpUpdateProgress();
+  lpUpdatePlayBtn();
+  lpSyncHyperframes();
+  if (lp.playing) lp.lastTick = Date.now();
 }
 
 function lpUpdatePlayBtn() {
@@ -286,6 +378,7 @@ function lpTick() {
     lpHighlight(idx);
   }
   lpUpdateProgress();
+  lpSyncHyperframes();   // drift check only — the animation runs itself
 }
 
 // Reached the end: snap to 100%, unlock Next, switch to replay icon.
@@ -302,6 +395,7 @@ function lpEnd() {
   if (timeEl) timeEl.textContent = lpFmtTime(Math.round(lp.total));
   lpUnlockNext();
   lpUpdatePlayBtn();
+  lpSyncHyperframes();
 }
 
 function lpPlay() {
@@ -320,6 +414,7 @@ function lpPlay() {
   lp.lastTick = Date.now();
   lp.timer    = setInterval(lpTick, LP_TICK_MS);
   lpUpdatePlayBtn();
+  lpSyncHyperframes();
 }
 
 function lpPause() {
@@ -329,6 +424,7 @@ function lpPause() {
   if (audio) audio.pause();
   if (lp.timer) { clearInterval(lp.timer); lp.timer = null; }
   lpUpdatePlayBtn();
+  lpSyncHyperframes();
 }
 
 // Stops playback and clears the ticker. Called by render.js before destroying
@@ -360,6 +456,7 @@ function lpRestart() {
   lpLockNext();
   lpHighlight(0);
   lpUpdateProgress();
+  lpSyncHyperframes();
   lpPlay();
 }
 
@@ -378,6 +475,7 @@ function lpSkip(delta) {
   lpHighlight(lp.index);
   lpUpdateProgress();
   lpUpdatePlayBtn();
+  lpSyncHyperframes();
   // Ticker keeps running; reset lastTick so the jump isn't counted as elapsed.
   if (lp.playing) lp.lastTick = Date.now();
 }
@@ -389,6 +487,7 @@ function lpSetSpeed(s) {
   if (btn) btn.textContent = s + "×";
   const audio = lpHasAudio() ? lpAudioEl() : null;
   if (audio) audio.playbackRate = s;
+  lpSyncHyperframes();   // the animation carries its own playbackRate
   // Virtual mode: the ticker reads lp.speed live each tick — nothing more to do.
 }
 
@@ -421,6 +520,7 @@ function lpMountHook(wasPlaying) {
     // Metadata may already be cached (re-render): apply the saved position now.
     if (audio.readyState >= 1) applyPosition();
   }
+  lpSyncHyperframes();   // re-attach after any re-render, at the saved position
   if (lp.pendingAutoPlay) { lp.pendingAutoPlay = false; lpPlay(); }
   else if (wasPlaying)    { lpPlay(); }
 }
@@ -436,6 +536,7 @@ function lpSeekTo(index) {
   lpHighlight(lp.index);
   lpUpdateProgress();
   lpUpdatePlayBtn();
+  lpSyncHyperframes();
   if (lp.playing) lp.lastTick = Date.now();
 }
 
@@ -483,7 +584,12 @@ function renderLesson() {
     if (lp.timer) { clearInterval(lp.timer); lp.timer = null; }
   }
 
-  const isWaveform  = state.lpStageStyle !== "clean";
+  // Video is the default stage. It needs a storyboard AND a personalized figure,
+  // so a lesson without either (or an "I don't know" path with nothing to plot)
+  // falls back to the waveform rather than drawing a frame full of dashes.
+  const videoOn     = state.lpStageStyle !== "clean" && state.lpStageStyle !== "waveform"
+                      && hyperframesCanRender(state.lessonVisualPlan);
+  const isWaveform  = !videoOn && state.lpStageStyle !== "clean";
   const totalTime   = lpFmtTime(Math.round(state.lessonPlayback.total));
   const barPct      = (state.lessonPlayback.total > 0 ? state.lessonPlayback.elapsed / state.lessonPlayback.total * 100 : 0).toFixed(2);
   const elapsed     = lpFmtTime(Math.round(state.lessonPlayback.elapsed));
@@ -496,9 +602,15 @@ function renderLesson() {
     <div class="lp-layout">
       ${audioSrc ? `<audio id="lp-audio" src="${h(audioSrc)}" preload="auto"></audio>` : ""}
 
-      <!-- TOP: staging area — accent bg, waveform, title, back button -->
-      <div class="lp-stage">
+      <!-- BANNER: back button + centered lesson title, above the stage -->
+      <div class="lp-banner">
         <button class="lp-back-btn" type="button" onclick="go('reward-preview')">‹</button>
+        <h1 class="lp-banner-title">${h(lesson.title)}</h1>
+      </div>
+
+      <!-- TOP: staging area — the video, or the waveform when it is turned off -->
+      <div class="lp-stage ${videoOn ? "lp-stage-video" : ""}">
+        ${videoOn ? `<div class="lp-hyperframes" id="lp-hyperframes">${lpHyperframesMarkup()}</div>` : ""}
         <div class="${waveClass}" id="lp-wave">
           <div class="lp-bar"></div>
           <div class="lp-bar"></div>
@@ -508,7 +620,6 @@ function renderLesson() {
           <div class="lp-bar"></div>
           <div class="lp-bar"></div>
         </div>
-        <h1 class="lp-stage-title">${h(lesson.title)}</h1>
       </div>
 
       <!-- MIDDLE: subtitle strip — shows prev / current / next sentence -->
@@ -528,8 +639,12 @@ function renderLesson() {
         </div>
         <div class="lp-progress-row">
           <span id="lp-time" class="lp-time-label">${elapsed}</span>
-          <div class="lp-progress">
+          <div class="lp-progress" id="lp-progress" role="slider" tabindex="0"
+               aria-label="Lesson position" aria-valuemin="0" aria-valuemax="100"
+               aria-valuenow="${Math.round(barPct)}"
+               onpointerdown="lpScrubStart(event)" onkeydown="lpScrubKey(event)">
             <div class="lp-progress-fill" id="lp-bar" style="width:${barPct}%;"></div>
+            <div class="lp-progress-knob" id="lp-knob" style="left:${barPct}%;"></div>
           </div>
           <span id="lp-total" class="lp-time-label">${totalTime}</span>
         </div>
@@ -541,6 +656,30 @@ function renderLesson() {
 }
 
 // ─── Admin Panel ──────────────────────────────────────────────────────────────
+// What the video is bound to, and which beat the clock is inside — the two
+// things you need to tell "the animation is wrong" from "the data is wrong".
+function lpAdminVisualReadout() {
+  const plan = state.lessonVisualPlan;
+  if (!plan) return `<p class="helper" style="font-size:10px;margin-top:6px;">No visual plan — this lesson has no storyboard, so the stage falls back to the waveform.</p>`;
+  const canRender = typeof hyperframesCanRender === "function" && hyperframesCanRender(plan);
+  const band = plan.band || {};
+  const lp = state.lessonPlayback;
+  const frac = lp.total > 0 ? lp.elapsed / lp.total : 0;
+  const beats = (plan.storyboard && plan.storyboard.spine) || [];
+  const beat = beats.find(b => frac >= b.from && frac < b.to) || beats[beats.length - 1];
+  return `
+    <p class="helper" style="font-size:10px;line-height:1.7;margin-top:6px;">
+      ${canRender ? "" : "<strong>not renderable</strong> (no figure) — waveform shown<br>"}
+      card ${h(plan.cardName || "—")} ·
+      you ${plan.userFigure == null ? "—" : plan.userFigure + "%"} ·
+      typical ${plan.marketAvg == null ? "—" : plan.marketAvg + "%"}<br>
+      band ${band.low == null ? "—" : band.low + "–" + band.high + "%"} ·
+      gap ${plan.gapPercent == null ? "—" : plan.gapPercent + "%"} ·
+      bucket <strong>${h(plan.bucket || "—")}</strong><br>
+      beat <strong>${h(beat ? beat.id : "—")}</strong> at ${(frac * 100).toFixed(0)}%
+    </p>`;
+}
+
 function renderLessonAdmin() {
   return `
     <div class="admin-card">
@@ -548,9 +687,11 @@ function renderLessonAdmin() {
       <div class="input-group">
         <label>Stage style</label>
         <select onchange="state.lpStageStyle=this.value;render()">
-          <option value="waveform" ${state.lpStageStyle !== "clean" ? "selected" : ""}>Waveform</option>
-          <option value="clean"    ${state.lpStageStyle === "clean"  ? "selected" : ""}>Clean (title only)</option>
+          <option value="video"    ${state.lpStageStyle === "video"    ? "selected" : ""}>Video — hyperframes (default)</option>
+          <option value="waveform" ${state.lpStageStyle === "waveform" ? "selected" : ""}>Waveform (audio only)</option>
+          <option value="clean"    ${state.lpStageStyle === "clean"    ? "selected" : ""}>Clean (nothing)</option>
         </select>
+        ${lpAdminVisualReadout()}
       </div>
       <div class="input-group">
         <label>Jump to sentence (0–${state.lessonPlayback.sentences.length - 1})</label>

@@ -112,8 +112,10 @@ moderate + cooks sometimes → `275 × 1.34 × 1.0 = 368.5` → **370**.
 - Tip banner is a hard **90-character** limit.
 - **"Peers", never "average users"** — the data is an external mathematical
   aggregate, never real user data (D23).
-- Fixed vocabulary: Buddy · Money Journal (never "expense tracker") · Kibble ·
-  Streak · Peers · Observation.
+- Fixed vocabulary: Buddy · Money Journal (never "expense tracker") · Charity
+  Points (two non-converting tiers: 💎 diamonds = subscriber, 🦴 bones = free/ad;
+  the old "Kibble" term is retired, though `state.kibble` stays as the internal
+  bone counter) · Streak · Peers · Observation.
 
 **Quality floor**
 - **No screen renders empty** (D19). Fabricate a plausible value rather than
@@ -138,14 +140,21 @@ top-bar and nav offsets.
 
 ## Verifying
 
-No browser here — you cannot visually QA. **There is no `node` on this machine**
-either; the substitute is macOS's built-in JavaScriptCore.
+No browser here — you cannot visually QA. **Which JS engine exists depends on the
+machine**: the Mac has `jsc` and no `node`; the Linux/WSL box has `node` (often
+only under `~/.nvm`, off PATH) and no `jsc`. Don't assume either.
 - `bash scripts/check-syntax.sh <path>` on everything you touch (no args = all
-  v3 + gate JS). It's the only automated gate.
+  v3 + gate JS). It's the only automated gate, and it detects both engines.
 - For logic, write a temporary DOM-stubbed harness that concatenates the needed
-  files into **one** script, then run it with `jsc harness.js`. Concatenating
-  matters: separately-evaluated scripts don't share top-level `const` bindings,
-  but a browser's `<script>` tags do. **Delete it before committing.**
+  files into **one** script, then run it (`node harness.js` / `jsc harness.js`).
+  Concatenating matters: separately-evaluated scripts don't share top-level
+  `const` bindings, but a browser's `<script>` tags do. Under node, use
+  `vm.runInContext` with a stub context and append `this.__api = { ... }` —
+  top-level `const` does not attach to a vm context's globals.
+  **Delete it before committing.**
+- The data wrappers are checkable: eval each `data/*.js` and deep-compare the
+  global it declares against the `.json` beside it. That catches wrapper drift,
+  which is silent and otherwise invisible until a figure looks wrong.
 - Ask the repo owner to eyeball anything visual — say so plainly rather than
   claiming it renders.
 

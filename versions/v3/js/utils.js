@@ -152,6 +152,8 @@ function activeTabFor(screen) {
   if (screen === "myDebts")           return "aboutMe";
   if (screen === "debtAnalyzer")      return "aboutMe";
   if (screen === "comparison")        return "aboutMe";
+  if (screen === "budgetCategory")    return "aboutMe";
+  if (screen === "spendEstimator")    return "aboutMe";
   if (screen === "accountBalances")   return "aboutMe";
   if (screen === "debtBalances")      return "aboutMe";
   if (screen === "budgetUpdateConfirm") return "aboutMe";

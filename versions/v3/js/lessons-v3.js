@@ -50,10 +50,24 @@ function lessonFramingStart(lessonId) {
     lessonId: lessonId,
     questionId: first ? first.id : null,
     tags: [],
+    inputs: {},        // structured answers: issuer / card / directRate / enteredApr / useAverage
     path: [],
     variantId: null
   };
   return state.lessonFraming;
+}
+
+/**
+ * The options for the CURRENT question. Static for most, but a `card_select`
+ * question generates its options at render time from CARD_APR by the issuer the
+ * user already picked — that is the tiered "Amex → Platinum" filtering.
+ */
+function lessonEffectiveOptions(f, q) {
+  if (q && q.type === "card_select") {
+    const cards = (typeof CARD_APR !== "undefined" && CARD_APR.issuers[f.inputs.issuer]) || {};
+    return Object.keys(cards).map(card => ({ label: card, card: card }));
+  }
+  return (q && q.options) || [];
 }
 
 function lessonFramingAnswer(optionIndex) {
@@ -62,24 +76,121 @@ function lessonFramingAnswer(optionIndex) {
   const lesson = lessonV3(f.lessonId);
   const q = lessonQuestion(lesson, f.questionId);
   if (!q) return;
-  const opt = q.options[optionIndex];
+  const opt = lessonEffectiveOptions(f, q)[optionIndex];
   if (!opt) return;
 
   // TRAP 1: `tag`, singular. Reading `.tags` here is the silent failure.
   if (opt.tag) f.tags.push(opt.tag);
+  // Structured inputs the APR inference reads.
+  if (opt.issuer)     f.inputs.issuer = opt.issuer;
+  if (opt.card)       f.inputs.card = opt.card;
+  if (opt.directRate) f.inputs.directRate = opt.directRate;
+  if (opt.useAverage) f.inputs.useAverage = true;
   f.path.push({ questionId: q.id, label: opt.label, tag: opt.tag || null });
 
   const nextId = lessonNextId(q, opt);
-  if (nextId && lessonQuestion(lesson, nextId)) {
-    f.questionId = nextId;
-    render();
-    return;
-  }
+  if (nextId && lessonQuestion(lesson, nextId)) { f.questionId = nextId; render(); return; }
+  lessonFramingFinish();
+}
 
-  // Terminal — pick the script and hand off to the player.
+/** The `fill_number` question (enter your APR). Terminal in the APR tree. */
+function lessonFramingEnterNumber(value) {
+  const f = state.lessonFraming;
+  if (!f) return;
+  const lesson = lessonV3(f.lessonId);
+  const q = lessonQuestion(lesson, f.questionId);
+  const num = Number(value);
+  if (isFinite(num) && num > 0) f.inputs.enteredApr = num;
+  f.path.push({ questionId: q.id, label: isFinite(num) && num > 0 ? num + "%" : "—", tag: null });
+  const nextId = lessonNextId(q, null);
+  if (nextId && lessonQuestion(lesson, nextId)) { f.questionId = nextId; render(); return; }
+  lessonFramingFinish();
+}
+
+// Terminal — infer the figure, pick the variant, store the session profile, play.
+function lessonFramingFinish() {
+  const f = state.lessonFraming;
+  const lesson = lessonV3(f.lessonId);
   f.questionId = null;
-  f.variantId = lessonSelectVariant(lesson, f.tags).id;
-  lessonOpenPlayer(lesson, f.variantId);
+  const variant = lessonSelectVariant(lesson, f.tags, f.inputs);
+  f.variantId = variant.id;
+
+  const figure = lessonInferFigure(lesson, f.inputs);
+  state.lessonProfile = state.lessonProfile || {};
+  state.lessonProfile[lesson.id] = {
+    inputs: Object.assign({}, f.inputs),
+    figure: figure,
+    bucket: variant.bucket || null,
+    variantId: variant.id
+  };
+  lessonOpenPlayer(lesson, variant.id);
+}
+
+// ── Inference + bucketing (APR) ───────────────────────────────────────────────
+// The audio stays general (the bucket); the specific number lives in the visual
+// plan. "Don't know" → the market average (an about-average read); no card / no
+// info → null, which plays the fallback.
+/**
+ * The CARD_APR entry a set of answers points at, or null. Entries are
+ * `{ typical, low, high }`; a bare number is still accepted so the lookup keeps
+ * working if the table is ever simplified back.
+ */
+function lessonCardEntry(inputs) {
+  if (typeof CARD_APR === "undefined") return null;
+  inputs = inputs || {};
+  if (inputs.directRate) return CARD_APR.directRates[inputs.directRate] || null;
+  if (inputs.issuer && inputs.card && CARD_APR.issuers[inputs.issuer]) {
+    return CARD_APR.issuers[inputs.issuer][inputs.card] || null;
+  }
+  return null;
+}
+
+function lessonEntryRate(entry) {
+  if (entry == null) return null;
+  return typeof entry === "number" ? entry : entry.typical;
+}
+
+/** The band the video draws as "cards like yours". Falls back to the national spread. */
+function lessonCardBand(inputs) {
+  const entry = lessonCardEntry(inputs);
+  if (entry && typeof entry === "object" && entry.low != null && entry.high != null) {
+    return { low: entry.low, high: entry.high };
+  }
+  const fb = (typeof CARD_APR !== "undefined" && CARD_APR.typicalBand) || null;
+  return fb ? { low: fb.low, high: fb.high } : null;
+}
+
+function lessonInferFigure(lesson, inputs) {
+  if (!lesson.bucketDimension) return null;
+  inputs = inputs || {};
+  if (inputs.enteredApr != null) return inputs.enteredApr;
+  const rate = lessonEntryRate(lessonCardEntry(inputs));
+  if (rate != null) return rate;
+  if (inputs.useAverage && typeof CARD_APR !== "undefined") return CARD_APR.marketAverage;
+  return null;
+}
+
+/** What the video calls their card. Never a figure — the numbers are separate. */
+function lessonCardName(inputs) {
+  inputs = inputs || {};
+  if (inputs.card) return inputs.card;
+  if (inputs.directRate === "store_retail") return "a store card";
+  if (inputs.directRate === "credit_union") return "a credit union card";
+  return "your card";
+}
+
+function lessonBucketFor(lesson, figure) {
+  if (figure == null || !lesson.bucketDimension) return null;
+  if (lesson.bucketDimension.kind === "apr") {
+    const avg = (typeof CARD_APR !== "undefined" && CARD_APR.marketAverage) || 22;
+    const r = figure / avg;
+    if (r < 0.85) return "deeply_below";
+    if (r < 0.95) return "slightly_below";
+    if (r <= 1.05) return "about_average";
+    if (r <= 1.20) return "slightly_above";
+    return "deeply_above";
+  }
+  return null;
 }
 
 /**
@@ -93,10 +204,23 @@ function lessonFramingAnswer(optionIndex) {
  * That is 06-education's "'I don't know' is a first-class answer, not a
  * failure". Do not add variants to cover them.
  */
-function lessonSelectVariant(lesson, tags) {
+function lessonSelectVariant(lesson, tags, inputs) {
   const variants = lesson.scriptVariants || [];
   const fallback = variants.find(v => v.isFallback) || variants[variants.length - 1];
 
+  // Bucket lessons (APR): infer the figure, bucket it against the reference, and
+  // match the bucket variant. No figure (no card / "I don't know" borrowing) →
+  // the fallback, which is also the "before you borrow" script.
+  if (lesson.bucketDimension) {
+    const bucket = lessonBucketFor(lesson, lessonInferFigure(lesson, inputs || {}));
+    if (bucket) {
+      const hit = variants.find(v => v.bucket === bucket);
+      if (hit) return hit;
+    }
+    return fallback;
+  }
+
+  // Tag overlap — the other lessons, until they get the same rework.
   let best = null, bestScore = 0;
   variants.forEach(v => {
     if (v.isFallback) return;
@@ -118,6 +242,23 @@ function lessonScriptFor(variantId) {
 function lessonOpenPlayer(lesson, variantId) {
   state.lessonVariantId = variantId;
   state.lessonVariantScript = lessonScriptFor(variantId);
+
+  // The data the staging-area video binds to. The narration stays general; every
+  // specific figure the viewer sees comes from here. Built from the session
+  // profile written when framing finished.
+  const prof = (state.lessonProfile && state.lessonProfile[lesson.id]) || {};
+  const inputs = prof.inputs || {};
+  const avg = (typeof CARD_APR !== "undefined" && CARD_APR.marketAverage) || null;
+  state.lessonVisualPlan = lesson.visualTemplate ? {
+    lessonId: lesson.id,
+    userFigure: prof.figure != null ? prof.figure : null,
+    marketAvg: avg,
+    gapPercent: (prof.figure != null && avg) ? Math.round(((prof.figure - avg) / avg) * 100) : null,
+    bucket: prof.bucket || null,
+    band: lessonCardBand(inputs),
+    cardName: lessonCardName(inputs),
+    storyboard: lesson.visualTemplate
+  } : null;
 
   // v2's player keys its content off state.currentLesson, so present the v3
   // lesson in the shape it expects rather than teaching it a new one.
@@ -142,13 +283,21 @@ function lessonSkipFraming() {
   if (!f) return;
   const lesson = lessonV3(f.lessonId);
   f.questionId = null;
-  f.variantId = lessonSelectVariant(lesson, []).id;
+  f.variantId = lessonSelectVariant(lesson, [], {}).id;
   lessonOpenPlayer(lesson, f.variantId);
 }
 
-/** Entry point from a task route or the Learn tab. */
+/**
+ * Entry point from a task route or the Learn tab. If the lesson was already
+ * framed THIS session, skip the questions and replay the same variant (D03:
+ * state is in-memory, so a refresh clears it and we ask again — no persistent
+ * cooldown, which does not matter for the prototype).
+ */
 function lessonV3Start(lessonId) {
-  if (!lessonV3(lessonId)) return;
+  const lesson = lessonV3(lessonId);
+  if (!lesson) return;
+  const prof = state.lessonProfile && state.lessonProfile[lessonId];
+  if (prof && prof.variantId) { lessonOpenPlayer(lesson, prof.variantId); return; }
   lessonFramingStart(lessonId);
   go("lessonFraming");
 }

@@ -47,9 +47,18 @@ function cmpWorthNoticing(r) {
   return material && (notable(r.vsPlan) || notable(r.vsPeer));
 }
 
+// Impact = the larger of the two gaps, so the three we surface are the ones most
+// worth acting on.
+function cmpImpact(r) {
+  return Math.max(Math.abs(r.vsPlan || 0), Math.abs(r.vsPeer || 0));
+}
+
 function renderComparison() {
   const rows = cmpAllRows();
-  const flagged = rows.filter(cmpWorthNoticing);
+  // Cap at 3 — a short list of the most material gaps, each with a path in.
+  const flagged = rows.filter(cmpWorthNoticing)
+    .sort((a, b) => cmpImpact(b) - cmpImpact(a))
+    .slice(0, 3);
 
   return `
     <h1 class="title" style="margin:0 0 4px;font-size:20px;">Where it's going</h1>
@@ -128,10 +137,14 @@ function renderComparisonFlag(r) {
         <p class="task-title" style="margin:0;">${h(r.category)}</p>
         <span class="obs-figure">${pct > 0 ? "+" : ""}${pct}%</span>
       </div>
-      <p class="helper" style="margin:0;">
+      <p class="helper" style="margin:0 0 8px;">
         ${budgetFmt(r.user)} so far, against ${budgetFmt(ref)}
         ${worst === "peer" ? "for households like yours" : "in your plan"}.
       </p>
+      <button class="button secondary full" style="font-size:12px;padding:8px 14px;"
+              type="button" onclick="goToCategory('${h(r.category).replace(/'/g, "\\'")}')">
+        Look into ${h(r.category)} ›
+      </button>
     </div>
   `;
 }
