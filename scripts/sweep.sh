@@ -4,9 +4,11 @@
 #   bash scripts/sweep.sh
 #
 # Concatenates the DOM stub, every <script> in versions/v3/index.html in load
-# order, and scripts/sweep.js into one file, then runs it under jsc. One script
-# rather than separate evaluations, because separately-evaluated scripts do not
-# share top-level `const` bindings but a browser's <script> tags do.
+# order, and scripts/sweep.js into one file, then runs it under node or jsc —
+# whichever this machine has (see check-syntax.sh; the Mac has jsc and no node,
+# the Linux/WSL box the reverse). One script rather than separate evaluations,
+# because separately-evaluated scripts do not share top-level `const` bindings
+# but a browser's <script> tags do.
 #
 # Exits non-zero if any check fails.
 
@@ -14,14 +16,37 @@ set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 
 JSC="/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc"
-[ -x "$JSC" ] || { echo "error: jsc not found (macOS only)" >&2; exit 2; }
+ENGINE="$(command -v node 2>/dev/null || true)"
+# nvm installs sit outside a non-interactive shell's PATH — take the newest.
+if [ -z "$ENGINE" ]; then
+  for cand in "$HOME"/.nvm/versions/node/*/bin/node; do
+    [ -x "$cand" ] && ENGINE="$cand"
+  done
+fi
+[ -n "$ENGINE" ] || ENGINE="$JSC"
+[ -x "$ENGINE" ] || { echo "error: no JS engine found — need node or macOS jsc" >&2; exit 2; }
 
 APP="versions/v3"
-OUT="$(mktemp -t mb-sweep).js"
+# Explicit template — `mktemp -t <prefix>` is BSD-only; GNU mktemp needs the
+# XXXXXX and otherwise fails, leaving OUT as a bare ".js" written to the repo.
+OUT="$(mktemp "${TMPDIR:-/tmp}/mb-sweep.XXXXXX").js"
 trap 'rm -f "$OUT"' EXIT
 
 # ── DOM stub ────────────────────────────────────────────────────────────────
 cat > "$OUT" <<'STUB'
+// print() is a jsc builtin and does not exist in node. sweep.js calls it ~21
+// times, so shim it here rather than rewriting every call site.
+//
+// It must write to stdout DIRECTLY: the stub below deliberately silences
+// `console` so app-code logging stays out of the sweep output, and a shim built
+// on console.log would inherit that silence — the whole report would vanish
+// while still exiting 0, which looks exactly like a clean run.
+if (typeof print === "undefined") {
+  var print = function () {
+    var line = Array.prototype.join.call(arguments, " ") + "\n";
+    if (typeof process !== "undefined" && process.stdout) process.stdout.write(line);
+  };
+}
 function El(i){this.id=i;this.style={};this.dataset={};this.innerHTML="";this.textContent="";this.value="";
  this.scrollTop=0;this.src="";this.onended=null;
  this.play=function(){return {catch:function(){}};};this.pause=function(){};
@@ -138,4 +163,4 @@ printf '\n// ══ sweep ══\n' >> "$OUT"
 cat scripts/sweep.js >> "$OUT"
 
 echo "Money Buddy v3 — Phase 6 sweep  ($n app files)"
-"$JSC" "$OUT"
+"$ENGINE" "$OUT"

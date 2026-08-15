@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
 # JS syntax checker — the automated gate for this repo.
 #
-# WHY THIS EXISTS: both CLAUDE.md files used to say "node --check path/to/file.js".
-# There is no node on this machine (no PATH entry, no nvm, no homebrew install).
-# macOS ships JavaScriptCore, whose `jsc` helper exposes checkSyntax(), so that
-# is the substitute. Verified with both a positive and a negative control —
-# it correctly rejects `function broken( {` and correctly accepts valid source.
+# WHY THIS EXISTS: this repo gets worked on from more than one machine, and the
+# two do not agree on which JS engine exists. The Mac has no node but ships
+# JavaScriptCore (`jsc`, which exposes checkSyntax()); the Linux/WSL box has node
+# (often only under ~/.nvm, off PATH for non-interactive shells) and no jsc.
+# Hardcoding either one makes the repo's only automated gate fail outright on the
+# other machine, which is exactly what happened. So: use whichever is present.
+# Both were verified with a positive and a negative control — each correctly
+# rejects `function broken( {` and correctly accepts valid source.
 #
-# NOTE: checkSyntax() takes a FILE PATH, not source text. Passing source makes it
-# fail with "Could not open file", which looks like a syntax error and isn't.
+# NOTE: jsc's checkSyntax() takes a FILE PATH, not source text. Passing source
+# makes it fail with "Could not open file", which looks like a syntax error and
+# isn't.
 #
 #   bash scripts/check-syntax.sh                 # all JS under versions/v3 + gate
 #   bash scripts/check-syntax.sh path/to/file.js # specific files
@@ -19,9 +23,22 @@
 set -uo pipefail
 
 JSC="/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc"
-if [ ! -x "$JSC" ]; then
-  echo "error: jsc not found at $JSC" >&2
-  echo "       install node and use 'node --check' instead" >&2
+NODE="$(command -v node 2>/dev/null || true)"
+# nvm installs land outside a non-interactive shell's PATH — take the newest.
+if [ -z "$NODE" ]; then
+  for cand in "$HOME"/.nvm/versions/node/*/bin/node; do
+    [ -x "$cand" ] && NODE="$cand"
+  done
+fi
+
+if [ -n "$NODE" ]; then
+  ENGINE="node"
+elif [ -x "$JSC" ]; then
+  ENGINE="jsc"
+else
+  echo "error: no JS engine found — need either node or macOS jsc" >&2
+  echo "       looked for: node on PATH, $HOME/.nvm/versions/node/*/bin/node," >&2
+  echo "                   $JSC" >&2
   exit 2
 fi
 
@@ -47,7 +64,12 @@ pass=0; fail=0
 for f in "${files[@]}"; do
   # Absolute path — jsc resolves relative to its own cwd, not necessarily ours.
   abs="$(cd "$(dirname "$f")" && pwd)/$(basename "$f")"
-  if err=$("$JSC" -e "checkSyntax('$abs')" 2>&1); then
+  if [ "$ENGINE" = "node" ]; then
+    err_cmd() { "$NODE" --check "$abs" 2>&1; }
+  else
+    err_cmd() { "$JSC" -e "checkSyntax('$abs')" 2>&1; }
+  fi
+  if err=$(err_cmd); then
     pass=$((pass + 1))
   else
     fail=$((fail + 1))
