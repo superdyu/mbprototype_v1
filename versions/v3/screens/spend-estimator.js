@@ -1,5 +1,10 @@
 // ─── Spend estimator (behavioral, extends the Money Journal) ─────────────────
-// TAB: Budget (sub-screen) | NAV BAR: Visible
+// TAB: Budget (sub-screen) | NAV BAR: Hidden (full-bleed)
+//
+// Full-bleed like every other `.journal-shell` flow: the shell supplies its own
+// padding and its `.journal-foot` owns the bottom edge, which a tab bar would
+// collide with. That means `journal-mode` in render.js, and staying OUT of
+// NAV_VISIBLE_SCREENS — the two go together for this markup.
 //
 // "Basically the Money Journal itself." It never asks a dollar figure — people
 // remember their HABITS (how often, what type: specialty café vs donut shop),
@@ -40,7 +45,17 @@ function estimatorMonthFraction() {
 
 function estimatorStart(category) {
   if (!isCategory(category)) return;
-  const qs = estimatorQuestionsFor(category).filter(q => !estimatorOnCooldown(q.id));
+  const all = estimatorQuestionsFor(category);
+  let qs = all.filter(q => !estimatorOnCooldown(q.id));
+  // The day clock is seeded and never advances within a session (journalDayIndex
+  // is SEED_STATE.journalHistory.length + 1; D03 wipes on refresh), so the
+  // config's cooldownDays:1 latches PERMANENTLY the moment a question is
+  // answered — `(day - day) < 1` is always true. Without this fallback the
+  // category's primary CTA leads to a dead-end "I'll ask again tomorrow" screen
+  // for the rest of the session, and a mis-tapped answer can never be corrected
+  // (the estimator is the only way to touch actuals — nothing takes a dollar
+  // figure). Partial cooldowns still apply; only a fully-latched set reopens.
+  if (!qs.length) qs = all;
   state.estimator = { category: category, questions: qs, qIndex: 0, answers: {} };
   go("spendEstimator");
 }

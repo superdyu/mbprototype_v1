@@ -173,7 +173,7 @@ function render() {
 
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");
   screenRoot.classList.toggle("journal-mode",     ["lessonFraming","lessonQuiz","lessonSimulation","lessonReward"].includes(state.screen) || screenRoot.classList.contains("journal-mode"));
-  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","lifestyleWizard","lifestyleWizardReview","budgetDone"].includes(state.screen));
+  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","lifestyleWizard","lifestyleWizardReview","budgetDone","spendEstimator"].includes(state.screen));
   screenRoot.classList.toggle("streak-mode",      state.screen === "streak");
   screenRoot.classList.toggle("login-mode",       state.screen === "login");
   screenRoot.classList.toggle("du-mode",          state.screen === "dailyUpdate");
@@ -184,6 +184,20 @@ function render() {
   screenRoot.innerHTML  = renderScreen();
   if (state.screen === "lesson") lpMountHook(lpWasPlaying);
   if (state.screen === "chat")   chatMountHook();   // pin the thread to the newest message
+
+  // The onboarding narrator is a timed surface like the lesson player, but it
+  // drives its OWN re-render (onbVideoAdvance → render → onbVideoSpeak), so it
+  // cannot use the stop-then-re-arm shape above: an unconditional stop here
+  // would clear `playing` and onbVideoSpeak's first guard would silence it on
+  // every segment. Tear down only when we have actually left its step —
+  // otherwise leaving onboarding by admin jump or a nav tab strands the
+  // narration, which keeps calling render() over whatever screen is now up.
+  if (typeof onbVideoStop === "function") {
+    const onb = state.onboarding;
+    const onVideoStep = state.screen === "onboarding" && onb &&
+                        typeof ONB_STEPS !== "undefined" && ONB_STEPS[onb.step] === "video";
+    if (!onVideoStep) onbVideoStop();
+  }
 
   // Buddy idle cycle runs only where the stage is actually on screen.
   buddyStopIdle();

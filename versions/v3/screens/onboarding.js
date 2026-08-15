@@ -561,7 +561,15 @@ function onbVideoClearTimer() {
 // Cancel any narration and the fallback timer — on pause or on leaving the step.
 function onbVideoStop() {
   const o = state.onboarding;
-  if (o && o.video) o.video.playing = false;
+  if (o && o.video) {
+    o.video.playing = false;
+    // speechSynthesis.cancel() does not drop the cancelled utterance's callback
+    // — it QUEUES onend (or onerror). If a restart re-arms `playing` in the same
+    // synchronous turn, that stale callback lands afterwards, passes the
+    // `playing` guard, and starts a second loop driving the same segments.
+    // Bumping the generation invalidates anything already in flight.
+    o.video.gen = (o.video.gen || 0) + 1;
+  }
   onbVideoClearTimer();
   try { if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
 }
@@ -577,6 +585,7 @@ function onbVideoSpeak() {
   const seg = ONB_VIDEO_SEGMENTS[o.video.index];
   if (!seg) { onbVideoFinish(); return; }
   const ms = onbVideoSegMs(seg);
+  const gen = o.video.gen || 0;   // callbacks below are void if this changes
   const synth = (typeof window !== "undefined") ? window.speechSynthesis : null;
   const canSpeak = synth && typeof SpeechSynthesisUtterance !== "undefined" && !v3PrefersReducedMotion();
   if (canSpeak) {
@@ -584,18 +593,20 @@ function onbVideoSpeak() {
       synth.cancel();
       const u = new SpeechSynthesisUtterance(seg);
       u.rate = 1; u.pitch = 1;
-      u.onend = onbVideoAdvance;
-      u.onerror = function () { o.video.timer = setTimeout(onbVideoAdvance, ms); };
+      u.onend = function () { onbVideoAdvance(gen); };
+      u.onerror = function () { o.video.timer = setTimeout(function () { onbVideoAdvance(gen); }, ms); };
       synth.speak(u);
       return;
     } catch (e) { /* fall through to the timer */ }
   }
-  o.video.timer = setTimeout(onbVideoAdvance, ms);
+  o.video.timer = setTimeout(function () { onbVideoAdvance(gen); }, ms);
 }
 
-function onbVideoAdvance() {
+function onbVideoAdvance(gen) {
   const o = state.onboarding;
   if (!o || !o.video || !o.video.playing) return;
+  // A callback queued before the last stop/restart is stale — ignore it.
+  if (gen != null && gen !== (o.video.gen || 0)) return;
   if (o.video.index >= ONB_VIDEO_SEGMENTS.length - 1) { onbVideoFinish(); return; }
   o.video.index++;
   render();
@@ -626,7 +637,10 @@ function onbVideoPause() {
 function onbVideoRestart() {
   const o = state.onboarding;
   onbVideoStop();
-  o.video = { index: 0, playing: false, finished: false, timer: null };
+  // Carry the generation forward — a fresh object would reset it to 0 and a
+  // stale callback could match again.
+  o.video = { index: 0, playing: false, finished: false, timer: null,
+              gen: (o.video && o.video.gen) || 0 };
   onbVideoPlay();
 }
 

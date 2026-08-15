@@ -266,6 +266,9 @@ function lpSyncHyperframes() {
 }
 
 // ─── Scrubbing ────────────────────────────────────────────────────────────────
+// Track geometry for the drag in progress, measured once at pointerdown and
+// cleared on release. Null when no drag is active.
+let lpScrubRect = null;
 // The progress bar is a real control. Every update here is a direct DOM write:
 // calling render() mid-drag would replace the element the pointer is captured
 // on and the gesture would die on the first move — the same rule the budget and
@@ -278,6 +281,11 @@ function lpScrubStart(e) {
   lp.scrubWasPlaying = lp.playing;
   if (lp.playing) lpPause();
   track.classList.add("scrubbing");   // drop the smoothing so the bar tracks the finger
+  // The track cannot move or resize mid-drag, so measure once. Reading it per
+  // pointermove forced a synchronous layout on every frame — and read it right
+  // after lpUpdateProgress had written bar.style.width, which is the classic
+  // read-after-write thrash.
+  lpScrubRect = track.getBoundingClientRect();
   try { track.setPointerCapture(e.pointerId); } catch (err) {}
   track.onpointermove   = lpScrubTo;
   track.onpointerup     = lpScrubEnd;
@@ -286,10 +294,16 @@ function lpScrubStart(e) {
 }
 
 function lpScrubTo(e) {
-  const track = document.getElementById("lp-progress");
   const lp = state.lessonPlayback;
-  if (!track || !lp.total) return;
-  const r = track.getBoundingClientRect();
+  if (!lp.total) return;
+  // Measured once in lpScrubStart; re-measure only if a move somehow arrives
+  // without one (defensive — the pointer handlers are wired there).
+  let r = lpScrubRect;
+  if (!r) {
+    const track = document.getElementById("lp-progress");
+    if (!track) return;
+    r = lpScrubRect = track.getBoundingClientRect();
+  }
   if (!r.width) return;
   const frac = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
   lpApplyElapsed(frac * lp.total);
@@ -303,6 +317,7 @@ function lpScrubEnd(e) {
     track.classList.remove("scrubbing");
     track.onpointermove = null; track.onpointerup = null; track.onpointercancel = null;
   }
+  lpScrubRect = null;
   if (lp.scrubWasPlaying && !lp.ended) lpPlay();
   lp.scrubWasPlaying = false;
 }
@@ -319,10 +334,16 @@ function lpApplyElapsed(sec) {
   const lp = state.lessonPlayback;
   lp.elapsed = Math.max(0, Math.min(lp.total, sec));
   if (lp.ended && lp.elapsed < lp.total) { lp.ended = false; lpLockNext(); }
-  lp.index = lpIndexForElapsed(lp.elapsed, lp.cues);
+  // Only rewrite the captions when the sentence actually changes — lpTick has
+  // guarded this since it was written; a drag calls this on every pointermove
+  // and a 300px track over a ~51s lesson makes most moves land in the same
+  // sentence, so the rewrite was almost always redundant.
+  const idx = lpIndexForElapsed(lp.elapsed, lp.cues);
+  const idxChanged = idx !== lp.index;
+  lp.index = idx;
   const audio = lpHasAudio() ? lpAudioEl() : null;
   if (audio) { try { audio.currentTime = lp.elapsed; } catch (err) {} }
-  lpHighlight(lp.index);
+  if (idxChanged) lpHighlight(lp.index);
   lpUpdateProgress();
   lpUpdatePlayBtn();
   lpSyncHyperframes();

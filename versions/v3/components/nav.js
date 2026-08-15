@@ -24,7 +24,8 @@
 //                    focus on confirm/keep-editing/discard
 const NAV_VISIBLE_SCREENS = ["home", "aboutMe",
   "myProgress", "goals", "learn", "topic", "simulation", "marketplace", "marketplaceDetail",
-  "settings", "myDebts", "debtAnalyzer", "comparison", "accountBalances", "debtBalances"];
+  "settings", "myDebts", "debtAnalyzer", "comparison", "accountBalances", "debtBalances",
+  "budgetCategory"];
 
 function renderNav() {
   if (!NAV_VISIBLE_SCREENS.includes(state.screen)) return "";
