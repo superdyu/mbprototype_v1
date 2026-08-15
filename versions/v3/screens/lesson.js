@@ -185,6 +185,29 @@ function lpHasAudio() {
   return !!LP_AUDIO[state.lessonPlayback.currentLessonId];
 }
 
+/**
+ * Speak the sentence currently on screen.
+ *
+ * Only `interest-builds` has a generated .wav, so every other lesson — the new
+ * APR video included — plays silently. This gives them a voice on any machine
+ * (see js/narration.js for why runtime speech rather than L10's .wav).
+ *
+ * Deliberately does NOT drive advancement: the virtual clock and its cues stay
+ * authoritative, and speech rides along beside them. Letting `onend` advance
+ * would put the captions and the hyperframes animation on two different clocks
+ * that drift apart, and the animation is choreographed against the cue times.
+ */
+function lpSpeakCurrent() {
+  const lp = state.lessonPlayback;
+  if (lpHasAudio() || !lp.playing) return;
+  if (typeof narrationSpeak !== "function") return;
+  narrationSpeak(lp.sentences[lp.index]);
+}
+
+function lpStopSpeaking() {
+  if (typeof narrationCancel === "function") narrationCancel();
+}
+
 function lpAudioEl() {
   return document.getElementById("lp-audio");
 }
@@ -343,7 +366,7 @@ function lpApplyElapsed(sec) {
   lp.index = idx;
   const audio = lpHasAudio() ? lpAudioEl() : null;
   if (audio) { try { audio.currentTime = lp.elapsed; } catch (err) {} }
-  if (idxChanged) lpHighlight(lp.index);
+  if (idxChanged) { lpHighlight(lp.index); lpSpeakCurrent(); }
   lpUpdateProgress();
   lpUpdatePlayBtn();
   lpSyncHyperframes();
@@ -397,6 +420,7 @@ function lpTick() {
   if (idx !== lp.index) {
     lp.index = idx;
     lpHighlight(idx);
+    lpSpeakCurrent();
   }
   lpUpdateProgress();
   lpSyncHyperframes();   // drift check only — the animation runs itself
@@ -436,6 +460,7 @@ function lpPlay() {
   lp.timer    = setInterval(lpTick, LP_TICK_MS);
   lpUpdatePlayBtn();
   lpSyncHyperframes();
+  lpSpeakCurrent();   // no .wav for this lesson → speak it live
 }
 
 function lpPause() {
@@ -443,6 +468,7 @@ function lpPause() {
   lp.playing = false;
   const audio = lpHasAudio() ? lpAudioEl() : null;
   if (audio) audio.pause();
+  lpStopSpeaking();
   if (lp.timer) { clearInterval(lp.timer); lp.timer = null; }
   lpUpdatePlayBtn();
   lpSyncHyperframes();
@@ -455,6 +481,7 @@ function lpStopPlayback() {
   lp.playing = false;
   const audio = lpHasAudio() ? lpAudioEl() : null;
   if (audio) audio.pause();
+  lpStopSpeaking();
   if (lp.timer) { clearInterval(lp.timer); lp.timer = null; }
 }
 

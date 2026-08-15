@@ -260,17 +260,24 @@ function lessonOpenPlayer(lesson, variantId) {
     storyboard: lesson.visualTemplate
   } : null;
 
-  // v2's player keys its content off state.currentLesson, so present the v3
-  // lesson in the shape it expects rather than teaching it a new one.
-  state.currentLesson = {
-    id: lesson.id,
-    title: lesson.title,
-    description: (lesson.courses || []).join(" · "),
-    badges: lesson.courses || [],
-    xp: LESSONS_V3.badges.xpLessonComplete || 100,
-    dailyTask: state.activeTaskId === "t_lesson_apr",
-    status: "in-progress"
-  };
+  // v2's player keys its content off state.currentLesson. The lesson is in the
+  // shared catalog now, so PREFER that row — it carries the real badge names.
+  // Overwriting it with `badges: lesson.courses` put course slugs
+  // ("interest-rates") where the reward screen expects badge names, so
+  // completeLesson() matched nothing and the reward landed with 0 gains and 0 XP.
+  // Fabricate a row only when the player was opened without selectLesson (an
+  // admin jump), and map courses → badges there too.
+  if (!state.currentLesson || state.currentLesson.id !== lesson.id) {
+    state.currentLesson = state.lessons.find(l => l.id === lesson.id) || {
+      id: lesson.id,
+      title: lesson.title,
+      description: (lesson.courses || []).join(" · "),
+      badges: lessonV3Badges(lesson),
+      xp: (LESSONS_V3.badges && LESSONS_V3.badges.xpLessonComplete) || 100,
+      dailyTask: state.activeTaskId === "t_lesson_apr",
+      status: "in-progress"
+    };
+  }
   state.activeQuizIndex = 0;
   state.activeQuizChoice = null;
   state.activeQuizWrongChoices = [];
@@ -337,7 +344,8 @@ function lessonV3LearnRow(lesson) {
     description: "Built from your own answers, so the numbers are yours.",
     type:        "lesson",
     badges:      lessonV3Badges(lesson),
-    xp:          40,
+    xp:          (typeof LESSONS_V3 !== "undefined" && LESSONS_V3.badges &&
+                  LESSONS_V3.badges.xpLessonComplete) || 40,
     dailyTask:   false,
     status:      "not-started",
     isV3:        true      // the one bit selectLesson branches on

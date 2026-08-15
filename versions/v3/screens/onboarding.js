@@ -594,6 +594,7 @@ function onbVideoStop() {
   }
   onbVideoClearTimer();
   onbVideoReleaseAudio();
+  narrationCancel();
 }
 
 /** Where gen-audio.sh writes this segment's narration. */
@@ -629,20 +630,34 @@ function onbVideoSpeak() {
     o.video.timer = setTimeout(function () { onbVideoAdvance(gen); }, ms);
   };
 
+  // Tier 3: silent clock. Tier 2: runtime speech. Tier 1: the generated .wav.
+  const speakFallback = function () {
+    if (narrationSpeak(seg, { onEnd: function () { onbVideoAdvance(gen); },
+                              onError: fallback })) {
+      // Speech drives the advance; keep a generous backstop in case neither
+      // onend nor onerror ever fires, so the captions can't strand on one line.
+      onbVideoClearTimer();
+      o.video.timer = setTimeout(function () { onbVideoAdvance(gen); }, ms + 6000);
+      return;
+    }
+    fallback();
+  };
+
   onbVideoReleaseAudio();
-  if (v3PrefersReducedMotion() || typeof Audio === "undefined") { fallback(); return; }
+  narrationCancel();
+  if (typeof Audio === "undefined") { speakFallback(); return; }
 
   try {
     const a = new Audio(onbVideoAudioSrc(o.video.index));
     onbAudioEl = a;
     a.onended = function () { onbVideoAdvance(gen); };
-    a.onerror = fallback;                      // not generated yet → silent clock
+    a.onerror = speakFallback;                 // not generated yet → speak it live
     const p = a.play();
-    if (p && typeof p.catch === "function") p.catch(fallback);   // autoplay blocked
+    if (p && typeof p.catch === "function") p.catch(speakFallback);  // autoplay blocked
     // Belt and braces: if the file never fires either event, don't strand the
     // captions on segment 1 — a generous timer still moves things along.
     o.video.timer = setTimeout(function () { onbVideoAdvance(gen); }, ms + 4000);
-  } catch (e) { fallback(); }
+  } catch (e) { speakFallback(); }
 }
 
 /** Stop and detach the segment audio, so a stale element cannot fire onended. */

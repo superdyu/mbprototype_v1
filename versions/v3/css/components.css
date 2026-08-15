@@ -2085,3 +2085,33 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .sim-sub-row { padding: 8px 0; border-bottom: 1px solid var(--line); gap: 10px; }
 .sim-sub-row:last-of-type { border-bottom: 0; }
 .reward-course { margin-bottom: 8px; padding: 12px 14px; }
+
+/* Spend estimator — the explicit confirm before the self-reported layer is
+   written. A real control, not a sentence: nothing commits until it is ticked. */
+.est-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 44px;                 /* tap-target floor */
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+}
+.est-confirm input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  flex: 0 0 auto;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.est-confirm:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}

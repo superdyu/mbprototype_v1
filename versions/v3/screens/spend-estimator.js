@@ -56,13 +56,19 @@ function estimatorStart(category) {
   // (the estimator is the only way to touch actuals — nothing takes a dollar
   // figure). Partial cooldowns still apply; only a fully-latched set reopens.
   if (!qs.length) qs = all;
-  state.estimator = { category: category, questions: qs, qIndex: 0, answers: {} };
+  state.estimator = { category: category, questions: qs, qIndex: 0, answers: {},
+                      adjusted: null, confirmed: false };
   go("spendEstimator");
 }
 
 function estimatorSetAnswer(qid, optIndex) {
-  if (!state.estimator) return;
-  state.estimator.answers[qid] = optIndex;
+  const e = state.estimator;
+  if (!e) return;
+  e.answers[qid] = optIndex;
+  // A different answer means a different estimate, so any correction the user
+  // typed and any tick they gave are about a figure that no longer exists.
+  e.adjusted = null;
+  e.confirmed = false;
   render();
 }
 
@@ -108,13 +114,41 @@ function estimatorCompute() {
   return Math.round(sum / step) * step;
 }
 
+/** The figure that will actually be written: the user's correction, or ours. */
+function estimatorFinalValue() {
+  const e = state.estimator;
+  if (!e) return 0;
+  return (e.adjusted == null) ? estimatorCompute() : e.adjusted;
+}
+
+// Editing the number is itself a change of mind, so it clears the confirmation
+// — you cannot tick the box, then alter the figure, and have the old tick stand.
+function estimatorSetAdjusted(value) {
+  const e = state.estimator;
+  if (!e) return;
+  const n = Math.max(0, Math.round(Number(value) || 0));
+  e.adjusted = n;
+  e.confirmed = false;
+  render();
+}
+
+function estimatorToggleConfirm() {
+  const e = state.estimator;
+  if (!e) return;
+  e.confirmed = !e.confirmed;
+  render();
+}
+
 function estimatorSubmit() {
   const e = state.estimator;
   if (!e) return;
+  // Belt and braces: the button is disabled until confirmed, but nothing may
+  // write this layer without an explicit affirmative.
+  if (!e.confirmed) return;
   // Nothing answered → say nothing. Writing the 0 the sum would produce reads
   // as "you spent nothing here" and would overwrite a real self-reported figure.
   if (!e.questions.some(q => e.answers[q.id] != null)) { estimatorDiscard(); return; }
-  const est = estimatorCompute();
+  const est = estimatorFinalValue();   // the user's correction, if they made one
   // Writes the "What you told me" layer for this category (L17). Spend-limit
   // goals track state.mtd live, so any goal on this category moves as a result.
   if (isCategory(e.category)) state.mtd[e.category] = est;
@@ -158,7 +192,7 @@ function renderSpendEstimator() {
   // self-reported figure (architecture §5), so when there is already one it has
   // to be on screen: the user is confirming a change, not just reading a number.
   if (e.qIndex >= qs.length) {
-    const est = estimatorCompute();
+    const est = estimatorFinalValue();
     const current = catValue(state.mtd, cat);
     const replacing = current > 0 && current !== est;
     return `
@@ -175,14 +209,31 @@ function renderSpendEstimator() {
                 This replaces what you'd told me before — ${budgetFmt(current)}
                 ${est < current ? "down" : "up"} to ${budgetFmt(est)}.
               </p>` : ""}
-            <p class="helper" style="margin:8px 0 0;">
-              Worked out from your habits. You can always sharpen it by journaling as the month goes.
-            </p>
+
+            <!-- The figure is the user's to correct, not just to accept. -->
+            <div class="input-group" style="margin-top:12px;">
+              <label for="estAmt">Adjust it if that's not right</label>
+              <input id="estAmt" type="number" min="0" step="5" value="${est}"
+                     onchange="estimatorSetAdjusted(this.value)"
+                     aria-label="${h(cat)} month-to-date estimate">
+            </div>
           </div>
+
+          <!-- Nothing commits until this is ticked. A write here REPLACES the
+               category's self-reported figure (architecture §5), so the user
+               affirms the change rather than a button doing it on their behalf. -->
+          <label class="est-confirm">
+            <input type="checkbox" ${e.confirmed ? "checked" : ""}
+                   onchange="estimatorToggleConfirm()">
+            <span>${replacing
+              ? `Yes — replace ${budgetFmt(current)} with ${budgetFmt(est)}`
+              : `Yes — record ${budgetFmt(est)} for ${h(cat)}`}</span>
+          </label>
         </div>
         <div class="journal-foot">
           <button class="button secondary" type="button" onclick="estimatorPrev()">Back</button>
-          <button class="button" type="button" onclick="estimatorSubmit()">Use this</button>
+          <button class="button" type="button" onclick="estimatorSubmit()"
+                  ${e.confirmed ? "" : "disabled"}>Use this</button>
         </div>
       </div>`;
   }
