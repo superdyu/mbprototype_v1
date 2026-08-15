@@ -19,6 +19,13 @@
 # OUTPUT
 #   versions/v3/assets/audio/daily/<scriptId>/<segmentId>.wav
 #   versions/v3/data/daily-timings.js     generated, loaded by the player
+#   versions/v3/assets/audio/onboarding/onboarding_intro/<segmentId>.wav
+#
+# The onboarding intro is generated the same way but needs no timings: its
+# player advances on the audio element's `ended` event rather than a timing
+# table. Until this script has been run on a Mac those .wav files are absent,
+# and the onboarding player falls back to a word-count clock — captions still
+# advance, there is just no voice.
 #
 # The timings are written to a SEPARATE generated file, not back into
 # daily-scripts.json — that stays a byte-identical copy of the spec so drift is
@@ -35,6 +42,8 @@ VOICE="${VOICE:-Samantha}"
 SRC="versions/v3/data/daily-scripts.json"
 OUTDIR="versions/v3/assets/audio/daily"
 TIMINGS="versions/v3/data/daily-timings.js"
+ONB_SRC="versions/v3/data/onboarding-script.json"
+ONB_OUTDIR="versions/v3/assets/audio/onboarding"
 
 [ -f "$SRC" ] || { echo "error: $SRC not found (run from repo root)" >&2; exit 1; }
 command -v say >/dev/null || { echo "error: 'say' not found — macOS only" >&2; exit 2; }
@@ -58,6 +67,23 @@ for s in d["scripts"]:
         print("%s\t%s\t%s" % (s["id"], seg["id"], text))
 PY
 
+# ── Onboarding intro ─────────────────────────────────────────────────────────
+# Same extractor, different source and output tree. The onboarding player
+# advances on the audio element's `ended` event rather than a timing table, so
+# this pass needs no timings written back — only the .wav files.
+if [ -f "$ONB_SRC" ]; then
+  python3 - "$ONB_SRC" > "$TMP/onb-segments.tsv" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+for s in d["scripts"]:
+    for seg in s["segments"]:
+        text = seg["text"].replace("\t", " ").replace("\n", " ")
+        print("%s\t%s\t%s" % (s["id"], seg["id"], text))
+PY
+else
+  : > "$TMP/onb-segments.tsv"
+fi
+
 count=0
 while IFS=$'\t' read -r script seg text; do
   [ -z "${script:-}" ] && continue
@@ -73,6 +99,22 @@ while IFS=$'\t' read -r script seg text; do
   count=$((count + 1))
   printf '  %-24s %-4s %6.2fs\n' "$script" "$seg" "$dur"
 done < "$TMP/segments.tsv"
+
+# Onboarding: wavs only, no timings (the player advances on `ended`).
+onb_count=0
+while IFS=$'\t' read -r script seg text; do
+  [ -z "${script:-}" ] && continue
+  mkdir -p "$ONB_OUTDIR/$script"
+  aiff="$TMP/onb-$script-$seg.aiff"
+  wav="$ONB_OUTDIR/$script/$seg.wav"
+
+  if [ -n "$VOICE" ]; then say -v "$VOICE" -o "$aiff" "$text"; else say -o "$aiff" "$text"; fi
+  afconvert "$aiff" "$wav" -d LEI16 -f WAVE >/dev/null
+
+  dur=$(afinfo "$wav" | awk -F': *' '/estimated duration/{print $2}' | awk '{print $1}')
+  onb_count=$((onb_count + 1))
+  printf '  %-24s %-4s %6.2fs\n' "$script" "$seg" "$dur"
+done < "$TMP/onb-segments.tsv"
 
 # Build the timings file. `start` is the running total, so a re-cut segment
 # shifts everything after it automatically — visual cues reference segment ids,
@@ -110,4 +152,4 @@ print("  timings -> %s" % sys.argv[2])
 PY
 
 echo "─────────────────────────────────"
-echo "$count segments generated with voice '${VOICE:-system default}'"
+echo "$count daily + $onb_count onboarding segments generated with voice '${VOICE:-system default}'"

@@ -274,8 +274,12 @@ function journalSubmit() {
   entries.forEach(e => {
     state.journalEntries.push(e);
     // L17 — entries feed month-to-date, and observations recompute from it.
-    // Safe by construction: entries only ever ADD spend, so a seeded gap can
-    // widen or hold but never vanish mid-session.
+    // The journal ADDS (each entry is one more thing that happened); the spend
+    // estimator REPLACES (it re-estimates the whole month). Both are legitimate
+    // writers of this layer — see architecture §5 — and a figure going down is a
+    // correction, not a bug. What stops an accidental one is that both commit
+    // only from a confirmation step: this path via journal-confirm, the
+    // estimator via its result step. Keep that true for any new writer.
     if (e.category && isCategory(e.category) && e.amount > 0) {
       state.mtd[e.category] = (state.mtd[e.category] || 0) + e.amount;
     }

@@ -25,14 +25,35 @@ const ONB_LIFESTYLE_DIMS = ["paysRent", "commute"];
 // Intro "video" narration — one caption per segment, spoken by live Web Speech
 // and advanced on each utterance's `onend` so text and voice stay in sync (the
 // spec's D04 intent; no recorded asset). Generalised, no figures. Buddy's voice.
-const ONB_VIDEO_SEGMENTS = [
-  "Here's the short version of how this works — no pressure, no jargon.",
-  "Each day I'll ask you a few quick questions about your money. That's your Money Journal.",
-  "Every answer fills in a little more of your picture — what you spend on, what matters to you, where things feel tight.",
-  "The more you tell me, the more your lessons and check-ins shape around your life, not some generic average.",
-  "So the read you get, and the peers I hold you up against, actually fit you.",
-  "That's it. Answer a little each day and I'll handle the rest. Let's get you set up."
-];
+// Narration text is data (data/onboarding-script.json) so the build-time TTS
+// pipeline can read it — see scripts/gen-audio.sh. Falls back to the literals
+// only if that file failed to load.
+const ONB_VIDEO_SCRIPT_ID = "onboarding_intro";
+const ONB_VIDEO_SEGMENT_IDS = (function () {
+  try {
+    const s = ONBOARDING_SCRIPT.scripts.find(x => x.id === ONB_VIDEO_SCRIPT_ID);
+    return s.segments.map(seg => seg.id);
+  } catch (e) { return ["s1","s2","s3","s4","s5","s6"]; }
+})();
+const ONB_VIDEO_SEGMENTS = (function () {
+  try {
+    const s = ONBOARDING_SCRIPT.scripts.find(x => x.id === ONB_VIDEO_SCRIPT_ID);
+    return s.segments.map(seg => seg.text);
+  } catch (e) {
+    return [
+      "Here's the short version of how this works — no pressure, no jargon.",
+      "Each day I'll ask you a few quick questions about your money. That's your Money Journal.",
+      "Every answer fills in a little more of your picture — what you spend on, what matters to you, where things feel tight.",
+      "The more you tell me, the more your lessons and check-ins shape around your life, not some generic average.",
+      "So the read you get, and the peers I hold you up against, actually fit you.",
+      "That's it. Answer a little each day and I'll handle the rest. Let's get you set up."
+    ];
+  }
+})();
+
+// Detached audio for the segment in flight. Module-level rather than on `state`
+// so the admin state inspector never tries to serialise a media element.
+let onbAudioEl = null;
 function onbLifestyleQuestions() {
   return LW_QUESTIONS.filter(q => ONB_LIFESTYLE_DIMS.indexOf(q.dim) !== -1);
 }
@@ -563,21 +584,38 @@ function onbVideoStop() {
   const o = state.onboarding;
   if (o && o.video) {
     o.video.playing = false;
-    // speechSynthesis.cancel() does not drop the cancelled utterance's callback
-    // — it QUEUES onend (or onerror). If a restart re-arms `playing` in the same
-    // synchronous turn, that stale callback lands afterwards, passes the
-    // `playing` guard, and starts a second loop driving the same segments.
-    // Bumping the generation invalidates anything already in flight.
+    // A media `ended`/`error` handler or a pending timer can still be queued
+    // when we stop. If a restart re-arms `playing` in the same synchronous
+    // turn, that stale callback lands afterwards, passes the `playing` guard,
+    // and starts a second loop driving the same segments. Bumping the
+    // generation invalidates anything already in flight — belt and braces
+    // alongside detaching the handlers in onbVideoReleaseAudio().
     o.video.gen = (o.video.gen || 0) + 1;
   }
   onbVideoClearTimer();
-  try { if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
+  onbVideoReleaseAudio();
 }
 
-// Speak the current segment. Live Web Speech fires onend for spoken utterances
-// (unlike recorded audio), so the caption advances exactly when the voice does.
-// No speech (unsupported / reduced motion / blocked) → a word-count timer keeps
-// the captions moving silently.
+/** Where gen-audio.sh writes this segment's narration. */
+function onbVideoAudioSrc(index) {
+  const segId = ONB_VIDEO_SEGMENT_IDS[index] || ("s" + (index + 1));
+  return "assets/audio/onboarding/" + ONB_VIDEO_SCRIPT_ID + "/" + segId + ".wav";
+}
+
+/**
+ * Play the current segment, then advance when it finishes.
+ *
+ * Under L10, Web Speech is a BUILD-TIME generator and never a runtime player —
+ * runtime plays the .wav that scripts/gen-audio.sh produced, exactly like the
+ * daily update and the lesson player. Calling speechSynthesis here (as this did)
+ * meant the first narration a tester heard was a different voice at a different
+ * pace from every other surface, or silence on a browser with no voice.
+ *
+ * The .wav is absent until gen-audio.sh has been run (macOS only), so a load or
+ * autoplay failure falls back to the word-count clock — the same "no asset →
+ * virtual clock" shape the lesson player already uses. Captions advance either
+ * way; only the voice is missing.
+ */
 function onbVideoSpeak() {
   const o = state.onboarding;
   if (!o || !o.video || !o.video.playing) return;
@@ -586,20 +624,36 @@ function onbVideoSpeak() {
   if (!seg) { onbVideoFinish(); return; }
   const ms = onbVideoSegMs(seg);
   const gen = o.video.gen || 0;   // callbacks below are void if this changes
-  const synth = (typeof window !== "undefined") ? window.speechSynthesis : null;
-  const canSpeak = synth && typeof SpeechSynthesisUtterance !== "undefined" && !v3PrefersReducedMotion();
-  if (canSpeak) {
-    try {
-      synth.cancel();
-      const u = new SpeechSynthesisUtterance(seg);
-      u.rate = 1; u.pitch = 1;
-      u.onend = function () { onbVideoAdvance(gen); };
-      u.onerror = function () { o.video.timer = setTimeout(function () { onbVideoAdvance(gen); }, ms); };
-      synth.speak(u);
-      return;
-    } catch (e) { /* fall through to the timer */ }
-  }
-  o.video.timer = setTimeout(function () { onbVideoAdvance(gen); }, ms);
+  const fallback = function () {
+    onbVideoClearTimer();
+    o.video.timer = setTimeout(function () { onbVideoAdvance(gen); }, ms);
+  };
+
+  onbVideoReleaseAudio();
+  if (v3PrefersReducedMotion() || typeof Audio === "undefined") { fallback(); return; }
+
+  try {
+    const a = new Audio(onbVideoAudioSrc(o.video.index));
+    onbAudioEl = a;
+    a.onended = function () { onbVideoAdvance(gen); };
+    a.onerror = fallback;                      // not generated yet → silent clock
+    const p = a.play();
+    if (p && typeof p.catch === "function") p.catch(fallback);   // autoplay blocked
+    // Belt and braces: if the file never fires either event, don't strand the
+    // captions on segment 1 — a generous timer still moves things along.
+    o.video.timer = setTimeout(function () { onbVideoAdvance(gen); }, ms + 4000);
+  } catch (e) { fallback(); }
+}
+
+/** Stop and detach the segment audio, so a stale element cannot fire onended. */
+function onbVideoReleaseAudio() {
+  if (!onbAudioEl) return;
+  try {
+    onbAudioEl.onended = null;
+    onbAudioEl.onerror = null;
+    onbAudioEl.pause();
+  } catch (e) {}
+  onbAudioEl = null;
 }
 
 function onbVideoAdvance(gen) {

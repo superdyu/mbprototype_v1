@@ -29,6 +29,7 @@ global_for() {
     journal-questions) echo "JOURNAL_QUESTIONS" ;;
     estimator-questions) echo "ESTIMATOR_QUESTIONS" ;;
     card-apr)          echo "CARD_APR" ;;
+    onboarding-script) echo "ONBOARDING_SCRIPT" ;;
     peer-benchmarks)   echo "PEER_BENCHMARKS" ;;
     daily-scripts)     echo "DAILY_SCRIPTS" ;;
     buddy-responses)   echo "BUDDY_RESPONSES" ;;

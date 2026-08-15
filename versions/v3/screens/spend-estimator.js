@@ -154,9 +154,13 @@ function renderSpendEstimator() {
       </div>`;
   }
 
-  // Result step.
+  // Result step — the confirmation. This write REPLACES the category's
+  // self-reported figure (architecture §5), so when there is already one it has
+  // to be on screen: the user is confirming a change, not just reading a number.
   if (e.qIndex >= qs.length) {
     const est = estimatorCompute();
+    const current = catValue(state.mtd, cat);
+    const replacing = current > 0 && current !== est;
     return `
       <div class="journal-shell">
         <div class="journal-head">
@@ -166,6 +170,11 @@ function renderSpendEstimator() {
           <div class="card">
             <p class="helper" style="margin:0 0 2px;">${h(cat)} so far this month</p>
             <p class="journal-total">${budgetFmt(est)}</p>
+            ${replacing ? `
+              <p class="helper" style="margin:8px 0 0;">
+                This replaces what you'd told me before — ${budgetFmt(current)}
+                ${est < current ? "down" : "up"} to ${budgetFmt(est)}.
+              </p>` : ""}
             <p class="helper" style="margin:8px 0 0;">
               Worked out from your habits. You can always sharpen it by journaling as the month goes.
             </p>

@@ -206,9 +206,24 @@ Two consequences:
    authored strings with baked figures (*"34% above what households like yours
    spend"*). Once numbers move, those go stale on first entry. Store the
    template, compute the figure at render.
-2. **Safe by construction** — journal entries only ever *add* spend, so a seeded
-   gap can widen or hold, never disappear mid-session. The four observations
-   can't be accidentally erased by a tester having a frugal day.
+2. **The layer is correctable, and confirmation is the guard.** The
+   self-reported layer has two writers with deliberately different semantics:
+
+   | Writer | Semantics | Why |
+   |---|---|---|
+   | `journalSubmit` (`js/journal.js`) | **adds** — `mtd[cat] += amount` | each entry is one more thing that happened |
+   | `estimatorSubmit` (`screens/spend-estimator.js`) | **replaces** — `mtd[cat] = est` | it is a fresh estimate of the whole month; adding would double on a re-run |
+
+   So a figure *can* go down, and the seeded gap *can* close — a correction is a
+   legitimate thing for a user to make, not a bug to design out. What keeps that
+   from happening by accident is that **neither writer commits silently**: both
+   pass through a confirmation step that states the resulting figure before it
+   lands (`screens/journal-confirm.js`; the estimator's result step, which shows
+   the current figure alongside the new one when it is replacing something).
+
+   **Any future writer of `state.mtd` needs the same confirmation step.** In a
+   full build the journal is ongoing rather than one-shot, and the confirmation
+   summarises the day's entries before they commit — same rule, more entries.
 
 The gaps between layers are the product. Two *different* gaps exist for the same
 category and must never substitute for one another:
