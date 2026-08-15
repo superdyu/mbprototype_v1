@@ -53,7 +53,7 @@ function renderRewardPreview() {
 
     <div class="flow-footer">
       <button class="button secondary" type="button" onclick="go('topic')">Back</button>
-      <button class="button" type="button" onclick="go('lesson')">Begin Lesson</button>
+      <button class="button" type="button" onclick="startCurrentLesson()">Begin Lesson</button>
     </div>
   `;
 }

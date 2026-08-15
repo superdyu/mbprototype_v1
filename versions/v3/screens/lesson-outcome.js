@@ -226,6 +226,8 @@ function lessonRewardStart() {
   const correct = state.lessonQuiz ? state.lessonQuiz.correct : 0;
   const fromTask = state.activeTaskId === "t_lesson_apr";
 
+  // v3 progression still accrues — course XP and Charity Points are v3's own
+  // ledgers and nothing else writes them.
   const award = lrComputeAward(lesson, correct, fromTask);
   state.lessonReward = {
     lessonId: lesson.id,
@@ -234,7 +236,13 @@ function lessonRewardStart() {
     kibble: lrAwardKibble(award)
   };
   if (fromTask) homeCompleteTask(state.activeTaskId);
-  go("lessonReward");
+
+  // …but the screen the user lands on is the shared reward screen, not a v3-only
+  // one (owner's call). completeLesson() reads state.currentLesson — which every
+  // lesson now has, v3 included, since they share one catalog — applies badge XP,
+  // writes the reward display state and navigates there itself.
+  if (state.currentLesson) { completeLesson(); return; }
+  go("lessonReward");   // reached only by an admin jump with no lesson selected
 }
 
 function renderLessonReward() {

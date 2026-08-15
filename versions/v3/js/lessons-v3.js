@@ -301,3 +301,54 @@ function lessonV3Start(lessonId) {
   lessonFramingStart(lessonId);
   go("lessonFraming");
 }
+
+// ─── v3 lessons in the Learn tab ─────────────────────────────────────────────
+// v3 lessons lived in their own catalog (LESSONS_V3) that the Learn tab never
+// listed, so `apr` was reachable ONLY from its daily task — a lesson you could
+// not find by browsing, on a pipeline of its own. Daily tasks are contextual
+// bookmarks into the app, not a second front door, so the v3 lessons are
+// adapted into state.lessons at boot and Learn/topic/selectLesson see one
+// catalog. Only the ENTRY branches (on isV3); everything after is shared.
+
+// v3 lessons tag themselves with course slugs; the Learn tab groups by badge.
+const LESSON_V3_COURSE_BADGES = {
+  "interest-rates":  "Credit Cards",
+  "credit-cards":    "Credit Cards",
+  "mortgages":       "Home Buying",
+  "savings":         "Emergency Fund",
+  "getting-started": "Emergency Fund",
+  "spending":        "Emergency Fund"
+};
+
+function lessonV3Badges(lesson) {
+  const out = [];
+  (lesson.courses || []).forEach(c => {
+    const b = LESSON_V3_COURSE_BADGES[c];
+    if (b && out.indexOf(b) === -1) out.push(b);
+  });
+  return out.length ? out : ["Credit Cards"];
+}
+
+/** A v3 lesson in the shape the Learn tab, topic list and selectLesson expect. */
+function lessonV3LearnRow(lesson) {
+  return {
+    id:          lesson.id,
+    title:       lesson.title,
+    description: "Built from your own answers, so the numbers are yours.",
+    type:        "lesson",
+    badges:      lessonV3Badges(lesson),
+    xp:          40,
+    dailyTask:   false,
+    status:      "not-started",
+    isV3:        true      // the one bit selectLesson branches on
+  };
+}
+
+/** Append the v3 catalog to state.lessons. Idempotent — safe on re-boot. */
+function lessonV3MergeIntoCatalog() {
+  if (typeof LESSONS_V3 === "undefined" || !LESSONS_V3.lessons) return;
+  LESSONS_V3.lessons.forEach(l => {
+    if (state.lessons.some(x => x.id === l.id)) return;
+    state.lessons.push(lessonV3LearnRow(l));
+  });
+}

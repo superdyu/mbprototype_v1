@@ -607,10 +607,13 @@ function renderLesson() {
 
   // Video is the default stage. It needs a storyboard AND a personalized figure,
   // so a lesson without either (or an "I don't know" path with nothing to plot)
-  // falls back to the waveform rather than drawing a frame full of dashes.
-  const videoOn     = state.lpStageStyle !== "clean" && state.lpStageStyle !== "waveform"
+  // shows a clean stage rather than drawing a frame full of dashes.
+  //
+  // Waveform renders ONLY when an admin explicitly picks it (L10) — falling
+  // through to it meant every lesson but `apr` played the animation L10 rejected.
+  const videoOn     = (state.lpStageStyle === "auto" || state.lpStageStyle === "video")
                       && hyperframesCanRender(state.lessonVisualPlan);
-  const isWaveform  = !videoOn && state.lpStageStyle !== "clean";
+  const isWaveform  = !videoOn && state.lpStageStyle === "waveform";
   const totalTime   = lpFmtTime(Math.round(state.lessonPlayback.total));
   const barPct      = (state.lessonPlayback.total > 0 ? state.lessonPlayback.elapsed / state.lessonPlayback.total * 100 : 0).toFixed(2);
   const elapsed     = lpFmtTime(Math.round(state.lessonPlayback.elapsed));
@@ -625,7 +628,11 @@ function renderLesson() {
 
       <!-- BANNER: back button + centered lesson title, above the stage -->
       <div class="lp-banner">
-        <button class="lp-back-btn" type="button" onclick="go('reward-preview')">‹</button>
+        <!-- navBack POPS the stack. go('reward-preview') PUSHED a screen the
+             user may never have seen, and topbar.js's header calls out that
+             exact anti-pattern: a hardcoded forward-jump is wrong as soon as a
+             screen can be reached from more than one place — which this one can. -->
+        <button class="lp-back-btn" type="button" onclick="navBack()">‹</button>
         <h1 class="lp-banner-title">${h(lesson.title)}</h1>
       </div>
 
@@ -708,7 +715,8 @@ function renderLessonAdmin() {
       <div class="input-group">
         <label>Stage style</label>
         <select onchange="state.lpStageStyle=this.value;render()">
-          <option value="video"    ${state.lpStageStyle === "video"    ? "selected" : ""}>Video — hyperframes (default)</option>
+          <option value="auto"     ${state.lpStageStyle === "auto"     ? "selected" : ""}>Auto — video if the lesson has one (default)</option>
+          <option value="video"    ${state.lpStageStyle === "video"    ? "selected" : ""}>Video — hyperframes (force)</option>
           <option value="waveform" ${state.lpStageStyle === "waveform" ? "selected" : ""}>Waveform (audio only)</option>
           <option value="clean"    ${state.lpStageStyle === "clean"    ? "selected" : ""}>Clean (nothing)</option>
         </select>

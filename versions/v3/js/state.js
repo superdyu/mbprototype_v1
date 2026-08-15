@@ -168,14 +168,20 @@ const state = {
   adminCollapsed: false,
 
   // Lesson player stage style — toggled from admin panel.
-  // L10 flipped the default to "clean": the narration is a recorded .wav, and
-  // an animated waveform that does not correspond to the audio is decoration
-  // pretending to be a visualisation. "waveform" remains as the non-default
-  // admin option.
-  // Lesson staging area: "video" (hyperframes, the default), "waveform" or
-  // "clean". Video needs a storyboard and a personalized figure; without them
-  // the player falls back to the waveform on its own.
-  lpStageStyle: "video",
+  //
+  //   "auto"     the default: video when the lesson HAS a storyboard and a
+  //              personalized figure, clean otherwise
+  //   "video"    force hyperframes (still needs a storyboard to show anything)
+  //   "waveform" the animated bar — admin-only, never a default
+  //   "clean"    nothing behind the captions
+  //
+  // L10: the narration is a recorded .wav, and an animated waveform that does
+  // not correspond to it is decoration pretending to be a visualisation — so
+  // waveform renders ONLY when explicitly selected here. A hardcoded "video"
+  // default reversed that, because only `apr` has a storyboard: every other
+  // lesson failed the storyboard test and fell through to the waveform.
+  // "auto" gives the intended split — apr is video, the rest are clean.
+  lpStageStyle: "auto",
 
   // ── Lesson playback session state ─────────────────────────────────────────
   // All playback variables consolidated here so navigation resets them cleanly

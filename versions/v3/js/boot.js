@@ -114,6 +114,10 @@ function bootV3() {
   //
   // Seeding the root as the entry screen instead made login the permanent root,
   // and navGoHome() returned to login forever.
+  // v3 lessons join the one Learn catalog, so they are browsable rather than
+  // reachable only through their daily task (see lessons-v3.js).
+  lessonV3MergeIntoCatalog();
+
   const entry = v3EntryScreen();
   state.nav.activeStack = "home";
   state.nav.stacks.home = entry === "home" ? ["home"] : ["home", entry];

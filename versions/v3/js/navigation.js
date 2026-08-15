@@ -185,6 +185,9 @@ function currentOffer() {
 // Enters a lesson from the topic page. Sets the lesson as the active session
 // so lesson.js and quiz.js can read from state.currentLesson without needing
 // arguments passed through onclick strings.
+// The ONE door into a lesson. Both the Learn tab and a daily task come through
+// here, so a lesson behaves identically however it was reached — a daily task
+// is a bookmark into the app, not a parallel pipeline.
 function selectLesson(id) {
   const lesson = state.lessons.find(l => l.id === id);
   if (!lesson) return;
@@ -197,6 +200,19 @@ function selectLesson(id) {
   state.activeQuizChoice       = null;
   state.activeQuizWrongChoices = [];
   go("reward-preview");
+}
+
+/**
+ * Leave the preview and start the lesson itself.
+ *
+ * v3 lessons ask their framing questions first — that is what personalises the
+ * script and the video figures — then open the player. v2 lessons go straight
+ * to it. Both land on the same `lesson` screen and the same tail.
+ */
+function startCurrentLesson() {
+  const lesson = state.currentLesson;
+  if (lesson && lesson.isV3) { lessonV3Start(lesson.id); return; }
+  go("lesson");
 }
 
 // Applies XP earned to a badge, handling level-up and tier-advance logic.
@@ -389,7 +405,9 @@ function navRouteTask(route) {
 
   if (name === "money_journal")       { journalStart({}); taskGo("journalEntry"); return; }
   if (name === "subscription_confirm"){ journalStart({ focusQuestionId: "q_watched" }); taskGo("journalEntry"); return; }
-  if (name === "lesson" && param)     { lessonV3Start(param); return; }
+  // A task is a bookmark: it opens the Learn tab's lesson, same as tapping it
+  // there. It must NOT start a parallel flow of its own.
+  if (name === "lesson" && param)     { taskGo("learn"); selectLesson(param); return; }
   if (name === "budget")              { taskGo("aboutMe"); return; }
   taskGo(name);
 }
