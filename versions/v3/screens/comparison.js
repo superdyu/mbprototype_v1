@@ -22,16 +22,28 @@
 const CMP_PCT_THRESHOLD = 15;
 const CMP_ABS_THRESHOLD = 25;
 
+// The plan layer only exists once the user has actually built one. state.plan
+// stays seeded with the persona's figures from bootV3 regardless, so without
+// this gate every "vs your plan" figure grades the user against a budget they
+// were told (on the budget tab) they do not have — and against a different
+// household's numbers at that. One chokepoint: everything downstream reads
+// hasPlan / vsPlan and degrades to peers-only on its own.
+function cmpHasPlan() {
+  return state.planStatus === "complete";
+}
+
 function cmpRow(category) {
-  const plan = catValue(state.plan, category);
+  const hasPlan = cmpHasPlan();
+  const plan = hasPlan ? catValue(state.plan, category) : 0;
   const user = catValue(state.mtd, category);
   const peer = benchPeerValue(category, benchOptsForUser());
   return {
     category: category,
+    hasPlan: hasPlan,
     plan: plan,
     user: user,
     peer: peer,
-    vsPlan: plan ? Math.round(((user - plan) / plan) * 100) : null,
+    vsPlan: (hasPlan && plan) ? Math.round(((user - plan) / plan) * 100) : null,
     vsPeer: peer ? Math.round(((user - peer) / peer) * 100) : null
   };
 }
@@ -42,7 +54,9 @@ function cmpAllRows() {
 
 function cmpWorthNoticing(r) {
   const notable = p => p != null && Math.abs(p) >= CMP_PCT_THRESHOLD;
-  const material = Math.abs(r.user - r.plan) >= CMP_ABS_THRESHOLD ||
+  // Guard the plan arm on r.plan: with no plan it is 0, and |user - 0| would
+  // make every category with any spend "material" on its own.
+  const material = (r.plan ? Math.abs(r.user - r.plan) >= CMP_ABS_THRESHOLD : false) ||
                    (r.peer != null && Math.abs(r.user - r.peer) >= CMP_ABS_THRESHOLD);
   return material && (notable(r.vsPlan) || notable(r.vsPeer));
 }
@@ -63,12 +77,13 @@ function renderComparison() {
   return `
     <h1 class="title" style="margin:0 0 4px;font-size:20px;">Where it's going</h1>
     <p class="helper" style="margin:0 0 14px;">
-      Three ways of looking at the same month. The differences are the
-      interesting part.
+      ${cmpHasPlan()
+        ? "Three ways of looking at the same month. The differences are the interesting part."
+        : "Two ways of looking at the same month. Build a budget and your plan joins the picture."}
     </p>
 
     <div class="card cmp-legend">
-      <div><span class="cmp-key cmp-key-plan"></span>Your plan</div>
+      ${cmpHasPlan() ? `<div><span class="cmp-key cmp-key-plan"></span>Your plan</div>` : ""}
       <div><span class="cmp-key cmp-key-user"></span>What you told me</div>
       <div><span class="cmp-key cmp-key-peer"></span>Peers</div>
       <p class="helper" style="margin:10px 0 0;font-size:10px;">
@@ -101,7 +116,9 @@ function renderComparisonRow(r) {
       </div>
 
       <div class="cmp-bars">
-        <span class="cmp-label">Plan</span>${bar(r.plan, "cmp-key-plan")}<span class="cmp-val">${budgetFmt(r.plan)}</span>
+        ${r.hasPlan
+          ? `<span class="cmp-label">Plan</span>${bar(r.plan, "cmp-key-plan")}<span class="cmp-val">${budgetFmt(r.plan)}</span>`
+          : ""}
         <span class="cmp-label">You</span>${bar(r.user, "cmp-key-user")}<span class="cmp-val">${budgetFmt(r.user)}</span>
         <span class="cmp-label">Peers</span>${bar(r.peer || 0, "cmp-key-peer")}<span class="cmp-val">${r.peer == null ? "—" : budgetFmt(r.peer)}</span>
       </div>

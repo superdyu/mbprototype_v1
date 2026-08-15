@@ -171,11 +171,30 @@ function goalsSuggestFor(context) {
     out.push({ label, target, period, category });
   };
 
+  // Without a built budget there is no plan to aim at, so the peer benchmark is
+  // the only honest reference. Same shape of suggestion, different yardstick —
+  // still just the number and the gap, never an instruction (D26).
+  const planless = typeof cmpHasPlan === "function" && !cmpHasPlan();
+
   if (ctx.category) {
     // Scoped to one category — specific, not spanning.
-    const plan = catValue(state.plan, ctx.category);
-    if (plan) push(`Keep ${ctx.category.toLowerCase()} under ${budgetFmt(plan)} a month`,
-                   plan, "monthly", ctx.category);
+    if (planless) {
+      const peer = cmpRow(ctx.category).peer;
+      if (peer) push(`Keep ${ctx.category.toLowerCase()} under ${budgetFmt(peer)} a month`,
+                     peer, "monthly", ctx.category);
+    } else {
+      const plan = catValue(state.plan, ctx.category);
+      if (plan) push(`Keep ${ctx.category.toLowerCase()} under ${budgetFmt(plan)} a month`,
+                     plan, "monthly", ctx.category);
+    }
+  } else if (planless) {
+    // Overall, no plan: the categories furthest over peers.
+    cmpAllRows()
+      .filter(r => r.peer > 0 && r.vsPeer != null && r.vsPeer > 10)
+      .sort((a, b) => b.vsPeer - a.vsPeer)
+      .slice(0, 2)
+      .forEach(r => push(`Keep ${r.category.toLowerCase()} under ${budgetFmt(r.peer)} a month`,
+                         r.peer, "monthly", r.category));
   } else {
     // Overall: the categories with the biggest gap — over plan OR over peers —
     // so each suggestion is earned and tied to the comparison observations.

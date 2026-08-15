@@ -24,16 +24,24 @@ function renderBudgetCategory() {
 
     ${renderComparisonRow(r)}
 
+    ${r.hasPlan ? `
     <div class="card">
       <div class="row" style="align-items:baseline;margin-bottom:2px;">
         <span class="budget-row-name">Your plan</span>
+        <!-- id is budgetSetPlan's live-drag target (budget-v3.js) — keep in step -->
         <span class="budget-row-amt" id="planAmt${idx}">${budgetFmt(r.plan)}</span>
       </div>
       <input class="journal-slider" type="range" min="0" max="${max}" step="5" value="${r.plan}"
              oninput="budgetSetPlan('${catArg}', this.value, true)"
              aria-label="${h(category)} planned amount">
       <p class="helper" style="font-size:11px;margin:6px 0 0;">Drag to adjust your monthly plan.</p>
-    </div>
+    </div>` : `
+    <div class="card">
+      <p class="helper" style="margin:0 0 10px;">
+        You haven't built a budget yet, so there's no plan to compare against here.
+      </p>
+      <button class="button full" type="button" onclick="go('aboutMe')">Build my budget ›</button>
+    </div>`}
 
     <button class="button full" style="margin-top:12px;" type="button"
             onclick="estimatorStart('${catArg}')">
