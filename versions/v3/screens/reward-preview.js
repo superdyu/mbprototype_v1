@@ -13,7 +13,7 @@ function renderRewardPreview() {
         <p class="subtitle">No lesson selected. Open a lesson from a topic page.</p>
       </div>
       <div class="flow-footer">
-        <button class="button secondary" type="button" onclick="go('learn')">Back to Learn</button>
+        <button class="button secondary" type="button" onclick="navGoTabRoot('learn')">Back to Learn</button>
       </div>
     `;
   }

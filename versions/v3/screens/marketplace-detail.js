@@ -42,7 +42,7 @@ function renderMarketplaceDetail() {
     </div>
 
     <div class="flow-footer">
-      <button class="button secondary" type="button" onclick="go('marketplace')">Back</button>
+      <button class="button secondary" type="button" onclick="navBack()">Back</button>
       <button class="button" type="button">Visit Site</button>
     </div>
   `;

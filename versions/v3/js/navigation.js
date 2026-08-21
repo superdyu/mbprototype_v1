@@ -422,6 +422,26 @@ window.addEventListener('popstate', function(e) {
 // seed-state's dailyTasks use their own vocabulary, matching no screen id, and
 // a route can carry a parameter ("lesson:apr").
 //
+// ── A TASK IS ONE OF TWO THINGS, AND THEY NAVIGATE DIFFERENTLY ───────────────
+//
+// 1. A BOOKMARK into another tab — "See what APR really costs you" opens the
+//    Learn tab's lesson; "Set up your budget" opens the Budget tab. The owner's
+//    framing: daily tasks are contextual bookmarks sending you to other spots in
+//    the application. Tapping one must be indistinguishable from tapping the
+//    same thing in that tab. So: navGoTabRoot — switch stacks and start clean.
+//
+// 2. A FLOW launched from Home — money_journal and subscription_confirm open a
+//    journal entry, which is not a tab and has nowhere else to belong. taskGo is
+//    right for those: reset the home stack, push, and back out to Home.
+//
+// These used to go through taskGo indiscriminately, which pushed the string
+// "learn" onto the HOME stack and left activeStack as "home". The lesson opened,
+// but renderNav highlights by activeStack (components/nav.js) — so the HOME tab
+// stayed lit while a Learn screen was on display, Back went to Home instead of
+// Learn, and the Learn tab's own stack still held whatever was there before. The
+// reward screen then exited with go('learn'), pushing a second "learn" on top of
+// the mess, so Back replayed the reward you had just finished.
+//
 // `subscription_confirm` is NOT a screen (L12) — it deep-links into a journal
 // entry focused on q_watched, which is where the engagement signal driving the
 // Hulu flag actually comes from. The deep link bypasses that question's 2-day
@@ -431,11 +451,13 @@ function navRouteTask(route) {
   const parts = String(route).split(":");
   const name = parts[0], param = parts[1];
 
+  // ── Flows from Home ──
   if (name === "money_journal")       { journalStart({}); taskGo("journalEntry"); return; }
   if (name === "subscription_confirm"){ journalStart({ focusQuestionId: "q_watched" }); taskGo("journalEntry"); return; }
-  // A task is a bookmark: it opens the Learn tab's lesson, same as tapping it
-  // there. It must NOT start a parallel flow of its own.
-  if (name === "lesson" && param)     { taskGo("learn"); selectLesson(param); return; }
-  if (name === "budget")              { taskGo("aboutMe"); return; }
+
+  // ── Bookmarks into a tab ──
+  if (name === "lesson" && param)     { navGoTabRoot("learn"); selectLesson(param); return; }
+  if (name === "budget")              { navGoTabRoot("aboutMe"); return; }
+
   taskGo(name);
 }

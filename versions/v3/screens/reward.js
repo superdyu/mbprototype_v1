@@ -224,8 +224,11 @@ function renderReward() {
         <p class="subtitle">Lesson complete.</p>
       </div>
       <div class="flow-footer">
-        <button class="button secondary" type="button" onclick="go('learn')">Back to Learn</button>
-        <button class="button full" type="button" onclick="go('home')">Return Home</button>
+        <!-- navGoTabRoot / navGoHome, never go(): both of these END a flow, and
+             go() PUSHES. "Return Home" used to push "home" on top of the home
+             stack, so Back replayed the reward you had just finished. -->
+        <button class="button secondary" type="button" onclick="navGoTabRoot('learn')">Back to Learn</button>
+        <button class="button full" type="button" onclick="navGoHome()">Return Home</button>
       </div>
     `;
   }
@@ -291,8 +294,8 @@ function renderReward() {
     </div>
 
     <div class="flow-footer" style="margin-top:8px;">
-      <button class="button secondary" type="button" onclick="go('learn')">Back to Learn</button>
-      <button class="button full" type="button" onclick="go('home')">Return Home</button>
+      <button class="button secondary" type="button" onclick="navGoTabRoot('learn')">Back to Learn</button>
+      <button class="button full" type="button" onclick="navGoHome()">Return Home</button>
     </div>
   `;
 }

@@ -23,7 +23,7 @@ function renderQuiz() {
         <p class="subtitle">No lesson active. Start a lesson from a topic page first.</p>
       </div>
       <div class="flow-footer">
-        <button class="button secondary" type="button" onclick="go('learn')">Back to Learn</button>
+        <button class="button secondary" type="button" onclick="navGoTabRoot('learn')">Back to Learn</button>
       </div>
     `;
   }

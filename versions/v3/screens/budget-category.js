@@ -40,7 +40,7 @@ function renderBudgetCategory() {
       <p class="helper" style="margin:0 0 10px;">
         You haven't built a budget yet, so there's no plan to compare against here.
       </p>
-      <button class="button full" type="button" onclick="go('aboutMe')">Build my budget ›</button>
+      <button class="button full" type="button" onclick="navGoTabRoot('aboutMe')">Build my budget ›</button>
     </div>`}
 
     <button class="button full" style="margin-top:12px;" type="button"

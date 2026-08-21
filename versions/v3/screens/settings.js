@@ -29,7 +29,7 @@ function renderSettings() {
         <h1 class="title">Settings</h1>
         <p class="subtitle">App preferences and account options.</p>
       </div>
-      <button class="button secondary" type="button" onclick="go('home')">Back</button>
+      <button class="button secondary" type="button" onclick="navBack()">Back</button>
     </div>
 
     <div class="card">

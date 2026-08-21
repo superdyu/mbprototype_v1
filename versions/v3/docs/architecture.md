@@ -475,6 +475,22 @@ state.nav = {
 | `navGoTabRoot(key)` | switch `activeStack` **and reset it to `[key]`** — "this flow is over" |
 | Admin "Jump to screen" | **reset** that stack to `[screen]` — a jump has no history |
 
+**A daily task is one of two things, and they navigate differently** — see
+`navRouteTask`. A **bookmark** into another tab (`lesson:apr`, `budget`) uses
+`navGoTabRoot`, so tapping the task is indistinguishable from tapping the same
+thing in that tab. A **flow launched from Home** (`money_journal`,
+`subscription_confirm`) uses `taskGo`, because a journal entry is not a tab and
+has nowhere else to belong. Routing bookmarks through `taskGo` pushed the string
+`"learn"` onto the *home* stack and left `activeStack` as `"home"` — so the Home
+tab stayed lit over a Learn screen, and Back went to Home.
+
+**No screen may `go()` a tab root.** `go('home')` / `go('learn')` push a tab key
+onto the current stack as though it were a sub-screen. Ten call sites did this;
+each is now `navGoTabRoot` (forward into a tab, or an escape hatch out of a
+dead-end screen), `navGoHome` (a flow ending), or `navBack` (a button that says
+Back). The reward screen's `go('home')` is what made Back replay a finished
+reward.
+
 `navGoTabRoot` exists because `navGoTab` commits that stack's **top**, which is
 right for a tab tap and wrong for ending a flow — the screen you just finished
 is still on it. Open the budget wizard from the Budget tab and the stack ends as
