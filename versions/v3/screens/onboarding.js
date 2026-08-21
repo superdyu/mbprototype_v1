@@ -97,6 +97,10 @@ function onbStart() {
     householdSize: null,
     incomeBand: null,
     lifestyle: Object.assign({}, PERSONA.lifestyle),   // persona is the fallback
+    // Which lifestyle dims the tester actually picked here. The persona fills
+    // state.lifestyle regardless, so this is the only way the budget wizard can
+    // tell "you already told me this" from "a stranger's default".
+    lifestyleAnswered: {},
     improveAreas: [],      // multi-select, max 3 (folds into strategicGoal)
     buddy: Object.assign({}, PERSONA.buddy)
   };
@@ -175,6 +179,17 @@ function onbToggleGoal(label) {
   render();
 }
 
+// Step 5 picks. Records the dim as USER-answered as well as writing the value,
+// so the budget wizard can pre-select exactly the questions already answered
+// here and leave the other four blank.
+function onbSetLifestyle(dim, value) {
+  const o = state.onboarding;
+  o.lifestyle[dim] = value;
+  if (!o.lifestyleAnswered) o.lifestyleAnswered = {};
+  o.lifestyleAnswered[dim] = true;
+  render();
+}
+
 // "A" · "A and B" · "A, B and C" — a readable phrase for strategicGoal.label.
 function onbJoinAreas(areas) {
   if (areas.length <= 1) return areas[0] || "";
@@ -199,6 +214,7 @@ function onbFinish() {
   }
 
   state.lifestyle = Object.assign({}, o.lifestyle);
+  state.lifestyleAnswered = Object.assign({}, o.lifestyleAnswered || {});
   state.buddy = Object.assign({}, o.buddy);
 
   // The multi-select folds into the single strategic goal the app renders as
@@ -415,7 +431,7 @@ function onbStepBody(key, o) {
       <div class="journal-options">
         ${q.options.map(opt => `
           <button class="journal-opt ${o.lifestyle[q.dim] === opt.value ? "picked" : ""}" type="button"
-                  onclick="state.onboarding.lifestyle['${q.dim}']='${opt.value}';render()">
+                  onclick="onbSetLifestyle('${q.dim}','${opt.value}')">
             <span class="journal-opt-label">${h(opt.label)}</span>
           </button>`).join("")}
       </div>`;

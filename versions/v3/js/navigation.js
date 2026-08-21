@@ -88,6 +88,23 @@ function navGoHome() {
   navCommit("home");
 }
 
+// Return to a TAB'S ROOT, resetting its stack — the any-tab counterpart to
+// navGoHome(), and for the same reason.
+//
+// navGoTab() commits navCurrent(), i.e. the TOP of that stack. That is right for
+// a tab tap (resume where you left off) and wrong for ending a flow, because the
+// screen you just finished is still on top. Enter the budget wizard from the
+// Budget tab and the aboutMe stack ends as
+// ["aboutMe","lifestyleWizard","lifestyleWizardReview","budgetDone"] — so
+// "See my budget" called navGoTab('aboutMe') and committed budgetDone, the
+// screen it was already on. The button did nothing.
+function navGoTabRoot(key) {
+  if (!state.nav.stacks[key]) return;
+  state.nav.activeStack = key;
+  state.nav.stacks[key] = [key];
+  navCommit(key);
+}
+
 // POP. At depth 1 there is nowhere to go — the top bar shows home instead.
 function navBack() {
   const st = navStack();

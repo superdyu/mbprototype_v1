@@ -302,6 +302,32 @@ and Groceries**. Still implement it as a product — but that's the blast radius
      base=275 (b3, index 1) × col=1.34 (900→very_high) × life=1.0
      = 368.5 → 370. Matches worked_example exactly. -->
 
+### The wizard walks the product, it does not recompute it
+
+`benchAllPeerValues` is the right answer for a one-shot calculation. The
+lifestyle wizard is not one — the tester can drag a slider on Q1 and then answer
+Q2, and recomputing would silently throw the drag away.
+
+So the wizard holds a **running** preview and applies each answer as a ratio
+against whatever is already folded in:
+
+```
+new = current × mods[dim][newAnswer][cat] / mods[dim][answerAlreadyApplied][cat]
+```
+
+An unanswered dimension contributes 1.0, so the first answer is just the
+multiplier; re-answering via Back divides the old one out with no special case;
+and with no drags at all it lands on the same figures `benchAllPeerValues` would
+have produced, because it is the same six multipliers in the same order. The
+running state lives in `state.lifestyleWizard.{preview, applied}`
+(`screens/lifestyle-wizard.js`).
+
+**`state.lifestyleAnswered`** is the companion to this. `state.lifestyle` is
+fully populated from the persona at boot, so it cannot tell "you told me this"
+from "a stranger's default" — and the wizard needs to, or every question opens
+pre-selected. Onboarding step 5 marks the two dimensions it asks
+(`ONB_LIFESTYLE_DIMS`); the wizard pre-selects only those.
+
 ### Deriving `incomeBand`
 
 Bands are `b1`–`b5` with `min`/`max` on **annual** income:
@@ -362,7 +388,7 @@ hunt — and it means adding a surface is a data edit, not a code edit.
 |---|---|
 | `home_tip` | Home — tip banner |
 | `home_task` | Home — daily task list |
-| `budget_comparison` | Budget — three-layer comparison |
+| `budget_comparison` | Budget — three-layer comparison (only the confirm gate now; the tab itself renders "Worth a look" instead) |
 | `progress` | My Progress — main body |
 | `progress_bills` | My Progress — bills calendar |
 | `goals` | Goals tab |
@@ -408,7 +434,17 @@ state.nav = {
 | `go(screen)` | push onto the active stack |
 | `taskGo(screen)` | set `activeStack = "home"`, then push — this is what makes a task-launched screen back to Home |
 | `back()` | pop the active stack |
+| `navGoTabRoot(key)` | switch `activeStack` **and reset it to `[key]`** — "this flow is over" |
 | Admin "Jump to screen" | **reset** that stack to `[screen]` — a jump has no history |
+
+`navGoTabRoot` exists because `navGoTab` commits that stack's **top**, which is
+right for a tab tap and wrong for ending a flow — the screen you just finished
+is still on it. Open the budget wizard from the Budget tab and the stack ends as
+`["aboutMe","lifestyleWizard","lifestyleWizardReview","budgetDone"]`, so
+"See my budget" called `navGoTab('aboutMe')` and re-committed `budgetDone`: the
+screen it was already on. It is the any-tab counterpart to `navGoHome()`, and
+the same distinction. **Every "Done" at the end of a flow wants one of those
+two, never `navGoTab`.**
 
 Per-tab stacks are what let the *same* screen back to two different places: a
 lesson opened from a Home task backs to Home, the same lesson opened from

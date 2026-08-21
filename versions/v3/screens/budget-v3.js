@@ -17,7 +17,7 @@ function renderBudgetV3() {
 
   return `
     <div class="row" style="align-items:baseline;margin-bottom:2px;">
-      <h1 class="title" style="margin:0;font-size:20px;">Monthly budget</h1>
+      <h1 class="title" style="margin:0;font-size:20px;">Budget</h1>
       <button class="button secondary" style="font-size:11px;padding:6px 12px;"
               type="button" onclick="lwStart()">Rebuild</button>
     </div>
@@ -46,13 +46,13 @@ function renderBudgetV3() {
 
     ${renderGoalSuggestions({ source: "budget" }, "Suggested Budget Goals")}
 
-    ${renderBudgetObservationCards("budget_comparison")}
-
-    <button class="button secondary full" style="margin-top:12px;" type="button"
-            onclick="go('comparison')">Compare with peers</button>
-
-    <div class="section-title" style="margin:18px 0 8px;">Categories</div>
-    ${CATEGORIES.map(c => renderBudgetCategoryRow(c)).join("")}
+    <!-- Once a budget exists this tab is the REVIEW surface, not an editing one:
+         the twelve rows are the three-layer comparison, and the sliders live on
+         the per-category screen a row taps into. It used to render twelve
+         sliders here, which meant the tab that says "your budget" was the only
+         place you could never see how it was going. renderComparisonBody is
+         shared with the standalone screen so there is one implementation. -->
+    ${renderComparisonBody()}
   `;
 }
 
@@ -172,24 +172,60 @@ function renderBudgetEmpty() {
 
 // ─── Post-save ───────────────────────────────────────────────────────────────
 
+/**
+ * "Budget Saved!" — a beat, then the Budget tab.
+ *
+ * This used to render the "budget_comparison" observation cards — the
+ * dining-over-plan and car-insurance flags — which have nothing to do with
+ * having just saved a budget and read as errors on the screen that confirms it.
+ *
+ * The continue is navGoTabRoot, not navGoTab: this screen is sitting ON the
+ * aboutMe stack when the wizard was opened from the Budget tab, and navGoTab
+ * re-commits that stack's top — this same screen. That is why "See my budget"
+ * did nothing.
+ */
+const BUDGET_DONE_MS = 2000;
+
 function renderBudgetDone() {
+  const still = v3PrefersReducedMotion();
+  // Auto-advance so the beat is a transition rather than a screen to dismiss.
+  // The tap target below is the escape hatch — it can never strand anyone.
+  budgetDoneArm(still ? 0 : BUDGET_DONE_MS);
+
   return `
-    <div class="journal-shell">
-      <div class="journal-head">
-        <h1 class="title" style="font-size:21px;margin:0;">Budget saved</h1>
-        <p class="helper" style="margin:6px 0 0;">
+    <div class="journal-shell budget-done" onclick="budgetDoneContinue()">
+      <div class="journal-body budget-done-body">
+        <p class="budget-done-title ${still ? "" : "budget-done-anim"}">Budget Saved!</p>
+        <p class="budget-done-sub ${still ? "" : "budget-done-anim-late"}">
           ${budgetFmt(catTotal(state.plan))} a month across ${CATEGORIES.length} categories.
         </p>
       </div>
-      <div class="journal-body">
-        ${renderBudgetObservationCards("budget_comparison")}
-      </div>
-      <div class="journal-foot">
-        <span></span>
-        <button class="button" type="button" onclick="navGoTab('aboutMe')">See my budget</button>
+      <div class="journal-foot" style="justify-content:center;">
+        <button class="button secondary" type="button" onclick="budgetDoneContinue()">
+          See my budget
+        </button>
       </div>
     </div>
   `;
+}
+
+// Module-level, not on `state` — the admin state inspector would serialise a
+// timer id it can do nothing with, and render() runs often enough that the
+// re-arm has to be idempotent.
+let budgetDoneTimer = null;
+
+function budgetDoneArm(ms) {
+  if (budgetDoneTimer) return;
+  budgetDoneTimer = setTimeout(function () {
+    budgetDoneTimer = null;
+    if (state.screen === "budgetDone") budgetDoneContinue();
+  }, Math.max(0, ms));
+}
+
+function budgetDoneContinue() {
+  if (budgetDoneTimer) { clearTimeout(budgetDoneTimer); budgetDoneTimer = null; }
+  if (state.screen !== "budgetDone") return;
+  navGoTabRoot("aboutMe");
 }
 
 function renderBudgetV3Admin() {

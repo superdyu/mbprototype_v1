@@ -463,6 +463,11 @@ var DEAD_BASELINE = [
   "journalDiscard",             // journal seam
   "observationPeerCounterpart",
   "planToBaseline",             // budget-baseline seam (L6)
+  // Both orphaned deliberately when the Budget tab became the review surface:
+  // the twelve slider rows moved to the per-category screen, and "Worth a look"
+  // replaced the observation cards. Kept because a future edit mode wants them.
+  "renderBudgetCategoryRow",
+  "renderBudgetObservationCards",
   "themeIsDark"                 // L21, for a screen that wants to branch on theme
 ];
 

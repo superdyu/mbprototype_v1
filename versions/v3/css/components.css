@@ -1531,6 +1531,45 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 
 /* ─── Budget (v3) ─────────────────────────────────────────────────────────────
    One row per category — twelve flat rows, no nesting (A2). */
+/* Post-save beat. Text only — the point is that the tester registers the save
+   happened before the Budget tab replaces it, not that anything is decorated. */
+.budget-done { justify-content: center; text-align: center; }
+.budget-done-body {
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  gap: 8px;
+}
+.budget-done-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+.budget-done-sub { margin: 0; font-size: 13px; color: var(--muted); }
+.budget-done-anim      { animation: budgetDoneIn .42s cubic-bezier(.2,.7,.3,1) both; }
+.budget-done-anim-late { animation: budgetDoneIn .42s cubic-bezier(.2,.7,.3,1) .18s both; }
+@keyframes budgetDoneIn {
+  from { opacity: 0; transform: translateY(10px) scale(.94); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .budget-done-anim, .budget-done-anim-late { animation: none; }
+}
+
+/* Worth a look — the same three bars as the list below, tinted so the section
+   still reads as a callout rather than a duplicate of the twelve. */
+.cmp-flag { background: var(--accent-soft); border-color: var(--accent-border); }
+
+/* Lifestyle wizard — what the chosen option means, above the sliders it moves.
+   Tinted so it reads as a response to the pick rather than another question. */
+.lw-meaning {
+  margin-top: 16px;
+  margin-bottom: 10px;
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+}
+
 .budget-row { margin-bottom: 8px; padding: 12px 14px; }
 .budget-row-name { font-size: 14px; font-weight: 700; }
 .budget-row-amt  { font-size: 15px; font-weight: 850; }

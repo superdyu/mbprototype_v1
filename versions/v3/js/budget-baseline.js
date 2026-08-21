@@ -106,7 +106,9 @@ function confirmPendingBaseline() {
 
 function discardPendingBaseline() {
   state.pendingBaseline = null;
-  navGoTab("aboutMe");
+  // Root, not navGoTab: this screen is sitting on top of the aboutMe stack, and
+  // navGoTab would re-commit the top — i.e. this same screen.
+  navGoTabRoot("aboutMe");
 }
 
 /** Old → new, per category, for the confirm gate. Only rows that changed. */

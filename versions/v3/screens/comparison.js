@@ -61,19 +61,17 @@ function cmpWorthNoticing(r) {
   return material && (notable(r.vsPlan) || notable(r.vsPeer));
 }
 
-// Impact = the larger of the two gaps, so the three we surface are the ones most
-// worth acting on.
+// Impact is measured in DOLLARS, not percent. A percentage ranking puts a $9
+// swing on a $30 category above a $180 swing on Housing, which is the opposite
+// of "the top dollar areas" — the gap worth surfacing is the one moving real
+// money. The percentage thresholds above still decide what QUALIFIES; this only
+// decides the order.
 function cmpImpact(r) {
-  return Math.max(Math.abs(r.vsPlan || 0), Math.abs(r.vsPeer || 0));
+  return Math.max(r.plan ? Math.abs(r.user - r.plan) : 0,
+                  r.peer != null ? Math.abs(r.user - r.peer) : 0);
 }
 
 function renderComparison() {
-  const rows = cmpAllRows();
-  // Cap at 3 — a short list of the most material gaps, each with a path in.
-  const flagged = rows.filter(cmpWorthNoticing)
-    .sort((a, b) => cmpImpact(b) - cmpImpact(a))
-    .slice(0, 3);
-
   return `
     <h1 class="title" style="margin:0 0 4px;font-size:20px;">Where it's going</h1>
     <p class="helper" style="margin:0 0 14px;">
@@ -81,11 +79,28 @@ function renderComparison() {
         ? "Three ways of looking at the same month. The differences are the interesting part."
         : "Two ways of looking at the same month. Build a budget and your plan joins the picture."}
     </p>
+    ${renderComparisonBody()}
+  `;
+}
 
+/**
+ * Legend + "Worth a look" + all twelve. Shared, because the Budget tab IS this
+ * view once a budget exists — the tab used to render twelve sliders, an editing
+ * surface, where the review surface belongs. Sliders still live on the
+ * per-category screen and in the wizard.
+ */
+function renderComparisonBody() {
+  const rows = cmpAllRows();
+  // Cap at 3 — a short list of the biggest dollar gaps, each with a path in.
+  const flagged = rows.filter(cmpWorthNoticing)
+    .sort((a, b) => cmpImpact(b) - cmpImpact(a))
+    .slice(0, 3);
+
+  return `
     <div class="card cmp-legend">
-      ${cmpHasPlan() ? `<div><span class="cmp-key cmp-key-plan"></span>Your plan</div>` : ""}
-      <div><span class="cmp-key cmp-key-user"></span>What you told me</div>
+      ${cmpHasPlan() ? `<div><span class="cmp-key cmp-key-plan"></span>Your budget</div>` : ""}
       <div><span class="cmp-key cmp-key-peer"></span>Peers</div>
+      <div><span class="cmp-key cmp-key-user"></span>What you told me</div>
       <p class="helper" style="margin:10px 0 0;font-size:10px;">
         Peers are a calculated comparison, not real people — public spending
         data for households your size and income, adjusted for where you live.
@@ -93,7 +108,11 @@ function renderComparison() {
     </div>
 
     ${flagged.length ? `
-      <div class="section-title" style="margin:18px 0 8px;">Worth a look</div>
+      <div class="section-title" style="margin:18px 0 4px;">Worth a look</div>
+      <p class="helper" style="margin:0 0 8px;font-size:11px;">
+        The categories where the biggest dollars are moving. Same three bars as
+        below — your budget, peers, and what you've told me.
+      </p>
       ${flagged.map(r => renderComparisonFlag(r)).join("")}
     ` : ""}
 
@@ -115,16 +134,18 @@ function renderComparisonRow(r) {
         <span class="helper" style="font-size:11px;">${budgetFmt(r.user)} so far</span>
       </div>
 
+      <!-- Order is budget → peers → you: the two references first, then what
+           actually happened, so the eye lands on the user's own bar last. -->
       <div class="cmp-bars">
         ${r.hasPlan
-          ? `<span class="cmp-label">Plan</span>${bar(r.plan, "cmp-key-plan")}<span class="cmp-val">${budgetFmt(r.plan)}</span>`
+          ? `<span class="cmp-label">Budget</span>${bar(r.plan, "cmp-key-plan")}<span class="cmp-val">${budgetFmt(r.plan)}</span>`
           : ""}
-        <span class="cmp-label">You</span>${bar(r.user, "cmp-key-user")}<span class="cmp-val">${budgetFmt(r.user)}</span>
         <span class="cmp-label">Peers</span>${bar(r.peer || 0, "cmp-key-peer")}<span class="cmp-val">${r.peer == null ? "—" : budgetFmt(r.peer)}</span>
+        <span class="cmp-label">You</span>${bar(r.user, "cmp-key-user")}<span class="cmp-val">${budgetFmt(r.user)}</span>
       </div>
 
       <div class="cmp-gaps">
-        ${cmpGapPill(r.vsPlan, "vs your plan")}
+        ${cmpGapPill(r.vsPlan, "vs your budget")}
         ${cmpGapPill(r.vsPeer, "vs peers")}
       </div>
     </div>
@@ -141,29 +162,43 @@ function cmpGapPill(pct, label) {
           </span>`;
 }
 
-// Inline card for a category with a gap worth noticing. States the number and
-// the gap; never prescribes an action (D26 — no financial advice, ever).
+// A category worth a look: the same three bars as the list below, so the two
+// sections read identically, plus the dollar gap and a path in. States the
+// number and the gap; never prescribes an action (D26 — no financial advice).
 function renderComparisonFlag(r) {
-  const worst = (r.vsPeer != null && Math.abs(r.vsPeer) > Math.abs(r.vsPlan || 0)) ? "peer" : "plan";
-  const pct = worst === "peer" ? r.vsPeer : r.vsPlan;
-  const ref = worst === "peer" ? r.peer : r.plan;
-
+  const overPeer = r.peer != null && r.user > r.peer;
+  const gap = cmpImpact(r);
   return `
-    <div class="card obs-card">
-      <div class="row" style="align-items:baseline;margin-bottom:3px;">
-        <p class="task-title" style="margin:0;">${h(r.category)}</p>
-        <span class="obs-figure">${pct > 0 ? "+" : ""}${pct}%</span>
+    <div class="card cmp-row cmp-flag">
+      <div class="row" style="align-items:baseline;margin-bottom:8px;">
+        <span class="budget-row-name">${h(r.category)}</span>
+        <span class="obs-figure">${overPeer ? "+" : ""}${budgetFmt(gap)}</span>
       </div>
-      <p class="helper" style="margin:0 0 8px;">
-        ${budgetFmt(r.user)} so far, against ${budgetFmt(ref)}
-        ${worst === "peer" ? "for households like yours" : "in your plan"}.
-      </p>
-      <button class="button secondary full" style="font-size:12px;padding:8px 14px;"
+
+      <div class="cmp-bars">
+        ${r.hasPlan
+          ? `<span class="cmp-label">Budget</span>${cmpFlagBar(r, r.plan, "cmp-key-plan")}<span class="cmp-val">${budgetFmt(r.plan)}</span>`
+          : ""}
+        <span class="cmp-label">Peers</span>${cmpFlagBar(r, r.peer || 0, "cmp-key-peer")}<span class="cmp-val">${r.peer == null ? "—" : budgetFmt(r.peer)}</span>
+        <span class="cmp-label">You</span>${cmpFlagBar(r, r.user, "cmp-key-user")}<span class="cmp-val">${budgetFmt(r.user)}</span>
+      </div>
+
+      <div class="cmp-gaps">
+        ${cmpGapPill(r.vsPlan, "vs your budget")}
+        ${cmpGapPill(r.vsPeer, "vs peers")}
+      </div>
+
+      <button class="button secondary full" style="font-size:12px;padding:8px 14px;margin-top:10px;"
               type="button" onclick="goToCategory('${h(r.category).replace(/'/g, "\\'")}')">
         Look into ${h(r.category)} ›
       </button>
     </div>
   `;
+}
+
+function cmpFlagBar(r, v, cls) {
+  const max = Math.max(r.plan, r.user, r.peer || 0, 1);
+  return `<div class="cmp-bar"><span class="${cls}" style="width:${Math.max(2, (v / max) * 100)}%"></span></div>`;
 }
 
 // ─── Compact strip for My Progress (07-progress-bills) ───────────────────────
@@ -181,11 +216,11 @@ function renderComparisonCompact(limit) {
         <span class="helper" style="font-size:11px;">
           ${budgetFmt(r.user)} / ${budgetFmt(r.plan)}
         </span>
-        ${cmpGapPill(r.vsPlan, "vs plan")}
+        ${cmpGapPill(r.vsPlan, "vs budget")}
       </div>
     `).join("")}
     <button class="button secondary full" style="margin-top:10px;" type="button"
-            onclick="go('comparison')">See all twelve</button>
+            onclick="navGoTabRoot('aboutMe')">See all twelve</button>
   `;
 }
 

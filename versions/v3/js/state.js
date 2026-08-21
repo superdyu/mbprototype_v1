@@ -176,6 +176,13 @@ const state = {
   planBuiltDate: null,
   lifestyleWizard: null,
 
+  // Which of the six lifestyle dimensions the USER actually answered, as
+  // opposed to inheriting from the persona. state.lifestyle is fully populated
+  // at boot (bootV3), so it cannot tell the two apart — and the wizard needs
+  // to, or every question opens pre-selected with a stranger's answer.
+  // Onboarding step 5 sets the two it asks (ONB_LIFESTYLE_DIMS).
+  lifestyleAnswered: {},
+
   // Admin panel collapse — persists across screens
   adminCollapsed: false,
 
