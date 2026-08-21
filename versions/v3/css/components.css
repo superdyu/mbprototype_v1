@@ -1531,6 +1531,10 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 
 /* ─── Budget (v3) ─────────────────────────────────────────────────────────────
    One row per category — twelve flat rows, no nesting (A2). */
+/* My Progress — the one place on that screen where something goes IN rather
+   than out. Tinted so it reads as an action among a column of read-outs. */
+.mp-update { background: var(--accent-soft); border-color: var(--accent-border); }
+
 /* Post-save beat. Text only — the point is that the tester registers the save
    happened before the Budget tab replaces it, not that anything is decorated. */
 .budget-done { justify-content: center; text-align: center; }

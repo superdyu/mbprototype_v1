@@ -669,10 +669,10 @@ function onbVideoBody(o) {
            repainting: nothing here calls render(), because a repaint mid-drag
            replaces the element the pointer is captured on. -->
       <div class="lp-ctrl-row">
-        <button class="button secondary lp-ctrl-btn" type="button" onclick="onbVideoSkip(-1)">◀ 10s</button>
+        <button class="button secondary lp-ctrl-btn" type="button" onclick="onbVideoSkip(-1)">◀ Back</button>
         <button class="button lp-ctrl-btn" id="onb-video-playbtn" type="button"
                 onclick="onbVideoPlayAction()">${playLabel}</button>
-        <button class="button secondary lp-ctrl-btn" type="button" onclick="onbVideoSkip(1)">10s ▶</button>
+        <button class="button secondary lp-ctrl-btn" type="button" onclick="onbVideoSkip(1)">Next ▶</button>
         <button class="button secondary lp-speed-btn" id="onb-video-speed" type="button"
                 onclick="onbVideoCycleSpeed()">${v.speed}×</button>
       </div>

@@ -115,17 +115,43 @@ const HF_ANIMS = {
   accumulate: { from: "translateY(7px) scale(.7)", out: "translateY(-2px)" }
 };
 
+// Entrances and exits are wall-clock SECONDS, not fractions of the runtime.
+//
+// The caps used to be fractions — min(0.09, span * 0.45) — and everything in
+// this engine is a fraction of the whole piece, so a 70-second lesson gave each
+// element a 6.3-second fade-in. The motion was correct and imperceptibly slow:
+// text drifted into view over six seconds while the narrator finished a
+// sentence and moved on. Expressed in seconds, a beat snaps in, holds for its
+// line, and snaps out, at any runtime.
+const HF_IN_SEC  = 0.42;
+const HF_OUT_SEC = 0.30;
+// The marker's slide from typical to their own rate carries the whole point of
+// the piece, so it gets slightly longer than a plain entrance.
+const HF_MARK_SEC = 0.60;
+
+/** A duration in seconds as a fraction of the runtime, never past `cap`. */
+function hfFrac(sec, totalSec, cap) {
+  const t = Math.max(0.001, Number(totalSec) || 1);
+  return Math.min(cap, sec / t);
+}
+
 /**
  * One element's keyframes, spanning the entire runtime. `from`/`to` are the
  * beat's fractions; the element eases in just inside the beat, holds, then
  * leaves — unless the beat holds to the end, which is how the closing frame
  * stays on screen.
+ *
+ * `totalSec` is what converts the fixed second-durations above into the
+ * percentages a @keyframes block needs. Without it the entrance is a share of
+ * the runtime, which is how it ended up at six seconds.
  */
-function hfKeyframes(name, from, to, anim, hold) {
+function hfKeyframes(name, from, to, anim, hold, totalSec) {
   const a = HF_ANIMS[anim] || HF_ANIMS.fade;
   const span = Math.max(0.001, to - from);
-  const inDur  = Math.min(0.09, span * 0.45);
-  const outDur = hold ? 0 : Math.min(0.05, span * 0.30);
+  // Never longer than a sensible share of the beat itself — a very short beat
+  // should not spend 0.42s of its life easing in.
+  const inDur  = Math.min(hfFrac(HF_IN_SEC, totalSec, 0.09), span * 0.45);
+  const outDur = hold ? 0 : Math.min(hfFrac(HF_OUT_SEC, totalSec, 0.05), span * 0.30);
 
   const p0 = from * 100;
   const p1 = (from + inDur) * 100;
@@ -193,7 +219,7 @@ function hfIcon(name, cx, cy, s) {
  * their own rate marked on it. The marker's slide from typical to their rate is
  * the beat that carries the whole point, so it is its own animation.
  */
-function hfScale(el, data, uid, n, beat) {
+function hfScale(el, data, uid, n, beat, totalSec) {
   const ink = 'var(--on-dark)';
   const band = data.band || {};
   const user = Number(data.userFigure);
@@ -233,7 +259,7 @@ function hfScale(el, data, uid, n, beat) {
     extraKeys: `@keyframes hfk-${markCls}{` +
       `0%{transform:translateX(${shift}px);}` +
       `${(beat.from * 100).toFixed(3)}%{transform:translateX(${shift}px);animation-timing-function:${HF_EASE};}` +
-      `${((beat.from + Math.min(0.12, (beat.to - beat.from) * 0.6)) * 100).toFixed(3)}%{transform:translateX(0);}` +
+      `${((beat.from + Math.min(hfFrac(HF_MARK_SEC, totalSec, 0.12), (beat.to - beat.from) * 0.6)) * 100).toFixed(3)}%{transform:translateX(0);}` +
       `100%{transform:translateX(0);}}`
   };
 }
@@ -290,7 +316,7 @@ function hyperframesMarkup(storyboard, data, totalSec, opts) {
           const cy = (el.y || 30) + row * 6.5;
           body = hfIcon("coin", cx, cy, 6.4);
         } else if (el.type === "scale") {
-          const s = hfScale(el, data, uid, n, beat);
+          const s = hfScale(el, data, uid, n, beat, totalSec);
           body = s.svg;
           if (!isStatic) { css.push(s.extraCss); keys.push(s.extraKeys); }
         }
@@ -298,7 +324,7 @@ function hyperframesMarkup(storyboard, data, totalSec, opts) {
         svg.push(`<g class="hf-el ${cls}">${body}</g>`);
         if (!isStatic) {
           css.push(`.${cls}{animation:hfk-${cls} var(--hf-dur) linear both;}`);
-          keys.push(hfKeyframes(`hfk-${cls}`, from, to, el.anim || "fade", hold));
+          keys.push(hfKeyframes(`hfk-${cls}`, from, to, el.anim || "fade", hold, totalSec));
         }
       }
     });

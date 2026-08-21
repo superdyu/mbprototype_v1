@@ -164,7 +164,14 @@ const LP_SCRIPTS = {
 // bar. Lessons in LP_AUDIO additionally drive the clock off a real <audio>
 // element (elapsed ← currentTime, total ← duration, play/pause/seek/rate → the
 // element); the cue→line and elapsed→bar derivation below is unchanged.
-const LP_DEFAULT_LINE_SEC = 10;
+// Floor and inter-sentence beat for the synthesized cue map. A flat
+// seconds-per-line constant used to stand here (10s), which is roughly double
+// what a sentence takes to say — so every line ended with a long silence while
+// the visuals crawled through a fade sized as a fraction of that inflated
+// runtime. Cues come from word count now, at the same pace the narration
+// actually runs.
+const LP_MIN_LINE_SEC   = 2.4;
+const LP_LINE_GAP_SEC   = 0.35;
 
 const LP_TIMINGS = {
   // APR lesson ("How Interest Builds") — TurboScribe cue times from the real
@@ -212,15 +219,32 @@ function lpAudioEl() {
   return document.getElementById("lp-audio");
 }
 
+/**
+ * How long a line takes to say: word count at DU_WPM, the pace the daily
+ * update and the onboarding narrator both run at, so retuning that one knob
+ * moves every narrated surface. Floored so a three-word line still reads.
+ */
+function lpLineSec(line) {
+  const words = String(line || "").trim().split(/\s+/).filter(Boolean).length;
+  const wpm = (typeof DU_WPM !== "undefined" && DU_WPM) || 165;
+  return Math.max(LP_MIN_LINE_SEC, (words / wpm) * 60) + LP_LINE_GAP_SEC;
+}
+
+/** Cue map from the script itself — cues[i] is when line i starts. */
+function lpCuesFromWords(sentences) {
+  const cues = [];
+  let t = 0;
+  (sentences || []).forEach(line => { cues.push(t); t += lpLineSec(line); });
+  return { cues, total: Math.max(1, t) };
+}
+
 // Returns { cues, total } for a lesson. Uses the authored timing when it exists
-// and matches the line count; otherwise synthesizes even cues so the continuous
-// engine still applies (preserving today's ~10s/line pace).
-function lpTimingFor(lessonId, lineCount) {
+// and matches the line count; otherwise derives cues from the script's own word
+// counts, so a short line is short and a long one has room.
+function lpTimingFor(lessonId, lineCount, sentences) {
   const t = LP_TIMINGS[lessonId];
   if (t && t.cues && t.cues.length === lineCount) return t;
-  const cues = [];
-  for (let i = 0; i < lineCount; i++) cues.push(i * LP_DEFAULT_LINE_SEC);
-  return { cues, total: Math.max(1, lineCount) * LP_DEFAULT_LINE_SEC };
+  return lpCuesFromWords(sentences || []);
 }
 
 // Index of the line currently being spoken: the last cue whose start ≤ elapsed.
@@ -619,7 +643,7 @@ function renderLesson() {
       "This lesson's content will be added soon.",
       "Tap Next to proceed to the quiz."
     ];
-    const timing       = lpTimingFor(lesson.id, lp.sentences.length);
+    const timing       = lpTimingFor(lesson.id, lp.sentences.length, lp.sentences);
     lp.cues            = timing.cues;
     lp.total           = timing.total;
     lp.index           = 0;
@@ -687,9 +711,9 @@ function renderLesson() {
       <!-- BOTTOM: audio controls -->
       <div class="lp-controls">
         <div class="lp-ctrl-row">
-          <button class="button secondary lp-ctrl-btn" type="button" onclick="lpSkip(-1)">◀ 10s</button>
+          <button class="button secondary lp-ctrl-btn" type="button" onclick="lpSkip(-1)">◀ Back</button>
           <button class="button lp-ctrl-btn" id="lp-playbtn" type="button" onclick="lpPlayAction()">${playLabel}</button>
-          <button class="button secondary lp-ctrl-btn" type="button" onclick="lpSkip(1)">10s ▶</button>
+          <button class="button secondary lp-ctrl-btn" type="button" onclick="lpSkip(1)">Next ▶</button>
           <button class="button secondary lp-speed-btn" id="lp-speed" type="button" onclick="lpCycleSpeed()">${state.lessonPlayback.speed}×</button>
         </div>
         <div class="lp-progress-row">

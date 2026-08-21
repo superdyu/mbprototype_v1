@@ -23,33 +23,58 @@
         "kind": "hyperframes",
         "_note": "Storyboard for the staging-area video (components/hyperframes.js). Beats are FRACTIONS of the lesson runtime, so the whole thing re-fits any duration. One shared spine; the `bucket` beat resolves to bucketSegments[bucket] so each outcome differs, but every segment renders from the user's own figures rather than baked art. Coordinates are in a 100 x 72 viewBox. Tokens ({userApr}, {marketAvg}, {bandLow}, {bandHigh}, {gapPhrase}, {cardName}) resolve at render time.",
 
+        "_spineNote": "Beat boundaries are the SCRIPT's line boundaries, derived from word count at DU_WPM (screens/lesson.js lpCuesFromWords). Education runs first — what APR is, that it is applied monthly, that clearing it costs nothing, and compounding — and only then does the card and its rate appear. Opening on the card and its number, as this used to, showed the answer before the thing it answers.",
         "spine": [
           {
-            "id": "open", "from": 0.0, "to": 0.16,
+            "id": "what", "from": 0.0, "to": 0.207,
             "elements": [
-              { "type": "icon",  "name": "card", "x": 50, "y": 26, "size": 22, "anim": "rise" },
-              { "type": "label", "text": "{cardName}", "x": 50, "y": 50, "size": 5.5, "anim": "fade" },
-              { "type": "label", "text": "the card you use most", "x": 50, "y": 59, "size": 3.6, "tone": "muted", "anim": "fade" }
+              { "type": "icon",  "name": "coin", "x": 50, "y": 22, "size": 18, "anim": "pop" },
+              { "type": "label", "text": "APR", "x": 50, "y": 48, "size": 12, "anim": "rise" },
+              { "type": "label", "text": "the yearly price of borrowing", "x": 50, "y": 60, "size": 3.6, "tone": "muted", "anim": "fade" }
             ]
           },
           {
-            "id": "rate", "from": 0.16, "to": 0.38,
+            "id": "monthly", "from": 0.207, "to": 0.354,
             "elements": [
-              { "type": "icon",  "name": "card", "x": 50, "y": 14, "size": 13, "anim": "fade" },
-              { "type": "label", "text": "{userApr}%", "x": 50, "y": 44, "size": 14, "anim": "rise" },
-              { "type": "label", "text": "your rate", "x": 50, "y": 56, "size": 3.8, "tone": "muted", "anim": "fade" }
+              { "type": "label", "text": "applied every month", "x": 50, "y": 12, "size": 4.6, "anim": "fade" },
+              { "type": "stack", "count": 4, "x": 50, "y": 32, "anim": "accumulate" },
+              { "type": "label", "text": "on whatever is still owed", "x": 50, "y": 62, "size": 3.6, "tone": "muted", "anim": "fade" }
             ]
           },
           {
-            "id": "compare", "from": 0.38, "to": 0.64,
+            "id": "paid_off", "from": 0.354, "to": 0.451,
+            "elements": [
+              { "type": "icon",  "name": "shield", "x": 50, "y": 24, "size": 16, "anim": "pop" },
+              { "type": "label", "text": "cleared in time", "x": 50, "y": 50, "size": 5.6, "anim": "rise" },
+              { "type": "label", "text": "costs nothing on most cards", "x": 50, "y": 60, "size": 3.6, "tone": "muted", "anim": "fade" }
+            ]
+          },
+          {
+            "id": "compounding", "from": 0.451, "to": 0.592,
+            "elements": [
+              { "type": "label", "text": "leave some behind", "x": 50, "y": 10, "size": 4.2, "tone": "muted", "anim": "fade" },
+              { "type": "stack", "count": 6, "x": 50, "y": 28, "anim": "accumulate" },
+              { "type": "label", "text": "interest on interest", "x": 50, "y": 64, "size": 5.4, "anim": "rise" }
+            ]
+          },
+          {
+            "id": "card", "from": 0.592, "to": 0.677,
+            "elements": [
+              { "type": "icon",  "name": "card", "x": 50, "y": 18, "size": 16, "anim": "rise" },
+              { "type": "label", "text": "{cardName}", "x": 50, "y": 40, "size": 4.6, "anim": "fade" },
+              { "type": "label", "text": "{userApr}%", "x": 50, "y": 58, "size": 12, "anim": "rise" }
+            ]
+          },
+          {
+            "id": "compare", "from": 0.677, "to": 0.787,
             "elements": [
               { "type": "label", "text": "where your rate sits", "x": 50, "y": 12, "size": 4.6, "anim": "fade" },
               { "type": "scale", "x": 12, "y": 40, "w": 76, "anim": "draw" }
             ]
           },
-          { "id": "bucket", "from": 0.64, "to": 0.86, "slot": "bucket" },
+          { "id": "bucket", "from": 0.787, "to": 0.872, "slot": "bucket" },
           {
-            "id": "settle", "from": 0.86, "to": 1.0, "hold": true,
+            "id": "settle", "from": 0.872, "to": 1.0, "hold": true,
             "elements": [
               { "type": "icon",  "name": "spark", "x": 50, "y": 16, "size": 12, "anim": "pop" },
               { "type": "label", "text": "{userApr}% vs {marketAvg}% typical", "x": 50, "y": 40, "size": 5.2, "anim": "fade" },
@@ -57,7 +82,6 @@
             ]
           }
         ],
-
         "bucketSegments": {
           "deeply_below": {
             "elements": [

@@ -645,6 +645,30 @@ it removes cross-browser variance in whether boundary events fire at all.
 
 Same generator serves the 15 lesson script bodies (L8).
 
+### 165 wpm is the one pacing knob
+
+`DU_WPM` (`screens/daily-update.js`) sets the pace for **every narrated
+surface**: the daily update, the onboarding narrator (`onbVideoSegMs`) and now
+the lesson player (`lpCuesFromWords`). Retune it once and all three move.
+
+The lesson player used to synthesize a flat `LP_DEFAULT_LINE_SEC = 10` per line
+instead — roughly double what a sentence takes to say, so every line ended in a
+long silence. Worse, **`components/hyperframes.js` expressed its entrances as a
+fraction of the total runtime**, and the cap was 9% — which over that inflated
+70-second runtime meant a **6.3-second fade-in**. The two compounded into text
+drifting into view while the narrator finished a sentence and moved on.
+
+Entrances and exits are now wall-clock seconds (`HF_IN_SEC`, `HF_OUT_SEC`,
+`HF_MARK_SEC`), converted to keyframe percentages through `hfFrac(sec, totalSec,
+cap)`. A beat snaps in, holds for its line, and snaps out at any runtime. The
+fraction cap survives as a ceiling so a very short beat cannot spend most of its
+life easing in.
+
+**Storyboard beat boundaries ARE script line boundaries.** The APR spine in
+`lessons.json` is cut from `lpCuesFromWords(apr_about_average)`; the other four
+buckets have different tail lengths, so their beats drift by up to 2%, which is
+inside a line. Rewriting a script means recutting the fractions.
+
 ### Verified against the shipped scripts
 
 All three variants have **7 segments each, every segment timed, every `cue`

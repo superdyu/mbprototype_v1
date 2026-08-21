@@ -22,6 +22,7 @@ function renderMyProgress() {
   return `
     <h1 class="title" style="margin:0 0 14px;font-size:20px;">My progress</h1>
     ${renderMPTrend()}
+    ${renderMPUpdate()}
     ${renderMPComparison()}
     ${renderMPBills()}
     ${renderMPSubscriptions()}
@@ -89,6 +90,41 @@ function mpShortLabel(label) {
   if (label === "Yesterday") return "yest";
   const m = String(label).match(/^(\d+)/);
   return m ? m[1] + "d" : label;
+}
+
+// ── 1b. Update your spending ─────────────────────────────────────────────────
+// The chart above says what has been recorded; this is how anything gets added
+// to it. Without it, My Progress is read-only — you can see the gap and have no
+// way to close it from the screen showing it to you.
+//
+// It opens a Money Journal entry rather than a form. journalSelectQuestions
+// already ranks by priority and applies cooldowns, so a plain journalStart({})
+// IS "the most important things to answer today" — there is no second selection
+// rule to keep in step with the first.
+
+function renderMPUpdate() {
+  const logged = mpDailyTotals().filter(d => d.total > 0).length;
+  return `
+    <div class="card mp-update">
+      <p class="task-title" style="margin:0 0 4px;">Anything to add today?</p>
+      <p class="task-desc" style="margin:0 0 12px;">
+        ${logged
+          ? "A few quick questions and the chart above moves."
+          : "Nothing recorded yet today. A few quick questions is all it takes."}
+      </p>
+      <button class="button full" type="button" onclick="mpStartUpdate()">
+        Update my spending ›
+      </button>
+    </div>
+  `;
+}
+
+// Pushes onto the myProgress stack (js/state.js), so Back returns here rather
+// than to Home — the same screen reached from a Home task backs to Home,
+// because the stack decides, not the screen (architecture §7).
+function mpStartUpdate() {
+  journalStart({});
+  go("journalEntry");
 }
 
 // ── 2. Three-layer comparison ────────────────────────────────────────────────
