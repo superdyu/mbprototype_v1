@@ -402,6 +402,11 @@ bootV3();
 try { history.replaceState(getNavSnapshot(), ''); } catch(e) {}
 render();
 
+// One delegated focusin/focusout pair on #screenRoot, attached after the first
+// render so the element exists. Covers every field in the app, including screens
+// that do not exist yet — which is the point of delegating it (components/keyboard.js).
+kbdInit();
+
 // Restore navigation state when the user presses browser back/forward.
 // Guard against null state — srcdoc iframes can fire popstate with e.state=null
 // in some browsers, which would spuriously recreate the baby budget iframe.

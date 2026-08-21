@@ -23,6 +23,32 @@ function h(value) {
     .replaceAll("'",  "&#039;");
 }
 
+/**
+ * Enable or disable a button by id, WITHOUT rendering.
+ *
+ * The house rule is `onchange`, not `oninput`, because a full render() mid-
+ * keystroke replaces the focused element and the caret goes with it. But that
+ * left every "Continue" gated on a field disabled until the tester clicked
+ * away — you typed your name and the button stayed grey.
+ *
+ * The way out is not oninput + render(). It is oninput + an imperative patch:
+ * state updates on every keystroke, and only the one control that depends on it
+ * is touched. Same shape journalSetNumber (js/journal.js) already uses to
+ * repaint the journal's Next label.
+ */
+function uiSetEnabled(id, enabled) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (enabled) el.removeAttribute("disabled");
+  else el.setAttribute("disabled", "disabled");
+}
+
+/** Replace one element's contents without touching the rest of the screen. */
+function uiPatchHTML(id, html) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = html;
+}
+
 // Scroll the screen content area back to the top
 function scrollTop() {
   const root = document.getElementById("screenRoot");

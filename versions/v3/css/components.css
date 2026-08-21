@@ -1886,20 +1886,11 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 }
 .onb-col-baseline {
   position: absolute;
-  top: 14px;
+  top: 4px;
   bottom: 22px;
   width: 0;
   border-left: 1px dashed var(--muted);
   opacity: .55;
-  transform: translateX(-50%);
-}
-.onb-col-baseline-label {
-  position: absolute;
-  top: 0;
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--muted);
-  white-space: nowrap;
   transform: translateX(-50%);
 }
 .onb-col-axis {

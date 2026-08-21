@@ -90,7 +90,7 @@ function onbStart() {
     step: 0,
     lwIndex: 0,
     buddyIndex: 0,         // sub-step within the character creator
-    video: { index: 0, playing: false, finished: false, timer: null },
+    video: null,           // built by onbVideoInit() on first use
     skipPrompt: false,     // name-step "skip this / skip all" confirmation
     name: "",
     zip: "",
@@ -177,6 +177,32 @@ function onbToggleGoal(label) {
   if (i !== -1) { o.improveAreas.splice(i, 1); }
   else if (o.improveAreas.length < ONB_GOALS_MAX) { o.improveAreas.push(label); }
   render();
+}
+
+/**
+ * Every free-text field in onboarding writes through here.
+ *
+ * It never calls render(): a full repaint mid-keystroke replaces the input the
+ * caret is in, and the tester loses their place at the third character. Instead
+ * it patches the only two things that depend on the value — the Continue
+ * button's disabled state and, for ZIP, the cost-of-living chart. `commit` is
+ * passed by onchange where a real repaint IS wanted once the field is done.
+ */
+function onbLiveInput(field, value, commit) {
+  const o = state.onboarding;
+  if (!o) return;
+
+  if (field === "buddyName") {
+    o.buddy.name = value;
+    state.buddy.name = value;       // so the stage above updates on commit
+  } else {
+    o[field] = value;
+  }
+
+  if (commit) { render(); return; }
+
+  uiSetEnabled("onbContinue", onbAnswered(ONB_STEPS[o.step], o));
+  if (field === "zip") uiPatchHTML("onbColChart", onbColChart(value));
 }
 
 // Step 5 picks. Records the dim as USER-answered as well as writing the value,
@@ -272,7 +298,7 @@ function renderOnboarding() {
           ? `<button class="button secondary" type="button" onclick="onbBack()">Back</button>`
           : `<span></span>`}
         ${showControls
-          ? `<button class="button" type="button" onclick="onbNext()"
+          ? `<button class="button" type="button" id="onbContinue" onclick="onbNext()"
                      ${onbAnswered(key, o) ? "" : "disabled"}>Continue</button>`
           : ""}
       </div>
@@ -308,7 +334,9 @@ function onbAnswered(key, o) {
   if (key === "household") return !!o.householdSize;
   if (key === "income")    return !!o.incomeBand;
   if (key === "goal")      return o.improveAreas.length > 0;
-  if (key === "video")     return true;   // watch or skip — Continue always proceeds
+  // Same contract as the lesson player: Next unlocks when the piece ends.
+  // Skip (top right) still exits at any point, so nothing is blocked (D09).
+  if (key === "video")     return !!(o.video && o.video.finished);
   // Attribute sub-steps always have a default; only naming the buddy is required.
   if (key === "buddy")     return ONB_BUDDY_STEPS[o.buddyIndex] !== "name"
                                   || !!(o.buddy.name && o.buddy.name.trim());
@@ -324,9 +352,10 @@ function onbColChart(zip) {
 
   const col = benchColIndex(zip);
 
-  // Only CA/AR/NY/VA prefixes are modeled in the test build (A12). Everything
-  // else falls back to the national average — say so plainly rather than drawing
-  // a chart that implies we have local data.
+  // Modeled areas are: every Arkansas ZIP and every county bordering it, at
+  // five-digit precision (data/zip-cost-of-living.json), plus the CA/NY/VA
+  // prefixes from A12. Everything else falls back to the national average — say
+  // so plainly rather than drawing a chart that implies we have local data.
   if (!col.supported) {
     return `
     <div class="note" style="margin-top:16px;">
@@ -341,13 +370,18 @@ function onbColChart(zip) {
   const zipW      = zipPct / scaleMax * 100;
   const markerX   = Math.max(6, Math.min(94, nationPct / scaleMax * 100));
 
+  // Name the county when we resolved one. It is the difference between "we
+  // looked something up about where you live" and "we guessed from your prefix",
+  // and it is the whole reason the five-digit table exists.
+  const where = col.county ? h(String(col.county).split(":")[1]) + " County" : "your area";
+
   let text;
   if (col.pct > 0) {
-    text = `Compared to the national average, your cost of living is <strong>${col.pct}% higher</strong>. This helps put your spending in context next to your peers.`;
+    text = `Compared to the national average, the cost of living in ${where} is <strong>${col.pct}% higher</strong>. This helps put your spending in context next to your peers.`;
   } else if (col.pct < 0) {
-    text = `Compared to the national average, your cost of living is <strong>${Math.abs(col.pct)}% lower</strong>. This helps put your spending in context next to your peers.`;
+    text = `Compared to the national average, the cost of living in ${where} is <strong>${Math.abs(col.pct)}% lower</strong>. This helps put your spending in context next to your peers.`;
   } else {
-    text = `Your cost of living is <strong>about the same</strong> as the national average. This helps put your spending in context next to your peers.`;
+    text = `The cost of living in ${where} is <strong>about the same</strong> as the national average. This helps put your spending in context next to your peers.`;
   }
 
   return `
@@ -361,7 +395,8 @@ function onbColChart(zip) {
         <div class="cmp-bar"><span style="width:${zipW}%;background:var(--accent);"></span></div>
       </div>
       <div class="onb-col-baseline" style="left:${markerX}%;" aria-hidden="true"></div>
-      <span class="onb-col-baseline-label" style="left:${markerX}%;">national average</span>
+      <!-- No label on the line: the axis caption below already names it, and
+           two "national average" strings a few pixels apart read as a bug. -->
       <p class="onb-col-axis">Cost of living · national average = 100%</p>
     </div>
     <p class="helper onb-col-text">${text}</p>`;
@@ -375,7 +410,8 @@ function onbStepBody(key, o) {
     </p>
     <div class="input-group">
       <input placeholder="Your name" value="${h(o.name)}"
-             onchange="state.onboarding.name=this.value;render()">
+             oninput="onbLiveInput('name', this.value)"
+             onchange="onbLiveInput('name', this.value)">
     </div>`;
 
   if (key === "zip") return `
@@ -385,9 +421,10 @@ function onbStepBody(key, o) {
     </p>
     <div class="input-group">
       <input inputmode="numeric" maxlength="5" placeholder="ZIP code" value="${h(o.zip)}"
-             onchange="state.onboarding.zip=this.value;render()">
+             oninput="onbLiveInput('zip', this.value)"
+             onchange="onbLiveInput('zip', this.value)">
     </div>
-    ${onbColChart(o.zip)}`;
+    <div id="onbColChart">${onbColChart(o.zip)}</div>`;
 
   if (key === "household") {
     const HH_LABELS = { 1: "Only me", 2: "2 people", 3: "3 people", 4: "4 or more people" };
@@ -471,7 +508,8 @@ function onbStepBody(key, o) {
         Seven days free, then $6.99 a month. Cancel any time.
       </p>
       <ul class="onb-trial-list">
-        <li>Daily updates read aloud</li>
+        <li>Daily updates on how you're doing</li>
+        <li>Video updates on reported spending</li>
         <li>Peer comparisons for every category</li>
         <li>Unlimited journal entries and history</li>
         <li>All lessons and simulations</li>
@@ -520,7 +558,8 @@ function onbBuddyStep(o) {
     control = `
       <div class="input-group">
         <input placeholder="Name your buddy" value="${h(b.name || "")}"
-               onchange="state.onboarding.buddy.name=this.value;state.buddy.name=this.value;render()">
+               oninput="onbLiveInput('buddyName', this.value)"
+               onchange="onbLiveInput('buddyName', this.value, true)">
       </div>`;
   }
 
@@ -560,27 +599,23 @@ function onbBuddySwatches(key, options, cssMap, current) {
     <p class="helper buddy-swatch-label">${current ? h(String(current)) : "&nbsp;"}</p>`;
 }
 
-// ─── Intro video (live Web Speech, captions synced on utterance end) ─────────
-function onbVideoBody(o) {
-  if (!o.video) o.video = { index: 0, playing: false, finished: false, timer: null };
-  const segs = ONB_VIDEO_SEGMENTS;
-  const v = o.video;
-  const seg = segs[v.index] || segs[segs.length - 1];
-  const pct = Math.round(((v.index + (v.finished ? 1 : 0)) / segs.length) * 100);
-  const playLabel = v.playing ? "Pause" : (v.finished ? "Replay" : (v.index === 0 ? "Play" : "Resume"));
-  return `
-    <p class="helper" style="margin:0 0 4px;">How Money Buddy works</p>
-    <h1 class="title" style="font-size:20px;margin:0 0 12px;">A quick hello before we start</h1>
-    <div class="onb-video">
-      ${renderBuddyStage({ square: true })}
-      <p class="onb-video-caption">${h(seg)}</p>
-      <div class="onb-video-progress" aria-hidden="true"><span style="width:${pct}%;"></span></div>
-      <div class="onb-video-controls">
-        <button class="button secondary" type="button" onclick="onbVideoRestart()">Restart</button>
-        <button class="button" type="button" onclick="${v.playing ? "onbVideoPause()" : "onbVideoPlay()"}">${playLabel}</button>
-      </div>
-    </div>`;
-}
+// ─── Intro video ─────────────────────────────────────────────────────────────
+// REBUILT to the lesson player's model (screens/lesson.js) so step 8 and a
+// lesson behave the same way: an elapsed-time clock against a per-segment CUE
+// map, with skip / scrub / speed acting on that clock and a Next that unlocks
+// on completion.
+//
+// It used to be event-driven — each segment's audio `onended` advanced to the
+// next — which gave the captions nothing to seek against. There was no clock to
+// scrub, no position to skip to and no rate to change, which is why the controls
+// were Restart and Play and nothing else.
+//
+// Cue times come from onbVideoSegMs(), i.e. word count at DU_WPM, the same pace
+// the build-time TTS renders at. The clock stays authoritative and the audio
+// rides along beside it, exactly as lpSpeakCurrent documents for the lesson.
+
+const ONB_VIDEO_TICK_MS = 100;
+const ONB_VIDEO_SPEEDS  = [1, 1.5, 2];
 
 function onbVideoSegMs(seg) {
   const words = String(seg || "").trim().split(/\s+/).length;
@@ -590,12 +625,125 @@ function onbVideoSegMs(seg) {
   return Math.max(1600, Math.round((words / wpm) * 60000));
 }
 
-function onbVideoClearTimer() {
-  const o = state.onboarding;
-  if (o && o.video && o.video.timer) { clearTimeout(o.video.timer); o.video.timer = null; }
+function onbVideoInit() {
+  const cues = [];
+  let t = 0;
+  ONB_VIDEO_SEGMENTS.forEach(seg => { cues.push(t); t += onbVideoSegMs(seg) / 1000; });
+  return {
+    index: 0, playing: false, finished: false,
+    elapsed: 0, total: Math.max(1, t), cues: cues,
+    speed: 1, lastTick: 0, timer: null, gen: 0
+  };
 }
 
-// Cancel any narration and the fallback timer — on pause or on leaving the step.
+/** The video state, built on first use and after a restart. */
+function onbVideo() {
+  const o = state.onboarding;
+  if (!o.video || !o.video.cues) o.video = onbVideoInit();
+  return o.video;
+}
+
+function onbVideoIndexFor(elapsed, cues) {
+  let idx = 0;
+  for (let i = 0; i < cues.length; i++) {
+    if (elapsed >= cues[i]) idx = i; else break;
+  }
+  return idx;
+}
+
+function onbVideoBody(o) {
+  const v = onbVideo();
+  const segs = ONB_VIDEO_SEGMENTS;
+  const seg = segs[v.index] || segs[segs.length - 1];
+  const pct = (v.total > 0 ? (v.elapsed / v.total) * 100 : 0).toFixed(2);
+  const playLabel = v.finished ? "↻" : (v.playing ? "⏸" : "▶");
+
+  return `
+    <p class="helper" style="margin:0 0 4px;">How Money Buddy works</p>
+    <h1 class="title" style="font-size:20px;margin:0 0 12px;">A quick hello before we start</h1>
+    <div class="onb-video">
+      ${renderBuddyStage({ square: true })}
+      <p class="onb-video-caption" id="onb-video-caption">${h(seg)}</p>
+
+      <!-- Same control set as the lesson player, and the same ids-based
+           repainting: nothing here calls render(), because a repaint mid-drag
+           replaces the element the pointer is captured on. -->
+      <div class="lp-ctrl-row">
+        <button class="button secondary lp-ctrl-btn" type="button" onclick="onbVideoSkip(-1)">◀ 10s</button>
+        <button class="button lp-ctrl-btn" id="onb-video-playbtn" type="button"
+                onclick="onbVideoPlayAction()">${playLabel}</button>
+        <button class="button secondary lp-ctrl-btn" type="button" onclick="onbVideoSkip(1)">10s ▶</button>
+        <button class="button secondary lp-speed-btn" id="onb-video-speed" type="button"
+                onclick="onbVideoCycleSpeed()">${v.speed}×</button>
+      </div>
+      <div class="lp-progress-row">
+        <span id="onb-video-time" class="lp-time-label">${lpFmtTime(Math.round(v.elapsed))}</span>
+        <div class="lp-progress" id="onb-video-progress" role="slider" tabindex="0"
+             aria-label="Intro position" aria-valuemin="0" aria-valuemax="100"
+             aria-valuenow="${Math.round(Number(pct))}"
+             onpointerdown="onbVideoScrubStart(event)" onkeydown="onbVideoScrubKey(event)">
+          <div class="lp-progress-fill" id="onb-video-bar" style="width:${pct}%;"></div>
+          <div class="lp-progress-knob" id="onb-video-knob" style="left:${pct}%;"></div>
+        </div>
+        <span class="lp-time-label">${lpFmtTime(Math.round(v.total))}</span>
+      </div>
+    </div>`;
+}
+
+// ── Direct repaints. None of these render() — see the note above. ─────────────
+
+function onbVideoPaintCaption() {
+  const v = onbVideo();
+  const el = document.getElementById("onb-video-caption");
+  if (el) el.textContent = ONB_VIDEO_SEGMENTS[v.index] || "";
+}
+
+function onbVideoPaintProgress() {
+  const v = onbVideo();
+  const pct = Math.max(0, Math.min(100, v.total > 0 ? (v.elapsed / v.total) * 100 : 0));
+  const bar = document.getElementById("onb-video-bar");
+  if (bar) bar.style.width = pct.toFixed(2) + "%";
+  const knob = document.getElementById("onb-video-knob");
+  if (knob) knob.style.left = pct.toFixed(2) + "%";
+  const track = document.getElementById("onb-video-progress");
+  if (track) track.setAttribute("aria-valuenow", String(Math.round(pct)));
+  const time = document.getElementById("onb-video-time");
+  if (time) time.textContent = lpFmtTime(Math.round(v.elapsed));
+}
+
+function onbVideoPaintPlayBtn() {
+  const v = onbVideo();
+  const btn = document.getElementById("onb-video-playbtn");
+  if (btn) btn.textContent = v.finished ? "↻" : (v.playing ? "⏸" : "▶");
+  // Continue is this step's Next and unlocks on completion, same as the lesson.
+  uiSetEnabled("onbContinue", onbAnswered("video", state.onboarding));
+}
+
+// ── Clock ────────────────────────────────────────────────────────────────────
+
+function onbVideoTick() {
+  const v = onbVideo();
+  const now = Date.now();
+  v.elapsed += ((now - v.lastTick) / 1000) * v.speed;
+  v.lastTick = now;
+
+  if (v.elapsed >= v.total) { onbVideoFinish(); return; }
+
+  const idx = onbVideoIndexFor(v.elapsed, v.cues);
+  if (idx !== v.index) {
+    v.index = idx;
+    onbVideoPaintCaption();
+    onbVideoSpeak();          // the new segment's voice rides along beside the clock
+  }
+  onbVideoPaintProgress();
+}
+
+function onbVideoClearTimer() {
+  const o = state.onboarding;
+  if (o && o.video && o.video.timer) { clearInterval(o.video.timer); o.video.timer = null; }
+}
+
+// Cancel any narration and the ticker — on pause or on leaving the step.
 function onbVideoStop() {
   const o = state.onboarding;
   // Was THIS surface using the shared narration seam? render() calls this on
@@ -605,12 +753,11 @@ function onbVideoStop() {
   const wasNarrating = !!(o && o.video && o.video.playing);
   if (o && o.video) {
     o.video.playing = false;
-    // A media `ended`/`error` handler or a pending timer can still be queued
-    // when we stop. If a restart re-arms `playing` in the same synchronous
-    // turn, that stale callback lands afterwards, passes the `playing` guard,
-    // and starts a second loop driving the same segments. Bumping the
-    // generation invalidates anything already in flight — belt and braces
-    // alongside detaching the handlers in onbVideoReleaseAudio().
+    // A media `ended`/`error` handler can still be queued when we stop. If a
+    // restart re-arms `playing` in the same synchronous turn, that stale
+    // callback lands afterwards and starts a second voice over the same
+    // segments. Bumping the generation invalidates anything already in flight —
+    // belt and braces alongside detaching the handlers in onbVideoReleaseAudio.
     o.video.gen = (o.video.gen || 0) + 1;
   }
   onbVideoClearTimer();
@@ -625,44 +772,22 @@ function onbVideoAudioSrc(index) {
 }
 
 /**
- * Play the current segment, then advance when it finishes.
+ * Give the current segment a voice. Does NOT drive advancement — the clock is
+ * authoritative, so a seek lands the caption and the voice in the same place.
  *
  * Under L10, Web Speech is a BUILD-TIME generator and never a runtime player —
  * runtime plays the .wav that scripts/gen-audio.sh produced, exactly like the
- * daily update and the lesson player. Calling speechSynthesis here (as this did)
- * meant the first narration a tester heard was a different voice at a different
- * pace from every other surface, or silence on a browser with no voice.
- *
- * The .wav is absent until gen-audio.sh has been run (macOS only), so a load or
- * autoplay failure falls back to the word-count clock — the same "no asset →
- * virtual clock" shape the lesson player already uses. Captions advance either
- * way; only the voice is missing.
+ * daily update and the lesson player. That .wav is absent until gen-audio.sh has
+ * been run, so a load or autoplay failure falls back to runtime speech, and a
+ * browser with no voice falls back to silence. Captions move either way.
  */
 function onbVideoSpeak() {
   const o = state.onboarding;
   if (!o || !o.video || !o.video.playing) return;
-  onbVideoClearTimer();
   const seg = ONB_VIDEO_SEGMENTS[o.video.index];
-  if (!seg) { onbVideoFinish(); return; }
-  const ms = onbVideoSegMs(seg);
-  const gen = o.video.gen || 0;   // callbacks below are void if this changes
-  const fallback = function () {
-    onbVideoClearTimer();
-    o.video.timer = setTimeout(function () { onbVideoAdvance(gen); }, ms);
-  };
+  if (!seg) return;
 
-  // Tier 3: silent clock. Tier 2: runtime speech. Tier 1: the generated .wav.
-  const speakFallback = function () {
-    if (narrationSpeak(seg, { onEnd: function () { onbVideoAdvance(gen); },
-                              onError: fallback })) {
-      // Speech drives the advance; keep a generous backstop in case neither
-      // onend nor onerror ever fires, so the captions can't strand on one line.
-      onbVideoClearTimer();
-      o.video.timer = setTimeout(function () { onbVideoAdvance(gen); }, ms + 6000);
-      return;
-    }
-    fallback();
-  };
+  const speakFallback = function () { narrationSpeak(seg); };
 
   onbVideoReleaseAudio();
   narrationCancel();
@@ -671,13 +796,10 @@ function onbVideoSpeak() {
   try {
     const a = new Audio(onbVideoAudioSrc(o.video.index));
     onbAudioEl = a;
-    a.onended = function () { onbVideoAdvance(gen); };
+    a.playbackRate = o.video.speed || 1;
     a.onerror = speakFallback;                 // not generated yet → speak it live
     const p = a.play();
     if (p && typeof p.catch === "function") p.catch(speakFallback);  // autoplay blocked
-    // Belt and braces: if the file never fires either event, don't strand the
-    // captions on segment 1 — a generous timer still moves things along.
-    o.video.timer = setTimeout(function () { onbVideoAdvance(gen); }, ms + 4000);
   } catch (e) { speakFallback(); }
 }
 
@@ -692,46 +814,134 @@ function onbVideoReleaseAudio() {
   onbAudioEl = null;
 }
 
-function onbVideoAdvance(gen) {
-  const o = state.onboarding;
-  if (!o || !o.video || !o.video.playing) return;
-  // A callback queued before the last stop/restart is stale — ignore it.
-  if (gen != null && gen !== (o.video.gen || 0)) return;
-  if (o.video.index >= ONB_VIDEO_SEGMENTS.length - 1) { onbVideoFinish(); return; }
-  o.video.index++;
-  render();
-  onbVideoSpeak();
+function onbVideoFinish() {
+  const v = onbVideo();
+  onbVideoStop();
+  v.elapsed  = v.total;
+  v.index    = ONB_VIDEO_SEGMENTS.length - 1;
+  v.finished = true;
+  onbVideoPaintCaption();
+  onbVideoPaintProgress();
+  onbVideoPaintPlayBtn();
 }
 
-function onbVideoFinish() {
-  const o = state.onboarding;
-  onbVideoStop();
-  if (o && o.video) o.video.finished = true;
-  render();
-}
+// ── Controls ─────────────────────────────────────────────────────────────────
 
 function onbVideoPlay() {
-  const o = state.onboarding;
-  if (!o.video) o.video = { index: 0, playing: false, finished: false, timer: null };
-  if (o.video.finished) { o.video.index = 0; o.video.finished = false; }
-  o.video.playing = true;
-  render();
+  const v = onbVideo();
+  if (v.playing || v.finished) return;
+  v.playing  = true;
+  v.lastTick = Date.now();
+  v.timer    = setInterval(onbVideoTick, ONB_VIDEO_TICK_MS);
+  onbVideoPaintPlayBtn();
   onbVideoSpeak();
 }
 
 function onbVideoPause() {
   onbVideoStop();
-  render();
+  onbVideoPaintPlayBtn();
+}
+
+function onbVideoPlayAction() {
+  const v = onbVideo();
+  if (v.finished) onbVideoRestart(); else if (v.playing) onbVideoPause(); else onbVideoPlay();
 }
 
 function onbVideoRestart() {
   const o = state.onboarding;
   onbVideoStop();
-  // Carry the generation forward — a fresh object would reset it to 0 and a
-  // stale callback could match again.
-  o.video = { index: 0, playing: false, finished: false, timer: null,
-              gen: (o.video && o.video.gen) || 0 };
+  const gen = (o.video && o.video.gen) || 0;
+  o.video = onbVideoInit();
+  o.video.gen = gen;                 // carry it forward, or a stale callback matches again
+  onbVideoPaintCaption();
+  onbVideoPaintProgress();
   onbVideoPlay();
+}
+
+/** ±1 segment, seeking the clock to that segment's cue — same as lpSkip. */
+function onbVideoSkip(delta) {
+  const v = onbVideo();
+  if (v.finished && delta < 0) v.finished = false;
+  const idx = Math.max(0, Math.min(ONB_VIDEO_SEGMENTS.length - 1, v.index + delta));
+  onbVideoApplyElapsed(v.cues[idx] || 0);
+}
+
+function onbVideoCycleSpeed() {
+  const v = onbVideo();
+  v.speed = ONB_VIDEO_SPEEDS[(ONB_VIDEO_SPEEDS.indexOf(v.speed) + 1) % ONB_VIDEO_SPEEDS.length];
+  const btn = document.getElementById("onb-video-speed");
+  if (btn) btn.textContent = v.speed + "×";
+  if (onbAudioEl) { try { onbAudioEl.playbackRate = v.speed; } catch (e) {} }
+  // The ticker reads v.speed live each tick — nothing more to do.
+}
+
+/** Seek to an absolute time and repaint everything that follows the clock. */
+function onbVideoApplyElapsed(sec) {
+  const v = onbVideo();
+  v.elapsed = Math.max(0, Math.min(v.total, sec));
+  if (v.finished && v.elapsed < v.total) v.finished = false;
+  const idx = onbVideoIndexFor(v.elapsed, v.cues);
+  const changed = idx !== v.index;
+  v.index = idx;
+  if (changed) { onbVideoPaintCaption(); onbVideoSpeak(); }
+  onbVideoPaintProgress();
+  onbVideoPaintPlayBtn();
+  if (v.playing) v.lastTick = Date.now();
+}
+
+// ── Scrubbing ────────────────────────────────────────────────────────────────
+// Geometry for the drag in progress, measured once at pointerdown. Reading it
+// per pointermove forces a synchronous layout every frame, right after the bar's
+// width was written — the classic read-after-write thrash.
+let onbScrubRect = null;
+let onbScrubWasPlaying = false;
+
+function onbVideoScrubStart(e) {
+  const track = document.getElementById("onb-video-progress");
+  const v = onbVideo();
+  if (!track) return;
+  onbScrubWasPlaying = v.playing;
+  if (v.playing) onbVideoPause();
+  track.classList.add("scrubbing");   // drop the smoothing so the bar tracks the finger
+  onbScrubRect = track.getBoundingClientRect();
+  try { track.setPointerCapture(e.pointerId); } catch (err) {}
+  track.onpointermove   = onbVideoScrubTo;
+  track.onpointerup     = onbVideoScrubEnd;
+  track.onpointercancel = onbVideoScrubEnd;
+  onbVideoScrubTo(e);
+}
+
+function onbVideoScrubTo(e) {
+  const v = onbVideo();
+  if (!v.total) return;
+  let r = onbScrubRect;
+  if (!r) {
+    const track = document.getElementById("onb-video-progress");
+    if (!track) return;
+    r = onbScrubRect = track.getBoundingClientRect();
+  }
+  if (!r.width) return;
+  onbVideoApplyElapsed(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * v.total);
+}
+
+function onbVideoScrubEnd(e) {
+  const track = document.getElementById("onb-video-progress");
+  const v = onbVideo();
+  if (track) {
+    try { track.releasePointerCapture(e.pointerId); } catch (err) {}
+    track.classList.remove("scrubbing");
+    track.onpointermove = null; track.onpointerup = null; track.onpointercancel = null;
+  }
+  onbScrubRect = null;
+  if (onbScrubWasPlaying && !v.finished) onbVideoPlay();
+  onbScrubWasPlaying = false;
+}
+
+/** Arrow keys nudge the scrubber, so the control is reachable without a pointer. */
+function onbVideoScrubKey(e) {
+  const step = 5;
+  if (e.key === "ArrowRight" || e.key === "ArrowUp")   { e.preventDefault(); onbVideoApplyElapsed(onbVideo().elapsed + step); }
+  if (e.key === "ArrowLeft"  || e.key === "ArrowDown") { e.preventDefault(); onbVideoApplyElapsed(onbVideo().elapsed - step); }
 }
 
 function onbTrial(accepted) {

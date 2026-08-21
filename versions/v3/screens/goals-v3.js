@@ -137,11 +137,13 @@ function renderGoalSuggestions(context, title) {
         <div class="input-group" style="margin-top:10px;">
           <label>What do you want to track?</label>
           <input placeholder="In your own words" value="${h(state.goalDraft.label)}"
+                 oninput="state.goalDraft.label=this.value"
                  onchange="state.goalDraft.label=this.value">
         </div>
         <div class="input-group">
           <label>Target amount</label>
           <input type="number" min="0" placeholder="Amount" value="${h(state.goalDraft.target)}"
+                 oninput="state.goalDraft.target=this.value"
                  onchange="state.goalDraft.target=this.value">
         </div>
         <button class="button full" type="button"

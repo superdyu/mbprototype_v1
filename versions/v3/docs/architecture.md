@@ -45,6 +45,7 @@ Both files are kept:
 | File | Role |
 |---|---|
 | `data/*.json` | Verbatim copy of the spec. **Never edited.** Diffable against `v3 Files/spec/data/`. |
+| `data/zip-cost-of-living.json` | The one exception — authored here, with no spec twin to diff against. Derived from public datasets; the derivation is recorded in its own `method._note`. |
 | `data/*.js` | Generated wrapper. What the app actually loads. |
 
 `scripts/wrap-data.sh` regenerates the `.js` from the `.json`. It is run by hand
@@ -66,6 +67,7 @@ opening `index.html` depends on it having been run recently.
 | `DAILY_SCRIPTS` | `daily-scripts.json` |
 | `BUDDY_RESPONSES` | `buddy-responses.json` |
 | `LESSONS_V3` | `lessons.json` |
+| `ZIP_COST_OF_LIVING` | `zip-cost-of-living.json` — **authored here, not a spec copy** |
 
 <!-- LESSONS_V3, not LESSONS — v2's state.lessons still exists and holds the
      48-question quiz pool we're keeping (L9). Two different things; distinct
@@ -254,14 +256,18 @@ peerValue = base[category][incomeBand][householdSize - 1]        // ARRAY INDEX
    plausible — the classic silent-wrong-number bug.
 2. **Cost of living is a two-step lookup.** `zipPrefixes` maps a 3-digit prefix
    to a tier *name* (`"900" → "very_high"`); `tiers[name][category]` is the
-   multiplier. There is no `colTier[zipPrefix][category]`.
+   multiplier. There is no `colTier[zipPrefix][category]`. **Never call this
+   directly** — go through `benchColMultipliers(zip)`, which tries the ZIP's own
+   county first and falls back to this ("Cost of living: county first, prefix
+   second" below).
 3. **Lifestyle is a product across all six dimensions**, not one lookup. A
    category can be touched by several — Dining out is modified by *both*
    `foodie` and `cooksAtHome`. Dimensions that don't name a category contribute
    1.0.
 
-Unlisted ZIP prefixes fall back to the `moderate` tier rather than failing (A12
-covers CA/AR/NY/VA only).
+Unlisted ZIP prefixes fall back to the `moderate` tier rather than failing.
+Modeled areas are every Arkansas ZIP and every county bordering it at five-digit
+precision, plus A12's CA/NY/VA prefixes.
 
 ### Two answer-key traps in `lifestyleModifiers`
 
@@ -301,6 +307,38 @@ and Groceries**. Still implement it as a product — but that's the blast radius
 <!-- VERIFIED 2026-08-07 by full recompute from the raw JSON:
      base=275 (b3, index 1) × col=1.34 (900→very_high) × life=1.0
      = 368.5 → 370. Matches worked_example exactly. -->
+
+### Cost of living: county first, prefix second
+
+`benchColMultipliers(zip)` is the single chokepoint. Two resolutions, in order:
+
+1. **The ZIP's own county** — `data/zip-cost-of-living.json` lists all 589
+   Arkansas ZIPs and the 283 in every county bordering it, at five-digit
+   precision. The county's typical home value over the national median gives a
+   ratio; the ratio is interpolated between the *same four tiers* the prefix
+   table uses (`benchInterpolateTiers`), clamping outside them.
+2. **The 3-digit prefix tier** — everywhere else, unchanged.
+
+This adds precision to the existing model rather than introducing a second one:
+nothing invents a new category shape, a county just lands *between* rungs
+instead of on one.
+
+**Why it exists.** All fourteen Arkansas prefixes (716–729) were already in
+`zipPrefixes`. But Little Rock, Fayetteville, Springdale and Bentonville all
+resolved to `moderate`, which is literally 1.0 across all twelve categories — so
+the onboarding chart drew two identical bars and Arkansas read as missing. It
+was not missing; it was flat. Benton County now lands at +11% and Phillips at
+−8%, a nineteen-point spread four rungs could not express.
+
+Six ZIPs are claimed by counties in two different states (Junction City,
+Lead Hill, Protem, Dugginsville and two Mississippi County entries on a
+Tennessee prefix). **Arkansas wins the tie** — that is what the file is for —
+and every conflict is recorded under `bleedOver.sharedZips` rather than silently
+resolved.
+
+`benchColSupported` / `benchZipSupported` answer "did we model this, or is the
+national baseline standing in?" — a genuinely-average area and an unmodeled one
+compute the same multiplier, so the figure alone cannot tell them apart.
 
 ### The wizard walks the product, it does not recompute it
 

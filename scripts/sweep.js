@@ -466,6 +466,10 @@ var DEAD_BASELINE = [
   // Both orphaned deliberately when the Budget tab became the review surface:
   // the twelve slider rows moved to the per-category screen, and "Worth a look"
   // replaced the observation cards. Kept because a future edit mode wants them.
+  // The ZIP-only entry point to the cost-of-living predicate. benchColIndex
+  // holds a resolved lookup and uses benchColSupported instead, so nothing
+  // calls this today — it stays as the module's public "is this area modeled?".
+  "benchZipSupported",
   "renderBudgetCategoryRow",
   "renderBudgetObservationCards",
   "themeIsDark"                 // L21, for a screen that wants to branch on theme

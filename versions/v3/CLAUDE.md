@@ -29,7 +29,10 @@ All verified against the raw JSON on 2026-08-07.
   Household 2 → index **1**. `4+` clamps to index 3. Reading `[householdSize]`
   returns the next household's figure.
 - **Cost of living is a two-step lookup** — `zipPrefixes[zip3]` gives a tier
-  *name*, then `tiers[name][cat]` gives the multiplier.
+  *name*, then `tiers[name][cat]` gives the multiplier. **Never read it
+  directly**: `benchColMultipliers(zip)` resolves the ZIP's own county first
+  (`data/zip-cost-of-living.json` — all of Arkansas and every bordering county,
+  five-digit) and only then falls back to the prefix tier.
 - **Lifestyle is a product across six dimensions**, not one lookup.
 - **`paysRent` data keys are the strings `"true"` / `"false"` / `"shared"`**,
   not booleans. The wizard's option values map onto them via `benchLifestyleKey`:

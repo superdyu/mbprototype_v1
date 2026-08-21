@@ -12,7 +12,7 @@
 // Verified against the raw JSON, what it actually is:
 //
 //   peerValue = base[cat][band][householdSize - 1]                  ARRAY INDEX
-//             × colTiers.tiers[ colTiers.zipPrefixes[zip3] ][cat]   TWO STEPS
+//             × benchColMultipliers(zip)[cat]                       COUNTY, THEN PREFIX
 //             × Π lifestyleModifiers[dim][answer][cat]              PRODUCT OF 6
 //             → round to nearest 5
 //
@@ -51,8 +51,7 @@ function benchHouseholdIndex(householdSize) {
  * TRAP 2 — cost of living is a TWO-STEP lookup, not colTier[zip][cat].
  * zipPrefixes maps a 3-digit prefix to a tier NAME ("900" → "very_high");
  * tiers[name][category] is the multiplier.
- * Unlisted prefixes fall back to "moderate" rather than failing (A12 covers
- * CA/AR/NY/VA only — every other ZIP in the country lands here).
+ * Unlisted prefixes fall back to "moderate" rather than failing.
  */
 function benchColTierName(zip) {
   const prefix = String(zip == null ? "" : zip).trim().slice(0, 3);
@@ -63,40 +62,131 @@ function benchColTierName(zip) {
 }
 
 /**
- * Is this ZIP's prefix actually modeled, or does it fall through to the
- * `moderate` default? A12 seeds only CA/AR/NY/VA prefixes — every other ZIP in
- * the country lands on the fallback. This distinguishes a genuinely-moderate
- * area from an unmodeled one; both compute the same multiplier, so the tier name
- * alone cannot tell them apart.
+ * THE ONE CHOKEPOINT for "what does living here cost".
+ *
+ * Two resolutions, tried in order:
+ *
+ *   1. The ZIP's own COUNTY (data/zip-cost-of-living.json). Arkansas and every
+ *      county bordering it are listed at five-digit precision. The county's
+ *      typical home value over the national median gives a ratio, and the ratio
+ *      is interpolated between the SAME four tiers the prefix table uses — so
+ *      this adds precision to the existing model rather than a second model.
+ *   2. The 3-digit prefix tier, for everywhere else.
+ *
+ * Why step 1 exists: the prefix table already carried all fourteen Arkansas
+ * prefixes, but Little Rock, Fayetteville, Springdale and Bentonville all
+ * resolved to "moderate", which is exactly 1.0 across all twelve categories.
+ * Two identical bars on the onboarding chart read as "Arkansas is missing".
+ * It was not missing; it was flat. Benton County now lands at +11% and Phillips
+ * at −8%, a nineteen-point spread the four-rung ladder could not express.
+ *
+ * Returns { source, multipliers, tierName?, county?, ratio?, estimated? }.
+ * `source` is "county" | "prefix" | "fallback" — fallback meaning nothing was
+ * modeled and the national baseline is standing in.
  */
-function benchZipSupported(zip) {
-  const prefix = String(zip == null ? "" : zip).trim().slice(0, 3);
-  const tier = PEER_BENCHMARKS.colTiers.zipPrefixes[prefix];
-  return typeof tier === "string" && tier.charAt(0) !== "_"
-      && !!PEER_BENCHMARKS.colTiers.tiers[tier];
+function benchColMultipliers(zip) {
+  const z = String(zip == null ? "" : zip).trim().slice(0, 5);
+  const tiers = PEER_BENCHMARKS.colTiers.tiers;
+
+  const table = (typeof ZIP_COST_OF_LIVING !== "undefined") ? ZIP_COST_OF_LIVING : null;
+  const countyKey = table && table.zips ? table.zips[z] : null;
+  const county = countyKey && table.counties ? table.counties[countyKey] : null;
+
+  if (county && county.ratio != null) {
+    return {
+      source: "county",
+      county: countyKey,
+      ratio: county.ratio,
+      estimated: !!county.estimated,
+      multipliers: benchInterpolateTiers(county.ratio)
+    };
+  }
+
+  const prefix = String(z).slice(0, 3);
+  const named = PEER_BENCHMARKS.colTiers.zipPrefixes[prefix];
+  const modeled = typeof named === "string" && named.charAt(0) !== "_" && !!tiers[named];
+  const tierName = benchColTierName(zip);
+  return {
+    source: modeled ? "prefix" : "fallback",
+    tierName: tierName,
+    multipliers: tiers[tierName] || tiers.moderate
+  };
 }
 
 /**
- * Single cost-of-living index for a ZIP: the mean of its tier's 12 category
+ * A home-value ratio placed on the four-tier ladder, interpolated linearly
+ * between the two tiers it falls between and clamped at both ends. Iterates
+ * CATEGORIES so the tiers' `_note` key can never leak into the result.
+ */
+function benchInterpolateTiers(ratio) {
+  const tiers = PEER_BENCHMARKS.colTiers.tiers;
+  const anchors = (typeof ZIP_COST_OF_LIVING !== "undefined" &&
+                   ZIP_COST_OF_LIVING.method && ZIP_COST_OF_LIVING.method.tierAnchors) || {};
+  const ladder = [["low", anchors.low], ["moderate", anchors.moderate],
+                  ["high", anchors.high], ["very_high", anchors.very_high]]
+                 .filter(a => typeof a[1] === "number")
+                 .sort((a, b) => a[1] - b[1]);
+  if (!ladder.length) return tiers.moderate;
+
+  const r = Number(ratio);
+  if (!isFinite(r) || r <= ladder[0][1])              return tiers[ladder[0][0]];
+  if (r >= ladder[ladder.length - 1][1])              return tiers[ladder[ladder.length - 1][0]];
+
+  for (let i = 0; i < ladder.length - 1; i++) {
+    const lo = ladder[i], hi = ladder[i + 1];
+    if (r >= lo[1] && r <= hi[1]) {
+      const t = (r - lo[1]) / (hi[1] - lo[1]);
+      const out = {};
+      for (let c = 0; c < CATEGORIES.length; c++) {
+        const cat = CATEGORIES[c];
+        const a = Number(tiers[lo[0]][cat]), b = Number(tiers[hi[0]][cat]);
+        out[cat] = (isFinite(a) && isFinite(b)) ? a + (b - a) * t : 1;
+      }
+      return out;
+    }
+  }
+  return tiers.moderate;
+}
+
+/**
+ * Did we actually model this area, or is the national baseline standing in?
+ * Distinguishes a genuinely-average area from an unmodeled one — both compute
+ * the same multiplier, so the figure alone cannot tell them apart.
+ *
+ * One definition, two entry points: callers holding a resolved lookup use
+ * benchColSupported, callers holding only a ZIP use benchZipSupported. Written
+ * twice they would eventually disagree.
+ */
+function benchColSupported(col) {
+  return !!col && col.source !== "fallback";
+}
+
+function benchZipSupported(zip) {
+  return benchColSupported(benchColMultipliers(zip));
+}
+
+/**
+ * Single cost-of-living index for a ZIP: the mean of its 12 category
  * multipliers. The `moderate` tier is 1.0 across the board — the national
  * baseline — so index 1.0 == national average. Iterate CATEGORIES, never
  * Object.keys(tier), so the `_note` key never contaminates the mean.
- * Returns { tierName, index, pct, supported }; pct = round((index - 1) * 100).
+ * Returns { tierName, county, index, pct, supported }; pct = round((index-1)*100).
  */
 function benchColIndex(zip) {
-  const tierName = benchColTierName(zip);
-  const tier = PEER_BENCHMARKS.colTiers.tiers[tierName] || {};
+  const col = benchColMultipliers(zip);
   let sum = 0, n = 0;
   for (let i = 0; i < CATEGORIES.length; i++) {
-    const v = Number(tier[CATEGORIES[i]]);
+    const v = Number(col.multipliers[CATEGORIES[i]]);
     if (isFinite(v)) { sum += v; n++; }
   }
   const index = n ? sum / n : 1;
   return {
-    tierName,
+    tierName: col.tierName || null,
+    county: col.county || null,
+    source: col.source,
     index,
     pct: Math.round((index - 1) * 100),
-    supported: benchZipSupported(zip)
+    supported: benchColSupported(col)
   };
 }
 
@@ -162,7 +252,7 @@ function benchPeerValue(category, opts) {
   if (!row) return null;
 
   const base = Number(row[benchHouseholdIndex(o.householdSize)]) || 0;
-  const col  = Number(PEER_BENCHMARKS.colTiers.tiers[benchColTierName(o.zip)][category]) || 1;
+  const col  = Number(benchColMultipliers(o.zip).multipliers[category]) || 1;
   const life = benchLifestyleMultiplier(category, o.lifestyle);
 
   const step = PEER_BENCHMARKS.method.roundTo || 5;

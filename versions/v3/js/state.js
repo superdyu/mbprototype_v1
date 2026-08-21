@@ -94,6 +94,11 @@ const state = {
   // Top-bar hamburger overlay
   topbarMenuOpen: false,
 
+  // Simulated iOS keyboard (components/keyboard.js). Desktop only — a real
+  // phone has its own. The focused ELEMENT is not here: it is a DOM node, and
+  // the admin state inspector serialises everything it finds on `state`.
+  kbd: { open: false, layer: "abc", shift: false },
+
   // ── Daily loop ────────────────────────────────────────────────────────────
   // buddyPose cycles 1/3/4/5 ambiently; 2 and 6 are event-driven (chat, reward).
   buddyPose: 1,
@@ -949,6 +954,7 @@ function resetUserData() {
   // streaming list and statement week behind and the follow-ups stay unlocked
   // against questions the user no longer appears to have answered.
   state.journalProfile       = {};
+  state.kbd                  = { open: false, layer: "abc", shift: false };
   // Re-seed from the v3 data files so reset returns to the seeded start state
   // rather than an empty one (D03: refresh does the same thing via the gate).
   bootV3();

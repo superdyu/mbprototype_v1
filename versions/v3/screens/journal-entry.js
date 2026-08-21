@@ -123,6 +123,7 @@ function renderJournalInput(q, s) {
         <input type="number" min="0" step="0.01" inputmode="decimal"
                placeholder="${h(q.placeholder || "")}"
                value="${a.amount != null ? h(a.amount) : ""}"
+               oninput="journalSetNumber('${q.id}','amount',this.value)"
                onchange="journalSetNumber('${q.id}','amount',this.value)">
       </div>
       ${q.categoryDropdown ? `
