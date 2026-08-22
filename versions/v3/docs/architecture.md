@@ -244,7 +244,7 @@ against the actual data, *all three* terms differ from how it reads:
 
 ```
 peerValue = base[category][incomeBand][householdSize - 1]        // ARRAY INDEX
-          × colTiers.tiers[ colTiers.zipPrefixes[zip3] ][category]   // TWO steps
+          × benchColMultipliers(zip)[category]                       // BEA, see below
           × Π lifestyleModifiers[dim][answer][category]              // PRODUCT of 6
           → round to nearest 5
 ```
@@ -255,20 +255,22 @@ peerValue = base[category][incomeBand][householdSize - 1]        // ARRAY INDEX
    2 → index 1, 3 → index 2, **4+ → index 3 (clamp)**. Reading it as
    `[householdSize]` returns the wrong household's figure and still looks
    plausible — the classic silent-wrong-number bug.
-2. **Cost of living is a two-step lookup.** `zipPrefixes` maps a 3-digit prefix
-   to a tier *name* (`"900" → "very_high"`); `tiers[name][category]` is the
-   multiplier. There is no `colTier[zipPrefix][category]`. **Never call this
-   directly** — go through `benchColMultipliers(zip)`, which tries the ZIP's own
-   county first and falls back to this ("Cost of living: county first, prefix
-   second" below).
+2. **Cost of living no longer comes from `colTiers` at all.** The spec's
+   two-step prefix→tier→multiplier lookup is retired — it gave Manhattan, Palo
+   Alto, Santa Clara and Los Angeles the same figures. **Always go through
+   `benchColMultipliers(zip)`**, which resolves the ZIP's county to a BEA
+   geography; `colTiers` survives only as its last-resort guard. See "Cost of
+   living: BEA Regional Price Parities, per category" below. (If you do read
+   `colTiers` directly for any reason, its own trap still applies: `zipPrefixes`
+   gives a tier *name*, and `tiers[name][category]` is the multiplier.)
 3. **Lifestyle is a product across all six dimensions**, not one lookup. A
    category can be touched by several — Dining out is modified by *both*
    `foodie` and `cooksAtHome`. Dimensions that don't name a category contribute
    1.0.
 
-Unlisted ZIP prefixes fall back to the `moderate` tier rather than failing.
-Modeled areas are every Arkansas ZIP and every county bordering it at five-digit
-precision, plus A12's CA/NY/VA prefixes.
+Coverage is every ZIP in the 50 states and DC. US territories have no BEA
+figures and report themselves unsupported rather than being given an invented
+one; A12's CA/AR/NY/VA prefix list is superseded.
 
 ### Two answer-key traps in `lifestyleModifiers`
 
