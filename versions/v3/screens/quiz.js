@@ -42,7 +42,7 @@ function renderQuiz() {
         <h1 class="title">Quiz</h1>
         <p class="helper">No questions available for this lesson yet.</p>
       </div>
-      <button class="button full" type="button" onclick="completeLesson()">Complete Lesson</button>
+      <button class="button full" type="button" onclick="quizFinish()">Complete Lesson</button>
     `;
   }
 
@@ -129,12 +129,32 @@ function renderQuiz() {
       <!-- Next / Submit only appears after the correct answer is chosen -->
       ${isCorrect ? `
         <button class="button" type="button"
-                onclick="${isLast ? "completeLesson()" : "nextQuizQuestion()"}">
+                onclick="${isLast ? "quizFinish()" : "nextQuizQuestion()"}">
           ${isLast ? "Submit" : "Next"}
         </button>
       ` : ""}
     </div>
   `;
+}
+
+/**
+ * End of the quiz. Detours through the calculator when the lesson has one.
+ *
+ * The v2 catalog went question, question, question, reward — eighteen lessons
+ * that never let you put a number in, while v3's three did. LESSON_SIM_V2
+ * (screens/lesson-outcome.js) gives the ones a calculator genuinely helps a
+ * spec of their own, and this is where they pick it up. Lessons without one are
+ * unchanged.
+ *
+ * The calculator's own "Finish lesson" calls completeLesson for a v2 origin, so
+ * the XP and badge path is identical either way — this only inserts a step.
+ */
+function quizFinish() {
+  const lesson = state.currentLesson;
+  if (lesson && typeof lessonSimOpen === "function" && lessonSimAvailable(lesson.id)) {
+    if (lessonSimOpen(lesson.id, "v2")) return;
+  }
+  completeLesson();
 }
 
 // Handles a choice selection.

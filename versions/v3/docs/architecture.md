@@ -463,6 +463,54 @@ in §5. If any of the three doesn't reproduce, the wiring is wrong.
 
 ---
 
+### The lesson calculator: one engine, both catalogs
+
+Three sim types live in `js/lesson-rewards.js` (`lrSimBalance`,
+`lrSimSavings`, `lrSimSubscriptions`); `screens/lesson-outcome.js` renders them
+as **"Try it with numbers"** (`lessonSimulation`).
+
+`screens/simulation.js` is the **v2 stub** and a different screen — it is not
+this. `render.js` says so at its `adminSubtitle` line; don't conflate them.
+
+**`lessonSimSpec(lessonId)` is the lookup.** v3's three lessons carry a
+`simulation` block in `lessons.json`; `LESSON_SIM_V2` gives thirteen of the
+eighteen v2 lessons a spec using the same three engines. Nothing downstream
+needs to know which catalog a lesson came from.
+
+Five v2 lessons deliberately have none — "loan vs lease", "deductible vs
+premium", "HSA basics", "what you can afford", "total cost of ownership" are
+comparisons, not arithmetic on a balance. A calculator bolted onto them would be
+a calculator for its own sake.
+
+**`origin` has to be carried, not inferred.** The v3 reward
+(`lessonRewardStart`) reads `lessonV3()`, which has never heard of a v2 lesson —
+one arriving there falls through to home and loses its badge XP. So
+`state.lessonSim.origin` decides where Finish goes: `completeLesson()` for v2,
+`lessonRewardStart()` for v3. `quizFinish()` (`screens/quiz.js`) is where the v2
+flow picks the calculator up, and it only inserts a step — the XP and badge path
+is identical either way.
+
+### Preset shortcuts, and why the ranges moved
+
+`LESSON_SIM_PRESETS` is keyed by sim **type**, because that is what a preset
+describes; a lesson may override with its own `simulation.presets`. They are
+cases, never instructions (D26) — "Minimum payments only" is a thing that
+happens to people, not advice.
+
+The slider bounds used to be literals at each `simSlider` call. They are now
+`LESSON_SIM_RANGES`, in one place, because a preset outside its slider's range
+leaves the thumb pinned at an end while the readout shows a figure it cannot
+reach. `lessonSimClamp` holds every preset to the same table, and the harness
+asserts that no authored preset or default is out of range or off-step.
+
+That check immediately found a **pre-existing** bug: `lessons.json` ships
+`current: 620` for the emergency-fund calculator against a step-50 grid, so the
+thumb snapped away from the figure on first touch. `current` is step 10 now, and
+`monthlyPayment` step 5 — a minimum payment is usually an odd figure.
+
+Taking a preset marks it selected; dragging any slider or toggling any row
+clears that, because it is no longer that preset's case.
+
 ### The estimator asks only what it does not already know
 
 `screens/spend-estimator.js` exists because people remember **habits**, not

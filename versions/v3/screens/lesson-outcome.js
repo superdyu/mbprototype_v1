@@ -96,23 +96,184 @@ function lessonQuizNext() {
 
 // ── Simulation ───────────────────────────────────────────────────────────────
 
+// ── Simulation specs, ranges and presets ─────────────────────────────────────
+//
+// The calculator was reachable from v3's three lessons only. The other eighteen
+// — the whole v2 catalog — went question, question, question, reward, and never
+// got to put a number in. LESSON_SIM_V2 gives the ones a calculator genuinely
+// helps a spec of their own, using the same three engines.
+//
+// Deliberately NOT all eighteen. "Loan vs lease" and "deductible vs premium"
+// are comparisons, not arithmetic on a balance; bolting a payoff slider onto
+// them would be a calculator for its own sake.
+const LESSON_SIM_V2 = {
+  // What a balance actually costs to clear.
+  "interest-builds":         { type: "balance_calculator", defaults: { balance: 1000, apr: 24, monthlyPayment: 40 } },
+  "interest-refresher":      { type: "balance_calculator", defaults: { balance: 1500, apr: 24, monthlyPayment: 60 } },
+  "minimum-payments-trap":   { type: "balance_calculator", defaults: { balance: 3000, apr: 24, monthlyPayment: 75 } },
+  "federal-vs-private":      { type: "balance_calculator", defaults: { balance: 8000, apr: 7,  monthlyPayment: 120 } },
+  "income-driven-repayment": { type: "balance_calculator", defaults: { balance: 8000, apr: 7,  monthlyPayment: 60 } },
+  // How long a target takes at a given pace.
+  "three-month-rule":        { type: "savings_pace_calculator", defaults: { target: 9000, current: 620, monthlyContribution: 250 } },
+  "where-to-keep-it":        { type: "savings_pace_calculator", defaults: { target: 3000, current: 620, monthlyContribution: 120 } },
+  "budget-basics":           { type: "savings_pace_calculator", defaults: { target: 1000, current: 0,   monthlyContribution: 100 } },
+  "why-start-now":           { type: "savings_pace_calculator", defaults: { target: 10000, current: 0,  monthlyContribution: 200 } },
+  "401k-and-the-match":      { type: "savings_pace_calculator", defaults: { target: 6000, current: 0,   monthlyContribution: 250 } },
+  "hidden-costs-buying":     { type: "savings_pace_calculator", defaults: { target: 10000, current: 2000, monthlyContribution: 400 } },
+  "index-funds-explained":   { type: "savings_pace_calculator", defaults: { target: 10000, current: 500, monthlyContribution: 300 } },
+  "risk-and-time-horizon":   { type: "savings_pace_calculator", defaults: { target: 10000, current: 1500, monthlyContribution: 200 } }
+};
+
+// Slider bounds, in ONE place. They used to be literals inside each renderer,
+// which was fine until presets arrived: a preset outside the range leaves the
+// thumb pinned at an end while the readout shows a value it cannot reach. Now
+// the renderers read these and the presets clamp to them.
+const LESSON_SIM_RANGES = {
+  balance:             { min: 100, max: 10000, step: 100 },
+  apr:                 { min: 0,   max: 36,    step: 1 },
+  // step 5, not 10: a minimum payment is often an odd figure (2% of a balance),
+  // and a 10-600 range has room for the finer grid.
+  monthlyPayment:      { min: 10,  max: 600,   step: 5 },
+  target:              { min: 500, max: 10000, step: 100 },
+  // step 10, not 50: lessons.json ships `current: 620` as the emergency-fund
+  // default, which a 50 grid cannot represent — the thumb would snap away from
+  // the figure on the first touch.
+  current:             { min: 0,   max: 10000, step: 10 },
+  monthlyContribution: { min: 0,   max: 1000,  step: 10 }
+};
+
+// The shortcuts under the sliders: the cases people actually turn up with, so
+// the calculator opens on a real situation rather than making them dial one in.
+// Keyed by sim TYPE, because that is what a preset describes — a lesson may
+// override with its own `simulation.presets` if it ever needs to.
+//
+// Named, never prescribed (D26): "Minimum payments only" is a situation, not
+// an instruction.
+const LESSON_SIM_PRESETS = {
+  balance_calculator: [
+    { label: "A typical card balance", values: { balance: 1000, apr: 24, monthlyPayment: 40 } },
+    { label: "Minimum payments only",  values: { balance: 3000, apr: 24, monthlyPayment: 75 } },
+    { label: "Paying it down hard",    values: { balance: 3000, apr: 24, monthlyPayment: 300 } },
+    { label: "A big balance, high rate", values: { balance: 6000, apr: 29, monthlyPayment: 150 } }
+  ],
+  savings_pace_calculator: [
+    { label: "Starting from nothing",  values: { target: 1000, current: 0, monthlyContribution: 50 } },
+    { label: "One month of expenses",  values: { target: 3000, current: 620, monthlyContribution: 120 } },
+    { label: "Three months' cover",    values: { target: 9000, current: 620, monthlyContribution: 250 } },
+    { label: "Putting more aside",     values: { target: 3000, current: 620, monthlyContribution: 400 } }
+  ],
+  subscription_tally: [
+    { label: "Everything on",          rows: "all" },
+    { label: "Only the ones you use",  rows: "used" },
+    { label: "All of them off",        rows: "none" }
+  ]
+};
+
+/**
+ * The simulation spec for ANY lesson — v3's from its data file, v2's from the
+ * map above. One lookup so nothing downstream has to know which catalog a
+ * lesson came from.
+ */
+function lessonSimSpec(lessonId) {
+  const v3 = (typeof lessonV3 === "function") ? lessonV3(lessonId) : null;
+  if (v3 && v3.simulation) return v3.simulation;
+  return LESSON_SIM_V2[lessonId] || null;
+}
+
+/** Does this lesson have a calculator worth showing? */
+function lessonSimAvailable(lessonId) {
+  return !!lessonSimSpec(lessonId);
+}
+
+/** The presets for a spec: its own if it names any, otherwise its type's. */
+function lessonSimPresets(spec) {
+  if (!spec) return [];
+  if (Array.isArray(spec.presets)) return spec.presets;
+  return LESSON_SIM_PRESETS[spec.type] || [];
+}
+
 function lessonSimStart() {
   const lesson = lessonV3(state.lessonQuiz ? state.lessonQuiz.lessonId : null);
   if (!lesson) { navBack(); return; }
-  state.lessonSim = { lessonId: lesson.id, values: lrSimDefaults(lesson) };
+  lessonSimOpen(lesson.id, "v3");
+}
+
+/**
+ * Open the calculator for a lesson from either catalog.
+ *
+ * `origin` decides where "Finish" goes, and it has to be carried rather than
+ * inferred: the v3 reward reads lessonV3(), which knows nothing about the v2
+ * catalog, so a v2 lesson arriving there falls through to home and loses its
+ * badge XP.
+ */
+function lessonSimOpen(lessonId, origin) {
+  const spec = lessonSimSpec(lessonId);
+  if (!spec) return false;
+  state.lessonSim = {
+    lessonId: lessonId,
+    origin: origin || "v3",
+    values: lrSimDefaults({ simulation: spec }),
+    presetIndex: null
+  };
   go("lessonSimulation");
+  return true;
+}
+
+/**
+ * Apply a preset. A button, not a slider — so render(), not debouncedRender():
+ * every slider on screen has to jump to its new position, and the debounce
+ * exists for the opposite case (a drag that must not destroy the element under
+ * the pointer). render() drops any pending debounced repaint on the way in.
+ */
+function lessonSimPreset(i) {
+  const s = state.lessonSim;
+  if (!s) return;
+  const preset = lessonSimPresets(lessonSimSpec(s.lessonId))[i];
+  if (!preset) return;
+
+  if (preset.rows) {
+    // subscription_tally: a preset names which rows are on.
+    (s.values.rows || []).forEach(r => {
+      if (preset.rows === "all")  r.on = true;
+      if (preset.rows === "none") r.on = false;
+      // "used" mirrors the persona's own engagement flag — the flagged-unused
+      // one goes off, which is the case the lesson is actually about.
+      if (preset.rows === "used") r.on = r.status !== "flagged_unused";
+    });
+  } else {
+    // Clamp to the slider's own bounds, or the thumb pins at an end while the
+    // readout shows a figure it cannot reach.
+    Object.keys(preset.values).forEach(key => {
+      s.values[key] = lessonSimClamp(key, preset.values[key]);
+    });
+  }
+  s.presetIndex = i;
+  render();
+}
+
+/** A value held inside its slider's range and snapped to its step. */
+function lessonSimClamp(key, value) {
+  const r = LESSON_SIM_RANGES[key];
+  const n = Number(value) || 0;
+  if (!r) return n;
+  const snapped = Math.round(n / r.step) * r.step;
+  return Math.max(r.min, Math.min(r.max, snapped));
 }
 
 // debouncedRender, not render: fires on every pointer move of the slider, and
 // a full render replaces the element being dragged (see budgetSetPlan).
 function lessonSimSet(key, value) {
   state.lessonSim.values[key] = Number(value) || 0;
+  // Dragging a slider means this is no longer that preset's case, so the chip
+  // stops claiming to be selected.
+  state.lessonSim.presetIndex = null;
   debouncedRender();
 }
 
 function lessonSimToggle(i) {
   const rows = state.lessonSim.values.rows || [];
   if (rows[i]) rows[i].on = !rows[i].on;
+  state.lessonSim.presetIndex = null;
   render();
 }
 
@@ -120,8 +281,10 @@ function renderLessonSimulation() {
   const s = state.lessonSim;
   if (!s) return lessonOutcomeNoSession("calculator",
     "The calculators come with their lesson, loaded with figures to play with.");
-  const lesson = lessonV3(s.lessonId);
-  const type = lesson.simulation.type;
+  const spec = lessonSimSpec(s.lessonId);
+  if (!spec) return lessonOutcomeNoSession("calculator",
+    "The calculators come with their lesson, loaded with figures to play with.");
+  const type = spec.type;
 
   return `
     <div class="journal-shell">
@@ -132,26 +295,57 @@ function renderLessonSimulation() {
         </p>
       </div>
       <div class="journal-body">
+        ${renderSimPresets(s, spec)}
         ${type === "balance_calculator"      ? renderSimBalance(s)   : ""}
         ${type === "savings_pace_calculator" ? renderSimSavings(s)   : ""}
         ${type === "subscription_tally"      ? renderSimSubs(s)      : ""}
       </div>
       <div class="journal-foot">
         <span></span>
-        <button class="button" type="button" onclick="lessonRewardStart()">Finish lesson</button>
+        <!-- Where "Finish" goes depends on which catalog the lesson came from:
+             the v3 reward reads lessonV3(), which has never heard of a v2
+             lesson and would drop it on home without its badge XP. -->
+        <button class="button" type="button"
+                onclick="${s.origin === "v2" ? "completeLesson()" : "lessonRewardStart()"}">
+          Finish lesson
+        </button>
       </div>
     </div>
   `;
 }
 
-function simSlider(label, key, value, min, max, step, fmt) {
+/**
+ * The shortcuts. A calculator that opens on one arbitrary set of numbers asks
+ * the reader to invent a situation before they can learn anything; these are
+ * the situations people actually turn up with, one tap away.
+ *
+ * Each is a case, never an instruction (D26) — "Minimum payments only" is a
+ * thing that happens to people, not advice about what to do.
+ */
+function renderSimPresets(s, spec) {
+  const presets = lessonSimPresets(spec);
+  if (!presets.length) return "";
+  return `
+    <p class="helper" style="margin:0 0 8px;">Start from a common case, then drag anything.</p>
+    <div class="sim-presets">
+      ${presets.map((p, i) => `
+        <button class="sim-preset ${s.presetIndex === i ? "picked" : ""}" type="button"
+                onclick="lessonSimPreset(${i})">${h(p.label)}</button>
+      `).join("")}
+    </div>`;
+}
+
+// Bounds come from LESSON_SIM_RANGES, not from the call site — presets clamp
+// against the same table, so a shortcut can never land outside its own slider.
+function simSlider(label, key, value, fmt) {
+  const r = LESSON_SIM_RANGES[key] || { min: 0, max: 1000, step: 1 };
   return `
     <div class="card sim-row">
       <div class="row" style="align-items:baseline;margin-bottom:6px;">
         <span class="budget-row-name">${h(label)}</span>
         <span class="budget-row-amt">${fmt ? fmt(value) : value}</span>
       </div>
-      <input class="journal-slider" type="range" min="${min}" max="${max}" step="${step}"
+      <input class="journal-slider" type="range" min="${r.min}" max="${r.max}" step="${r.step}"
              value="${value}" oninput="lessonSimSet('${key}', this.value)"
              aria-label="${h(label)}">
     </div>`;
@@ -161,9 +355,9 @@ function renderSimBalance(s) {
   const v = s.values;
   const out = lrSimBalance(v);
   return `
-    ${simSlider("Balance", "balance", v.balance, 100, 10000, 100, budgetFmt)}
-    ${simSlider("APR", "apr", v.apr, 0, 36, 1, x => x + "%")}
-    ${simSlider("Monthly payment", "monthlyPayment", v.monthlyPayment, 10, 600, 10, budgetFmt)}
+    ${simSlider("Balance", "balance", v.balance, budgetFmt)}
+    ${simSlider("APR", "apr", v.apr, x => x + "%")}
+    ${simSlider("Monthly payment", "monthlyPayment", v.monthlyPayment, budgetFmt)}
     <div class="card sim-out">
       ${out.monthsToPayoff == null ? `
         <p class="du-figure du-figure-sm">Never</p>
@@ -182,9 +376,9 @@ function renderSimSavings(s) {
   const v = s.values;
   const out = lrSimSavings(v);
   return `
-    ${simSlider("Target", "target", v.target, 500, 10000, 100, budgetFmt)}
-    ${simSlider("Saved so far", "current", v.current, 0, 10000, 50, budgetFmt)}
-    ${simSlider("Each month", "monthlyContribution", v.monthlyContribution, 0, 1000, 10, budgetFmt)}
+    ${simSlider("Target", "target", v.target, budgetFmt)}
+    ${simSlider("Saved so far", "current", v.current, budgetFmt)}
+    ${simSlider("Each month", "monthlyContribution", v.monthlyContribution, budgetFmt)}
     <div class="card sim-out">
       ${out.monthsToTarget == null ? `
         <p class="du-figure du-figure-sm">—</p>

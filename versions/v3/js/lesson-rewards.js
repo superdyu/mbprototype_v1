@@ -138,8 +138,11 @@ function lrSimDefaults(lesson) {
     // seedFrom names the persona, but these are illustrative rows, not the
     // user's own subscription list — same sandbox rule.
     return {
+      // `status` rides along so the "only the ones you use" preset has
+      // something to key on — it is the persona's own engagement flag, which is
+      // the case the lesson is about.
       rows: (PERSONA.subscriptions.known || []).map(s => ({
-        name: s.name, monthly: s.monthly, on: true
+        name: s.name, monthly: s.monthly, status: s.status, on: true
       }))
     };
   }

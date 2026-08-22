@@ -2120,6 +2120,35 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 /* ─── Lesson quiz / simulation / reward ───────────────────────────────────── */
 .quiz-right { border-color: var(--good); background: var(--good-bg); }
 .quiz-wrong { border-color: var(--warn-border); background: var(--warn-bg); opacity: .7; }
+/* Lesson calculator — the common-case shortcuts above the sliders. Chips, so a
+   row of four fits a 390px frame without becoming four full-width buttons. */
+.sim-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.sim-preset {
+  flex: 0 1 auto;
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sim-preset:hover { border-color: var(--accent); }
+.sim-preset.picked {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.sim-preset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 .sim-row { margin-bottom: 8px; padding: 12px 14px; }
 .sim-out { text-align: center; padding: 18px 14px; background: var(--accent-soft); border-color: var(--accent-border); }
 .sim-sub-row { padding: 8px 0; border-bottom: 1px solid var(--line); gap: 10px; }
