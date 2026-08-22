@@ -231,7 +231,8 @@ The gaps between layers are the product. Two *different* gaps exist for the same
 category and must never substitute for one another:
 
 - **vs plan** — $429 against a $320 budget = **34% over**
-- **vs peers** — $429 against a $370 benchmark = **16% over**
+- **vs peers** — $429 against the peer benchmark (**$295** under the BEA model;
+  the spec's own worked example said $370 under the retired tier table — §5)
 
 Per L11, the seeded dining observation is the **plan** comparison, and the peer
 comparison gets its own distinct card.
@@ -306,39 +307,99 @@ and Groceries**. Still implement it as a product — but that's the blast radius
      These are exactly the bugs that ship silently. -->
 <!-- VERIFIED 2026-08-07 by full recompute from the raw JSON:
      base=275 (b3, index 1) × col=1.34 (900→very_high) × life=1.0
-     = 368.5 → 370. Matches worked_example exactly. -->
+     = 368.5 → 370. Matched worked_example exactly at the time.
+     SUPERSEDED: the col factor is now BEA (Los Angeles "Other services" =
+     107.1), so the product is 295. The base and lifestyle readings this note
+     was written to verify are unchanged and still assert 275 and 1.0. -->
 
-### Cost of living: county first, prefix second
+### Cost of living: BEA Regional Price Parities, per category
 
-`benchColMultipliers(zip)` is the single chokepoint. Two resolutions, in order:
+`benchColMultipliers(zip)` is the single chokepoint. Resolution order:
 
-1. **The ZIP's own county** — `data/zip-cost-of-living.json` lists all 589
-   Arkansas ZIPs and the 283 in every county bordering it, at five-digit
-   precision. The county's typical home value over the national median gives a
-   ratio; the ratio is interpolated between the *same four tiers* the prefix
-   table uses (`benchInterpolateTiers`), clamping outside them.
-2. **The 3-digit prefix tier** — everywhere else, unchanged.
+1. **The ZIP's county** (`data/zip-cost-of-living.json` — all 31,913 US ZIPs).
+   The county names a **BEA geography**: its metro area, or its state's
+   nonmetropolitan portion. BEA's Regional Price Parities give the regional
+   price level for four buckets — Housing, Utilities, Goods, Other services —
+   where 100 is the national average.
+2. **The ZIP's 3-digit prefix → the county most of that prefix sits in**, for
+   PO-box-only and "unique" ZIPs no county dataset lists. Widens to numeric
+   neighbours if the prefix itself is unlisted, but never across a territory
+   boundary — 969 is Guam and 968 is Honolulu.
+3. **The old 4-tier prefix table**, as a guard. `peer-benchmarks.json` is a
+   verbatim spec copy and is never edited; it is simply no longer the model.
 
-This adds precision to the existing model rather than introducing a second one:
-nothing invents a new category shape, a county just lands *between* rungs
-instead of on one.
+**Why it replaced the tiers.** Three digits mapped to one of four hand-set
+tiers, so every ZIP sharing a tier was *identical* — Manhattan, Palo Alto, Santa
+Clara and Los Angeles all resolved to the same figures. `very_high` caps Housing
+at 1.85, so nowhere could read higher. And the headline averaged twelve
+categories unweighted, making Housing one twelfth of it. Santa Clara came out at
+121% against Rogers, Arkansas at 111%. BEA says **112.9 and 91.0**, with housing
+at **213.0 against 75.8**.
 
-**Why it exists.** All fourteen Arkansas prefixes (716–729) were already in
-`zipPrefixes`. But Little Rock, Fayetteville, Springdale and Bentonville all
-resolved to `moderate`, which is literally 1.0 across all twelve categories — so
-the onboarding chart drew two identical bars and Arkansas read as missing. It
-was not missing; it was flat. Benton County now lands at +11% and Phillips at
-−8%, a nineteen-point spread four rungs could not express.
+### Local modifiers are per category, from different sources
 
-Six ZIPs are claimed by counties in two different states (Junction City,
-Lead Hill, Protem, Dugginsville and two Mississippi County entries on a
-Tennessee prefix). **Arkansas wins the tie** — that is what the file is for —
-and every conflict is recorded under `bleedOver.sharedZips` rather than silently
-resolved.
+Housing moves with county rents. Utilities move with state electricity prices.
+Groceries track neither. So each category takes its modifier from the source
+that actually governs it:
 
-`benchColSupported` / `benchZipSupported` answer "did we model this, or is the
-national baseline standing in?" — a genuinely-average area and an unmodeled one
-compute the same multiplier, so the figure alone cannot tell them apart.
+| Category | Regional base | Local modifier |
+|---|---|---|
+| Housing | BEA Housing | **county** — rent vs the median rent of its own BEA region |
+| Utilities | BEA Utilities | **state** — residential ¢/kWh vs national |
+| Groceries · Shopping · Transport | BEA Goods | none |
+| Dining out · Health · Personal care · Entertainment · Other | BEA Other services | none |
+| Subscriptions · Debt payments | **1.0** | none — priced nationally |
+
+The empty cells are deliberate. There is no credible county-level feed for
+grocery, restaurant or healthcare prices, so those carry the regional figure
+unmodified — fabricating per-county food variation would produce exactly the
+plausible-looking wrong number this model exists to remove. The housing ratio is
+measured against the county's **own region**, not the nation: BEA has already
+priced the region, and comparing to the nation would count it twice.
+
+### The headline index is anchored, not recomputed
+
+```
+index = all/100 + Σ weight[c] × (final[c] − base[c])
+```
+
+BEA's own published All-items figure, plus the weighted deviation each local
+modifier introduces. Where no modifier applies the sum is zero and the index
+**is** BEA's number, exactly.
+
+Deliberately not a recomputation from the weights: BEA's real weights are
+place-specific — where housing is expensive people spend a larger share on it —
+so one national weight set reproduces published All-items to about half a point
+typically and is off by ten in San Jose. The weights themselves were recovered
+by least squares across all 488 geographies and are shares of **PCE**, not
+household out-of-pocket spending, which is why Health lands near Housing.
+
+Coverage is the 50 states and DC. BEA prices no US territory, so a Puerto Rico
+or Saipan ZIP reports itself **unsupported** rather than being given an invented
+figure.
+
+**Regenerate with `scripts/build-cost-of-living.py`, then `scripts/wrap-data.sh`.**
+The generator is the audit trail for 767KB of derived numbers — it names every
+source and every derivation.
+
+### `benchSelfTest` no longer asserts 370
+
+The spec's `worked_example` is Dining out, b3, household 2, ZIP 90066 →
+`275 × 1.34 × 1.0 = 370`. That **1.34 was the `very_high` tier's** Dining-out
+multiplier, i.e. the thing this model replaced. BEA prices restaurant meals
+inside "Services: Other", which for Los Angeles is 107.1 — so the peer value is
+now **295**.
+
+The test therefore checks the three factors *separately*: the base lookup (the
+array-index trap), the lifestyle product (the six-dimension trap), and the cost
+of living against the source that replaced it. That is stronger than the old
+single assertion, which its own comment admitted several wrong readings could
+satisfy — the persona is household 2 with every lifestyle modifier at 1.0, so a
+wrong array index still produced 370.
+
+Worth knowing: BEA's "Other services" lumps restaurants with healthcare and
+insurance, which vary far less by place, so 1.071 probably understates a Los
+Angeles restaurant bill. It is still the best sourced figure available.
 
 ### The wizard walks the product, it does not recompute it
 
@@ -390,10 +451,13 @@ as a tile, blow up a total, or fail a benchmark lookup. **Always drive
 iteration from `CATEGORIES`** (§4) and index into the data, never the reverse.
 Same for ZIP prefix lookups — `_note` is a key there too.
 
-**Self-test on build** — `PEER_BENCHMARKS.worked_example`: Dining out, band b3,
-household 2, ZIP 90066 (prefix 900 = very_high), foodie moderate → 275 × 1.34 ×
-1.0 = 368.5 → **370**. If that doesn't reproduce, the wiring is wrong. Free
-regression test the spec handed us.
+**Self-test on build** — `benchSelfTest`, from
+`PEER_BENCHMARKS.worked_example`: Dining out, band b3, household 2, ZIP 90066,
+foodie moderate. Base **275** and lifestyle **1.0** still reproduce the spec
+exactly; the cost-of-living factor is BEA's **1.071**, not the retired tier's
+1.34, so the result is **295**. Each factor is asserted separately, which the
+old single assertion could not do — see "`benchSelfTest` no longer asserts 370"
+in §5. If any of the three doesn't reproduce, the wiring is wrong.
 
 ---
 
@@ -442,7 +506,8 @@ hunt — and it means adding a surface is a data edit, not a code edit.
 
 <!-- L11 applies here: obs_dining_over_peers ships typed `peer_gap` with the
      PLAN numbers (429 vs 320). Reframe its headline to "over your plan" and
-     add a separate peer card at 429 vs 370. Fix it in state at boot, not by
+     add a separate peer card at 429 vs the derived peer value. Fix it in
+     state at boot, not by
      editing data/*.json — that file stays a verbatim spec copy (§1). -->
 
 ---

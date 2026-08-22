@@ -1897,6 +1897,9 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   opacity: .55;
   transform: translateX(-50%);
 }
+.onb-col-teaser { text-align: left; margin: 14px 0 0; }
+.onb-col-teaser-card { margin-top: 16px; }
+
 .onb-col-axis {
   text-align: center;
   font-size: 9px;

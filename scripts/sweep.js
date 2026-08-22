@@ -423,8 +423,15 @@ chk(maxBefore === maxAfter, "slider ceiling is stable as the value changes",
 // ─────────────────────────────────────────────────────────────────────────────
 section("7. Data integrity");
 chk(CATEGORIES.length === 12, "12-category taxonomy");
+// benchSelfTest checks three factors separately now — base lookup, lifestyle
+// product, cost of living — because the col factor moved when the tier table
+// was replaced by BEA. Report which one failed, not just that something did.
 var selfTest = benchSelfTest();
-chk(selfTest.pass, "benchmark self-test -> " + selfTest.actual, "expected " + selfTest.expected);
+chk(selfTest.pass, "benchmark self-test -> " + selfTest.actual +
+    " (spec's retired figure was " + selfTest.specResult + ")",
+    selfTest.failed.map(function (f) {
+      return f.name + ": expected " + f.expected + ", got " + f.actual;
+    }).join("\n          "));
 chk(catTotal(SEED_STATE.monthToDateActuals) > 0, "month-to-date sums without _note contamination");
 var noteLeak = CATEGORIES.indexOf("_note") === -1;
 chk(noteLeak, "_note is not a category");
@@ -455,6 +462,11 @@ section("7b. Unreferenced functions — inventory, not a verdict");
 // and is kept on purpose. Anything NOT on this list is new, and warns.
 var DEAD_BASELINE = [
   "benchSelfTest",              // documents the benchmark formula by example
+  // The ZIP-only entry point to the cost-of-living predicate. benchColIndex
+  // already holds a resolved lookup and uses benchColSupported, so calling this
+  // instead would repeat the lookup. Kept as the module's public
+  // "is this area modeled?".
+  "benchZipSupported",
   "buddyDescription",           // L15 buddy plumbing, used once art lands
   "budgetDelta",
   "catRows",                    // taxonomy helper, pairs with catTotal/catValue
@@ -466,10 +478,6 @@ var DEAD_BASELINE = [
   // Both orphaned deliberately when the Budget tab became the review surface:
   // the twelve slider rows moved to the per-category screen, and "Worth a look"
   // replaced the observation cards. Kept because a future edit mode wants them.
-  // The ZIP-only entry point to the cost-of-living predicate. benchColIndex
-  // holds a resolved lookup and uses benchColSupported instead, so nothing
-  // calls this today — it stays as the module's public "is this area modeled?".
-  "benchZipSupported",
   "renderBudgetCategoryRow",
   "renderBudgetObservationCards",
   "themeIsDark"                 // L21, for a screen that wants to branch on theme

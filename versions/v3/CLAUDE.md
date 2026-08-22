@@ -28,11 +28,17 @@ All verified against the raw JSON on 2026-08-07.
 - **`base[cat][band]` is a 4-element ARRAY indexed by `householdSize − 1`.**
   Household 2 → index **1**. `4+` clamps to index 3. Reading `[householdSize]`
   returns the next household's figure.
-- **Cost of living is a two-step lookup** — `zipPrefixes[zip3]` gives a tier
-  *name*, then `tiers[name][cat]` gives the multiplier. **Never read it
-  directly**: `benchColMultipliers(zip)` resolves the ZIP's own county first
-  (`data/zip-cost-of-living.json` — all of Arkansas and every bordering county,
-  five-digit) and only then falls back to the prefix tier.
+- **Cost of living is BEA Regional Price Parities, not the tier table.**
+  `benchColMultipliers(zip)` is the only chokepoint: ZIP → county → BEA
+  geography → four price buckets, then a **per-category** local modifier
+  (housing from county rents, utilities from state electricity prices, nothing
+  else — see architecture §5). `peer-benchmarks.json`'s `colTiers` survives only
+  as a guard; **never read it directly.** Its four tiers gave Manhattan, Palo
+  Alto, Santa Clara and LA all the same number and capped housing at 1.85.
+- **`benchSelfTest` no longer asserts the spec's 370.** That figure carried the
+  old `very_high` tier's 1.34; BEA prices LA restaurant meals at 1.071, so the
+  peer value is 295. The test now checks base, lifestyle and cost-of-living
+  separately — stronger than the single assertion it replaced.
 - **Lifestyle is a product across six dimensions**, not one lookup.
 - **`paysRent` data keys are the strings `"true"` / `"false"` / `"shared"`**,
   not booleans. The wizard's option values map onto them via `benchLifestyleKey`:
@@ -48,8 +54,11 @@ All verified against the raw JSON on 2026-08-07.
 - **The self-reported layer is `monthToDateActuals`** ($429 dining), *not* the
   sum of `journalHistory` (~$168). Getting it backwards breaks every observation.
 
-Self-test for the benchmark model: Dining out, b3, household 2, ZIP 900, foodie
-moderate + cooks sometimes → `275 × 1.34 × 1.0 = 368.5` → **370**.
+Self-test for the benchmark model (`benchSelfTest`): Dining out, b3, household
+2, ZIP 90066, foodie moderate + cooks sometimes. Base **275** and lifestyle
+**1.0** are still exactly the spec's; the cost-of-living factor is now BEA's
+1.071 rather than the retired tier's 1.34, so the result is **295**, not 370.
+The three factors are asserted separately — see architecture §5.
 
 ## Hard rules
 

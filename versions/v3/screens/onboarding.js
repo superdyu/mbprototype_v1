@@ -343,23 +343,27 @@ function onbAnswered(key, o) {
   return true;
 }
 
-// Cost-of-living comparison shown on the ZIP step once a usable prefix is typed.
+// Cost-of-living comparison shown on the ZIP step, once all five digits are in.
 // Nation is the 100% baseline; the ZIP's index sits next to it. Descriptive
 // only, never prescriptive (D26); "peers", never "average users" (D23).
 function onbColChart(zip) {
   const digits = String(zip == null ? "" : zip).replace(/\D/g, "");
-  if (digits.length < 3) return "";
+
+  // Wait for the whole ZIP. It used to draw at three digits, which was the old
+  // prefix model showing through — three digits named a tier. A ZIP now
+  // resolves to its county, and four digits of a five-digit code identify
+  // nothing, so a partial chart would be a figure for somewhere else.
+  if (digits.length < 5) return onbColTeaser(digits.length);
 
   const col = benchColIndex(zip);
 
-  // Modeled areas are: every Arkansas ZIP and every county bordering it, at
-  // five-digit precision (data/zip-cost-of-living.json), plus the CA/NY/VA
-  // prefixes from A12. Everything else falls back to the national average — say
-  // so plainly rather than drawing a chart that implies we have local data.
+  // Every US ZIP is modeled, so this is a guard rather than a path — but a ZIP
+  // that is genuinely nonsense should say so plainly rather than draw a chart
+  // that implies we looked something up.
   if (!col.supported) {
     return `
     <div class="note" style="margin-top:16px;">
-      This area isn't in the test data yet, so I'll use the national average for now. Your peer numbers still work — they're just not tuned to local costs.
+      I don't recognise that one, so I'll use the national average for now. Your peer numbers still work — they're just not tuned to local costs.
     </div>`;
   }
 
@@ -370,10 +374,7 @@ function onbColChart(zip) {
   const zipW      = zipPct / scaleMax * 100;
   const markerX   = Math.max(6, Math.min(94, nationPct / scaleMax * 100));
 
-  // Name the county when we resolved one. It is the difference between "we
-  // looked something up about where you live" and "we guessed from your prefix",
-  // and it is the whole reason the five-digit table exists.
-  const where = col.county ? h(String(col.county).split(":")[1]) + " County" : "your area";
+  const where = col.place ? h(col.place) : "your area";
 
   let text;
   if (col.pct > 0) {
@@ -399,7 +400,47 @@ function onbColChart(zip) {
            two "national average" strings a few pixels apart read as a bug. -->
       <p class="onb-col-axis">Cost of living · national average = 100%</p>
     </div>
-    <p class="helper onb-col-text">${text}</p>`;
+    <p class="helper onb-col-text">${text}</p>
+    ${onbColHousingLine(col)}`;
+}
+
+// The composite is a weighted basket, and most of that basket is priced
+// nationally — so even Silicon Valley lands near 120%, which reads as wrong to
+// anyone who knows what their own rent is. Housing is where nearly all the
+// variation actually lives, so name it.
+function onbColHousingLine(col) {
+  const h1 = col.housingIndex;
+  if (!h1 || !isFinite(h1)) return "";
+  const mult = Math.round(h1 * 10) / 10;
+  let phrase;
+  if (h1 >= 1.15)      phrase = `runs about <strong>${mult}× the national average</strong>`;
+  else if (h1 <= 0.85) phrase = `runs about <strong>${mult}× the national average</strong>`;
+  else                 phrase = `is <strong>close to the national average</strong>`;
+  return `
+    <p class="helper onb-col-text" style="margin-top:8px;">
+      Housing there ${phrase} — that's where most of the difference sits. The rest
+      of a budget, from groceries to streaming, is priced much the same everywhere.
+    </p>`;
+}
+
+// Before there is anything to chart. The step was a bare input with no reason
+// to fill it in; this says what typing it buys.
+function onbColTeaser(typed) {
+  if (typed > 0) {
+    return `
+    <p class="helper onb-col-teaser">
+      ${5 - typed} more digit${5 - typed === 1 ? "" : "s"} and I'll show you the comparison.
+    </p>`;
+  }
+  return `
+    <div class="note onb-col-teaser-card">
+      <p class="task-title" style="margin:0 0 4px;font-size:13px;">There's a number waiting behind this one</p>
+      <p class="task-desc" style="margin:0;">
+        Type your ZIP and I'll show you how your corner of the country compares
+        to the rest of it. Some places run a third above the national average,
+        some a fifth below — and housing swings further than that.
+      </p>
+    </div>`;
 }
 
 function onbStepBody(key, o) {
