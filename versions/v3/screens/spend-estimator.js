@@ -43,6 +43,83 @@ function estimatorMonthFraction() {
   return Math.max(0.05, Math.min(1, day / days));
 }
 
+// ─── What the app already knows ──────────────────────────────────────────────
+// The estimator asks about HABITS because people don't remember totals. But for
+// some categories the app is not guessing at all — it already holds the answer,
+// and asking anyway is the app failing to listen.
+//
+// Subscriptions is the case that made this obvious. It asked "Just one or two /
+// A handful / Quite a few" and scored 55, while state.subs held four named
+// services adding to $60.46 and, if the tester had answered the setup question,
+// state.journalProfile.streaming named the ones they said they pay for. Two
+// exact sources, ignored, in favour of a three-way guess.
+//
+// So: where the app knows, it says so and offers the figure. Where it doesn't,
+// it asks. This is a SEAM — estimatorKnown() is the only place that decides
+// whether a category has a known figure, and adding another category is one
+// branch here rather than a change to the flow.
+
+/**
+ * What we already hold for a category, or null to fall through to the questions.
+ * Returns { amount, items, exactCount, estimatedCount, basis }.
+ */
+function estimatorKnown(category) {
+  if (category === "Subscriptions") return estimatorKnownSubscriptions();
+  return null;
+}
+
+/**
+ * Named subscriptions and their real monthly prices.
+ *
+ * Two sources, deliberately merged rather than one preferred:
+ *   state.subs                       — has the PRICE, seeded from the persona
+ *   state.journalProfile.streaming   — has what the USER said they pay for
+ *
+ * Anything in both is exact. Anything the user named that we have no price for
+ * is counted at the average of the ones we do know, and the copy says so — a
+ * service we cannot price is still a service they are paying for, and silently
+ * dropping it would under-report.
+ */
+function estimatorKnownSubscriptions() {
+  const known = (state.subs || []).filter(s => s && s.name);
+  const named = (typeof journalProfileSignals === "function")
+    ? journalProfileSignals("streaming").filter(Boolean)
+    : [];
+  if (!known.length && !named.length) return null;
+
+  const priced = {};
+  known.forEach(s => { priced[s.name] = Number(s.monthly) || 0; });
+
+  // If they told us which ones they have, that list governs — they may have
+  // cancelled something the persona still lists, or added something it doesn't.
+  const names = named.length ? named.slice() : known.map(s => s.name);
+
+  const withPrice = names.filter(n => priced[n] != null);
+  const average = withPrice.length
+    ? withPrice.reduce((t, n) => t + priced[n], 0) / withPrice.length
+    : 0;
+
+  const items = names.map(n => ({
+    name: n,
+    monthly: priced[n] != null ? priced[n] : Math.round(average * 100) / 100,
+    exact: priced[n] != null
+  }));
+  if (!items.length) return null;
+
+  const amount = items.reduce((t, i) => t + i.monthly, 0);
+  const estimatedCount = items.filter(i => !i.exact).length;
+  return {
+    amount: Math.round(amount * 100) / 100,
+    items: items,
+    exactCount: items.length - estimatedCount,
+    estimatedCount: estimatedCount,
+    // Subscriptions bill monthly whatever the date, so no month-fraction here —
+    // the same reason est_sub_count carries fullMonth.
+    fullMonth: true,
+    basis: named.length ? "you told me" : "your account"
+  };
+}
+
 function estimatorStart(category) {
   if (!isCategory(category)) return;
   const all = estimatorQuestionsFor(category);
@@ -56,9 +133,37 @@ function estimatorStart(category) {
   // (the estimator is the only way to touch actuals — nothing takes a dollar
   // figure). Partial cooldowns still apply; only a fully-latched set reopens.
   if (!qs.length) qs = all;
+  const known = estimatorKnown(category);
   state.estimator = { category: category, questions: qs, qIndex: 0, answers: {},
-                      adjusted: null, confirmed: false };
+                      adjusted: null, confirmed: false,
+                      // "known" → show what we hold first; "ask" → the questions.
+                      stage: known ? "known" : "ask",
+                      known: known, usedKnown: false };
   go("spendEstimator");
+}
+
+/** Take the figure we already hold and go straight to the confirmation. */
+function estimatorUseKnown() {
+  const e = state.estimator;
+  if (!e || !e.known) return;
+  e.stage = "ask";
+  e.qIndex = e.questions.length;   // land on the result step
+  e.adjusted = Math.round(e.known.amount);
+  e.usedKnown = true;
+  e.confirmed = false;             // the tick is still theirs to give
+  render();
+}
+
+/** "That's not right" — fall through to the habit questions after all. */
+function estimatorAskInstead() {
+  const e = state.estimator;
+  if (!e) return;
+  e.stage = "ask";
+  e.qIndex = 0;
+  e.adjusted = null;
+  e.usedKnown = false;
+  e.confirmed = false;
+  render();
 }
 
 function estimatorSetAnswer(qid, optIndex) {
@@ -129,6 +234,10 @@ function estimatorSetAdjusted(value) {
   const n = Math.max(0, Math.round(Number(value) || 0));
   e.adjusted = n;
   e.confirmed = false;
+  // The provenance line claims the figure IS the sum of their subscriptions, so
+  // it tracks the value rather than the gesture: change it and the claim drops,
+  // type it back and the claim is true again.
+  if (e.known) e.usedKnown = (n === Math.round(e.known.amount));
   render();
 }
 
@@ -147,7 +256,12 @@ function estimatorSubmit() {
   if (!e.confirmed) return;
   // Nothing answered → say nothing. Writing the 0 the sum would produce reads
   // as "you spent nothing here" and would overwrite a real self-reported figure.
-  if (!e.questions.some(q => e.answers[q.id] != null)) { estimatorDiscard(); return; }
+  //
+  // Taking the already-known figure answers no questions, so it has to be
+  // exempt — otherwise the whole known path silently discards and the category
+  // keeps whatever it had. Same for a figure the user typed in themselves.
+  const answeredSomething = e.questions.some(q => e.answers[q.id] != null);
+  if (!answeredSomething && e.adjusted == null) { estimatorDiscard(); return; }
   const est = estimatorFinalValue();   // the user's correction, if they made one
   // Writes the "What you told me" layer for this category (L17). Spend-limit
   // goals track state.mtd live, so any goal on this category moves as a result.
@@ -188,6 +302,11 @@ function renderSpendEstimator() {
       </div>`;
   }
 
+  // Known step — what the app already holds, before it asks anything.
+  if (e.stage === "known" && e.known) {
+    return renderEstimatorKnown(e);
+  }
+
   // Result step — the confirmation. This write REPLACES the category's
   // self-reported figure (architecture §5), so when there is already one it has
   // to be on screen: the user is confirming a change, not just reading a number.
@@ -204,6 +323,11 @@ function renderSpendEstimator() {
           <div class="card">
             <p class="helper" style="margin:0 0 2px;">${h(cat)} so far this month</p>
             <p class="journal-total">${budgetFmt(est)}</p>
+            ${e.usedKnown ? `
+              <p class="helper" style="margin:6px 0 0;">
+                From your ${h(e.known.items.length)} subscription${e.known.items.length === 1 ? "" : "s"} —
+                not an estimate.
+              </p>` : ""}
             ${replacing ? `
               <p class="helper" style="margin:8px 0 0;">
                 This replaces what you'd told me before — ${budgetFmt(current)}
@@ -272,6 +396,61 @@ function renderSpendEstimator() {
   `;
 }
 
+/**
+ * "I already know this one."
+ *
+ * Lists what we hold, item by item, so the figure is checkable rather than
+ * asserted — and offers the questions anyway, because the app being confident
+ * is not the same as the app being right.
+ */
+function renderEstimatorKnown(e) {
+  const k = e.known;
+  const cat = e.category;
+  return `
+    <div class="journal-shell">
+      <div class="journal-head">
+        <p class="helper" style="margin:0 0 4px;">${h(cat)}</p>
+        <h1 class="title" style="font-size:20px;margin:0 0 6px;">I already know this one</h1>
+        <p class="helper" style="margin:0;">
+          No need to guess — here's what ${k.basis === "you told me" ? "you've told me" : "I have on file"}.
+        </p>
+      </div>
+
+      <div class="journal-body">
+        <div class="card">
+          <div class="row" style="align-items:baseline;margin-bottom:10px;">
+            <span class="helper">Every month</span>
+            <span class="journal-total">${budgetFmt(k.amount)}</span>
+          </div>
+          ${k.items.map(item => `
+            <div class="row est-known-row">
+              <span>${h(item.name)}</span>
+              <span class="helper">
+                ${budgetFmt(item.monthly)}${item.exact ? "" : " · estimated"}
+              </span>
+            </div>`).join("")}
+          ${k.estimatedCount ? `
+            <p class="helper" style="margin:10px 0 0;font-size:11px;">
+              ${h(k.estimatedCount)} of these ${k.estimatedCount === 1 ? "doesn't have" : "don't have"}
+              a price on file, so ${k.estimatedCount === 1 ? "it's" : "they're"} counted at the
+              average of the ones that do.
+            </p>` : ""}
+        </div>
+      </div>
+
+      <div class="journal-foot" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <button class="button full" type="button" onclick="estimatorUseKnown()">
+          Use ${budgetFmt(k.amount)}
+        </button>
+        <button class="button secondary full" type="button" onclick="estimatorAskInstead()">
+          That's not right — ask me instead
+        </button>
+        <button class="onb-skip full" type="button" onclick="estimatorDiscard()">Cancel</button>
+      </div>
+    </div>
+  `;
+}
+
 function renderSpendEstimatorAdmin() {
   const e = state.estimator;
   return `
@@ -282,7 +461,10 @@ function renderSpendEstimatorAdmin() {
              Estimating <strong>${h(e.category)}</strong> — ${e.questions.length} question(s),
              on ${Math.min(e.qIndex + 1, e.questions.length)}.<br>
              Month elapsed: ${Math.round(estimatorMonthFraction() * 100)}% ·
-             running estimate ${budgetFmt(estimatorCompute())}
+             running estimate ${budgetFmt(estimatorCompute())}<br>
+             stage <strong>${h(e.stage)}</strong> ·
+             already known ${e.known ? budgetFmt(e.known.amount) + " (" + h(e.known.basis) + ")" : "—"}
+             ${e.usedKnown ? " · <strong>used</strong>" : ""}
            </p>`
         : `<p class="helper">Not running. Reached from a category detail's "Update actuals".</p>`}
     </div>

@@ -463,6 +463,47 @@ in §5. If any of the three doesn't reproduce, the wiring is wrong.
 
 ---
 
+### The estimator asks only what it does not already know
+
+`screens/spend-estimator.js` exists because people remember **habits**, not
+totals — "specialty café most days", not "$155". But for some categories the app
+is not guessing at all, and asking anyway is the app failing to listen.
+
+Subscriptions was the case that proved it. The estimator asked "Just one or two
+/ A handful / Quite a few" and scored **$55**, while `state.subs` held four
+named services adding to **$60.46** — and the seeded month-to-date for that
+category was already $60.46. So the flow took a correct figure and replaced it
+with a bucketed guess.
+
+**`estimatorKnown(category)` is the seam.** It is the only place that decides
+whether a category has a figure the app already holds; adding another category
+is one branch there, not a change to the flow. When it returns something, the
+estimator opens on a **known step** that itemises what we hold and offers two
+ways out — take the figure, or ask the questions anyway. When it returns null,
+nothing changes.
+
+Two sources are merged for Subscriptions, deliberately rather than one winning:
+
+| Source | Holds |
+|---|---|
+| `state.subs` | the **price**, seeded from the persona |
+| `state.journalProfile.streaming` | what the **user said** they pay for |
+
+If they answered the setup question, their list governs — they may have
+cancelled something the persona still lists. A service they named that we have
+no price for is counted at the average of the ones we do know and **labelled as
+estimated**: dropping it would under-report, and pricing it silently would
+assert something we don't have.
+
+Two behaviours worth keeping if this is touched:
+
+- **Taking the known figure answers no questions**, so `estimatorSubmit`'s
+  "nothing answered → say nothing" guard has to exempt it, or the whole path
+  silently discards and the category keeps whatever it had.
+- **The provenance line tracks the value, not the gesture.** It claims the
+  figure *is* the sum of their subscriptions, so editing it drops the claim and
+  typing it back restores it.
+
 ## 6. Observation registry
 
 Four seeded observations (D18), each carrying a `surfaces[]` array naming where

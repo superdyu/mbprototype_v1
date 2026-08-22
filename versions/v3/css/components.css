@@ -2128,6 +2128,15 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 
 /* Spend estimator — the explicit confirm before the self-reported layer is
    written. A real control, not a sentence: nothing commits until it is ticked. */
+/* Spend estimator — the "I already know this one" itemisation. */
+.est-known-row {
+  align-items: baseline;
+  padding: 5px 0;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.est-known-row:first-of-type { border-top: none; }
+
 .est-confirm {
   display: flex;
   align-items: flex-start;
