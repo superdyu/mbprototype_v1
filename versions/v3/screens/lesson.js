@@ -204,14 +204,73 @@ function lpHasAudio() {
  * would put the captions and the hyperframes animation on two different clocks
  * that drift apart, and the animation is choreographed against the cue times.
  */
+// ── THE SYNC CONTRACT (architecture §10) ─────────────────────────────────────
+// With a generated .wav the element IS the clock and everything already lines
+// up. Without one — which is every lesson but interest-builds — the clock was a
+// 165 wpm word-count estimate while the voice read at the browser's own pace.
+// The two separate within a few lines: the caption moves on mid-sentence and
+// the scrub bar agrees with neither.
+//
+// So when live speech is driving, SPEECH is the clock. The line index is pinned
+// on `onStart` and only advances on `onEnd`; lpTick still runs the bar smoothly
+// but is capped inside the current line's window (lpSpeechCap), so it can never
+// overtake the voice. The estimate survives as the total-length figure and as
+// the fallback where there is no speech engine at all.
 function lpSpeakCurrent() {
   const lp = state.lessonPlayback;
   if (lpHasAudio() || !lp.playing) return;
   if (typeof narrationSpeak !== "function") return;
-  narrationSpeak(lp.sentences[lp.index]);
+
+  const idx = lp.index;
+  const started = narrationSpeak(lp.sentences[idx], {
+    rate: lp.speed || 1,
+    onStart: function () {
+      const l = state.lessonPlayback;
+      if (!l || l.index !== idx) return;      // superseded by a seek
+      l.speechDriven = true;
+      // The caption on screen is provably the line being spoken right now, so
+      // pin the clock to its cue rather than wherever the estimate had drifted.
+      l.elapsed = l.cues[idx] || 0;
+      l.lastTick = Date.now();
+      lpUpdateProgress();
+      lpSyncHyperframes();
+    },
+    onEnd: function () {
+      const l = state.lessonPlayback;
+      if (!l || !l.playing || l.index !== idx) return;
+      if (idx >= l.sentences.length - 1) { lpEnd(); return; }
+      l.index = idx + 1;
+      l.elapsed = l.cues[l.index] || l.elapsed;
+      l.lastTick = Date.now();
+      lpHighlight(l.index);
+      lpUpdateProgress();
+      lpSyncHyperframes();
+      lpSpeakCurrent();
+    },
+    onError: function () {
+      // No voice after all — hand the clock back to the estimate.
+      const l = state.lessonPlayback;
+      if (l) l.speechDriven = false;
+    }
+  });
+  if (!started) lp.speechDriven = false;
+}
+
+/**
+ * Ceiling for the virtual clock while speech drives it: just inside the current
+ * line's window, so the bar keeps moving but the caption cannot advance ahead
+ * of the voice. Without a cap a fast estimate would run the whole film while
+ * the narrator was still on line three.
+ */
+function lpSpeechCap(lp) {
+  const next = lp.cues[lp.index + 1];
+  if (next == null) return lp.total;
+  return Math.max(lp.cues[lp.index] || 0, next - 0.05);
 }
 
 function lpStopSpeaking() {
+  const lp = state.lessonPlayback;
+  if (lp) lp.speechDriven = false;
   if (typeof narrationCancel === "function") narrationCancel();
 }
 
@@ -390,7 +449,14 @@ function lpApplyElapsed(sec) {
   lp.index = idx;
   const audio = lpHasAudio() ? lpAudioEl() : null;
   if (audio) { try { audio.currentTime = lp.elapsed; } catch (err) {} }
-  if (idxChanged) { lpHighlight(lp.index); lpSpeakCurrent(); }
+  // The voice has to follow the handle. Without this it finishes the line it
+  // was already on and then advances from THERE, so dragging the bar leaves the
+  // narration reading a paragraph the viewer has already scrubbed past.
+  if (idxChanged) {
+    lpHighlight(lp.index);
+    if (!audio) lpStopSpeaking();
+    lpSpeakCurrent();
+  }
   lpUpdateProgress();
   lpUpdatePlayBtn();
   lpSyncHyperframes();
@@ -434,14 +500,19 @@ function lpTick() {
     const dt  = (now - lp.lastTick) / 1000;
     lp.lastTick = now;
     lp.elapsed += dt * lp.speed;
+    // Speech is the clock (see lpSpeakCurrent). The bar still moves smoothly,
+    // but it stops at the end of the line being spoken and waits for `onEnd`
+    // to release it — otherwise a fast estimate runs the film while the
+    // narrator is still three lines back.
+    if (lp.speechDriven) lp.elapsed = Math.min(lp.elapsed, lpSpeechCap(lp));
   }
 
-  if (lp.elapsed >= lp.total) {
+  if (lp.elapsed >= lp.total && !lp.speechDriven) {
     lpEnd();
     return;
   }
   const idx = lpIndexForElapsed(lp.elapsed, lp.cues);
-  if (idx !== lp.index) {
+  if (idx !== lp.index && !lp.speechDriven) {
     lp.index = idx;
     lpHighlight(idx);
     lpSpeakCurrent();

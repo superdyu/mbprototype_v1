@@ -50,79 +50,84 @@ const LESSON_SCRIPTS = {
 
   // apr_deeply_below · bucket: deeply_below
   apr_deeply_below: [
-    "Let's talk about APR — the number that decides what it costs you to carry a balance.",
-    "APR is the yearly price of borrowing, written as a percentage of what you owe.",
-    "It isn't charged once a year, though. It gets divided down and applied each month to whatever is still sitting on the card.",
-    "Clear the balance in time and, on most cards, none of it costs you anything.",
-    "Leave some behind and interest starts on the part that stayed. Next month it's working on that interest too — that's compounding.",
-    "So that's the mechanic. Now here's your card, and the rate it charges.",
+    "APR is the one number that decides what carrying a balance costs you.",
+    "It's the yearly price of borrowing, written as a percentage of what you owe.",
+    "It isn't billed once a year, though. It's divided down and applied every month to whatever is still sitting on the card.",
+    "If the balance is cleared before the due date, on most cards none of it costs you anything.",
+    "If some of it stays, interest starts on the part that stayed. The month after, it's charged on that interest too. That's compounding.",
+    "That's the mechanic. Here's your card, and the rate it charges.",
     "And here's where that rate sits, against the range for cards like yours and against what's typical.",
-    "Yours lands well below the middle, which is a genuinely comfortable place to be.",
-    "At a rate this low, a balance that lingers builds up far more slowly than it would for most people."
+    "A gap of a couple of percentage points is easy to shrug off. It's worth turning into money, because money is the form it arrives in.",
+    "Yours sits well below the middle.",
+    "At a rate this low a balance that lingers costs you noticeably less than it would most people, though it still costs something."
   ],
 
   // apr_slightly_below · bucket: slightly_below
   apr_slightly_below: [
-    "Let's talk about APR — the number that decides what it costs you to carry a balance.",
-    "APR is the yearly price of borrowing, written as a percentage of what you owe.",
-    "It isn't charged once a year, though. It gets divided down and applied each month to whatever is still sitting on the card.",
-    "Clear the balance in time and, on most cards, none of it costs you anything.",
-    "Leave some behind and interest starts on the part that stayed. Next month it's working on that interest too — that's compounding.",
-    "So that's the mechanic. Now here's your card, and the rate it charges.",
+    "APR is the one number that decides what carrying a balance costs you.",
+    "It's the yearly price of borrowing, written as a percentage of what you owe.",
+    "It isn't billed once a year, though. It's divided down and applied every month to whatever is still sitting on the card.",
+    "If the balance is cleared before the due date, on most cards none of it costs you anything.",
+    "If some of it stays, interest starts on the part that stayed. The month after, it's charged on that interest too. That's compounding.",
+    "That's the mechanic. Here's your card, and the rate it charges.",
     "And here's where that rate sits, against the range for cards like yours and against what's typical.",
-    "Yours comes in a little under the middle, which quietly works in your favor.",
-    "A slightly lower rate means anything you carry adds up a touch slower than it would elsewhere."
+    "A gap of a couple of percentage points is easy to shrug off. It's worth turning into money, because money is the form it arrives in.",
+    "Yours comes in a little under the middle.",
+    "A slightly lower rate means anything you carry grows a little slower than it would elsewhere."
   ],
 
   // apr_about_average · bucket: about_average
   apr_about_average: [
-    "Let's talk about APR — the number that decides what it costs you to carry a balance.",
-    "APR is the yearly price of borrowing, written as a percentage of what you owe.",
-    "It isn't charged once a year, though. It gets divided down and applied each month to whatever is still sitting on the card.",
-    "Clear the balance in time and, on most cards, none of it costs you anything.",
-    "Leave some behind and interest starts on the part that stayed. Next month it's working on that interest too — that's compounding.",
-    "So that's the mechanic. Now here's your card, and the rate it charges.",
+    "APR is the one number that decides what carrying a balance costs you.",
+    "It's the yearly price of borrowing, written as a percentage of what you owe.",
+    "It isn't billed once a year, though. It's divided down and applied every month to whatever is still sitting on the card.",
+    "If the balance is cleared before the due date, on most cards none of it costs you anything.",
+    "If some of it stays, interest starts on the part that stayed. The month after, it's charged on that interest too. That's compounding.",
+    "That's the mechanic. Here's your card, and the rate it charges.",
     "And here's where that rate sits, against the range for cards like yours and against what's typical.",
-    "Yours lands right around the middle — the same place most cards sit.",
+    "A gap of a couple of percentage points is easy to shrug off. It's worth turning into money, because money is the form it arrives in.",
+    "Yours lands right around the middle, where most cards sit.",
     "So the rate sets the price, and what's left at the end of the month decides whether you pay it."
   ],
 
   // apr_slightly_above · bucket: slightly_above
   apr_slightly_above: [
-    "Let's talk about APR — the number that decides what it costs you to carry a balance.",
-    "APR is the yearly price of borrowing, written as a percentage of what you owe.",
-    "It isn't charged once a year, though. It gets divided down and applied each month to whatever is still sitting on the card.",
-    "Clear the balance in time and, on most cards, none of it costs you anything.",
-    "Leave some behind and interest starts on the part that stayed. Next month it's working on that interest too — that's compounding.",
-    "So that's the mechanic. Now here's your card, and the rate it charges.",
+    "APR is the one number that decides what carrying a balance costs you.",
+    "It's the yearly price of borrowing, written as a percentage of what you owe.",
+    "It isn't billed once a year, though. It's divided down and applied every month to whatever is still sitting on the card.",
+    "If the balance is cleared before the due date, on most cards none of it costs you anything.",
+    "If some of it stays, interest starts on the part that stayed. The month after, it's charged on that interest too. That's compounding.",
+    "That's the mechanic. Here's your card, and the rate it charges.",
     "And here's where that rate sits, against the range for cards like yours and against what's typical.",
-    "Yours runs a little above the middle. Not alarming, but worth knowing.",
-    "A bit above typical means a balance that lingers costs a little more, and next month's interest is worked out on the larger figure."
+    "A gap of a couple of percentage points is easy to shrug off. It's worth turning into money, because money is the form it arrives in.",
+    "Yours runs a little above the middle.",
+    "Small over a month, larger over a year, and every month's interest is worked out on the bigger figure."
   ],
 
   // apr_deeply_above · bucket: deeply_above
   apr_deeply_above: [
-    "Let's talk about APR — the number that decides what it costs you to carry a balance.",
-    "APR is the yearly price of borrowing, written as a percentage of what you owe.",
-    "It isn't charged once a year, though. It gets divided down and applied each month to whatever is still sitting on the card.",
-    "Clear the balance in time and, on most cards, none of it costs you anything.",
-    "Leave some behind and interest starts on the part that stayed. Next month it's working on that interest too — that's compounding.",
-    "So that's the mechanic. Now here's your card, and the rate it charges.",
+    "APR is the one number that decides what carrying a balance costs you.",
+    "It's the yearly price of borrowing, written as a percentage of what you owe.",
+    "It isn't billed once a year, though. It's divided down and applied every month to whatever is still sitting on the card.",
+    "If the balance is cleared before the due date, on most cards none of it costs you anything.",
+    "If some of it stays, interest starts on the part that stayed. The month after, it's charged on that interest too. That's compounding.",
+    "That's the mechanic. Here's your card, and the rate it charges.",
     "And here's where that rate sits, against the range for cards like yours and against what's typical.",
-    "Yours sits well above the middle, and that's worth sitting with for a second.",
-    "Up here, anything left on the card builds faster, and each month's interest is worked out on a bigger number."
+    "A gap of a couple of percentage points is easy to shrug off. It's worth turning into money, because money is the form it arrives in.",
+    "Yours sits well above the middle.",
+    "Up here what stays on the card grows faster, and each month's interest is worked out on a number that keeps getting bigger."
   ],
 
   // apr_default · fallback — no card, or nothing to point at. Plays with the
   // waveform rather than the video, since there is no figure to draw. Same
   // education, minus the two lines that need a card to exist.
   apr_default: [
-    "Let's talk about APR. We'll keep it general, since there's no particular card in front of us.",
-    "APR is the yearly price of borrowing, written as a percentage of what you owe.",
-    "It isn't charged once a year, though. It gets divided down and applied each month to whatever is still sitting on the card.",
-    "Clear the balance in time and, on most cards, none of it costs you anything.",
-    "Leave some behind and interest starts on the part that stayed. Next month it's working on that interest too — that's compounding.",
-    "That last part is the bit people find surprising, and it's the whole reason the rate matters.",
+    "APR is the one number that decides what carrying a balance costs you. We'll keep this general, since there's no particular card in front of us.",
+    "It's the yearly price of borrowing, written as a percentage of what you owe.",
+    "It isn't billed once a year, though. It's divided down and applied every month to whatever is still sitting on the card.",
+    "If the balance is cleared before the due date, on most cards none of it costs you anything.",
+    "If some of it stays, interest starts on the part that stayed. The month after, it's charged on that interest too. That's compounding.",
+    "That last part is the one people find surprising, and it's the whole reason a couple of percentage points matter more than they look.",
     "Nothing to act on this second. It's a number that turns up eventually, and now you know what it's saying."
   ],
 

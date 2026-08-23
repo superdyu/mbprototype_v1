@@ -941,7 +941,11 @@ function onbVideoInit() {
   return {
     index: 0, playing: false, finished: false,
     elapsed: 0, total: Math.max(1, t), cues: cues,
-    speed: 1, lastTick: 0, timer: null, gen: 0
+    speed: 1, lastTick: 0, timer: null, gen: 0,
+    // True once a voice — generated .wav or live speech — is driving the
+    // clock. While it is, the tick is capped inside the current segment and
+    // only the voice's own end event advances the caption. See onbVideoSpeak.
+    speechDriven: false
   };
 }
 
@@ -1101,11 +1105,15 @@ function onbVideoTick() {
   const now = Date.now();
   v.elapsed += ((now - v.lastTick) / 1000) * v.speed;
   v.lastTick = now;
+  // A voice is driving (see onbVideoSpeak). The bar still moves, but it stops
+  // at the end of the segment being spoken and waits for `onEnd`/`onended` to
+  // release it — otherwise the estimate runs the film past the narrator.
+  if (v.speechDriven) v.elapsed = Math.min(v.elapsed, onbSpeechCap(v));
 
-  if (v.elapsed >= v.total) { onbVideoFinish(); return; }
+  if (v.elapsed >= v.total && !v.speechDriven) { onbVideoFinish(); return; }
 
   const idx = onbVideoIndexFor(v.elapsed, v.cues);
-  if (idx !== v.index) {
+  if (idx !== v.index && !v.speechDriven) {
     v.index = idx;
     onbVideoPaintCaption();
     onbVideoSpeak();          // the new segment's voice rides along beside the clock
@@ -1129,6 +1137,7 @@ function onbVideoStop() {
   const wasNarrating = !!(o && o.video && o.video.playing);
   if (o && o.video) {
     o.video.playing = false;
+    o.video.speechDriven = false;   // no voice, so the estimate is the clock again
     // A media `ended`/`error` handler can still be queued when we stop. If a
     // restart re-arms `playing` in the same synchronous turn, that stale
     // callback lands afterwards and starts a second voice over the same
@@ -1163,7 +1172,48 @@ function onbVideoSpeak() {
   const seg = onbVideoSegments()[o.video.index];
   if (!seg) return;
 
-  const speakFallback = function () { narrationSpeak(seg); };
+  // ── THE SYNC CONTRACT (architecture §10) ───────────────────────────────────
+  // No .wav has ever been generated for the onboarding intro on this machine
+  // (gen-audio.sh needs macOS `say`), so this path is what actually runs — and
+  // it ran a 165 wpm word-count clock against a browser voice reading at its
+  // own pace. Caption, voice and scrub bar all disagreed within a few segments.
+  //
+  // When live speech is driving, SPEECH is the clock: the segment index is
+  // pinned on `onStart` and only advances on `onEnd`, and onbVideoTick's bar is
+  // capped inside the current segment (onbSpeechCap). Identical to the lesson
+  // player's lpSpeakCurrent — same contract, same reasons.
+  const idx = o.video.index;
+  const speakFallback = function () {
+    const started = narrationSpeak(seg, {
+      rate: o.video.speed || 1,
+      onStart: function () {
+        const v = onbVideo();
+        if (!v || v.index !== idx) return;      // superseded by a seek
+        v.speechDriven = true;
+        v.elapsed = v.cues[idx] || 0;
+        v.lastTick = Date.now();
+        onbVideoPaintProgress();
+        onbVideoSyncFrames();
+      },
+      onEnd: function () {
+        const v = onbVideo();
+        if (!v || !v.playing || v.index !== idx) return;
+        if (idx >= onbVideoSegments().length - 1) { onbVideoFinish(); return; }
+        v.index = idx + 1;
+        v.elapsed = v.cues[v.index] || v.elapsed;
+        v.lastTick = Date.now();
+        onbVideoPaintCaption();
+        onbVideoPaintProgress();
+        onbVideoSyncFrames();
+        onbVideoSpeak();
+      },
+      onError: function () {
+        const v = onbVideo();
+        if (v) v.speechDriven = false;          // hand the clock back to the estimate
+      }
+    });
+    if (!started) { const v = onbVideo(); if (v) v.speechDriven = false; }
+  };
 
   onbVideoReleaseAudio();
   narrationCancel();
@@ -1174,9 +1224,44 @@ function onbVideoSpeak() {
     onbAudioEl = a;
     a.playbackRate = o.video.speed || 1;
     a.onerror = speakFallback;                 // not generated yet → speak it live
+    // A generated .wav has the same job as live speech here: it is the voice,
+    // so it is the clock. The clip's real length is not the word-count estimate
+    // either, so leaving the bar on the estimate would drift the same way.
+    a.onplay = function () {
+      const v = onbVideo();
+      if (!v || v.index !== idx) return;
+      v.speechDriven = true;
+      v.elapsed = v.cues[idx] || 0;
+      v.lastTick = Date.now();
+      onbVideoPaintProgress();
+      onbVideoSyncFrames();
+    };
+    a.onended = function () {
+      const v = onbVideo();
+      if (!v || !v.playing || v.index !== idx) return;
+      if (idx >= onbVideoSegments().length - 1) { onbVideoFinish(); return; }
+      v.index = idx + 1;
+      v.elapsed = v.cues[v.index] || v.elapsed;
+      v.lastTick = Date.now();
+      onbVideoPaintCaption();
+      onbVideoPaintProgress();
+      onbVideoSyncFrames();
+      onbVideoSpeak();
+    };
     const p = a.play();
     if (p && typeof p.catch === "function") p.catch(speakFallback);  // autoplay blocked
   } catch (e) { speakFallback(); }
+}
+
+/**
+ * Ceiling for the virtual clock while a voice drives it: just inside the
+ * current segment, so the bar keeps moving but the caption cannot run ahead of
+ * what is being said. Mirrors lpSpeechCap.
+ */
+function onbSpeechCap(v) {
+  const next = v.cues[v.index + 1];
+  if (next == null) return v.total;
+  return Math.max(v.cues[v.index] || 0, next - 0.05);
 }
 
 /** Stop and detach the segment audio, so a stale element cannot fire onended. */
@@ -1265,7 +1350,14 @@ function onbVideoApplyElapsed(sec) {
   const idx = onbVideoIndexFor(v.elapsed, v.cues);
   const changed = idx !== v.index;
   v.index = idx;
-  if (changed) { onbVideoPaintCaption(); onbVideoSpeak(); }
+  // The voice has to follow the handle. Without the release it would finish the
+  // segment it was already on and advance from THERE, narrating a passage the
+  // viewer has scrubbed past.
+  if (changed) {
+    v.speechDriven = false;
+    onbVideoPaintCaption();
+    onbVideoSpeak();
+  }
   onbVideoPaintProgress();
   onbVideoPaintPlayBtn();
   onbVideoSyncFrames();

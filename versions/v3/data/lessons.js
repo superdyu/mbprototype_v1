@@ -30,10 +30,10 @@ const LESSONS_V3 =
         "kind": "hyperframes",
         "_note": "Storyboard for the staging-area video (components/hyperframes.js). Beats are FRACTIONS of the lesson runtime, so the whole thing re-fits any duration. One shared spine; the `bucket` beat resolves to bucketSegments[bucket] so each outcome differs, but every segment renders from the user's own figures rather than baked art. Coordinates are in a 100 x 72 viewBox. Tokens ({userApr}, {marketAvg}, {bandLow}, {bandHigh}, {gapPhrase}, {cardName}) resolve at render time.",
 
-        "_spineNote": "Beat boundaries are the SCRIPT's line boundaries, derived from word count at DU_WPM (screens/lesson.js lpCuesFromWords). Education runs first — what APR is, that it is applied monthly, that clearing it costs nothing, and compounding — and only then does the card and its rate appear. Opening on the card and its number, as this used to, showed the answer before the thing it answers.",
+        "_spineNote": "Beat boundaries are the SCRIPT's line boundaries, derived from word count at DU_WPM (screens/lesson.js lpCuesFromWords) over apr_about_average's ten lines. 'what' spans lines 1-2; every other beat is one line. Education runs first, then the card, then where the rate sits, then what the gap is worth in money. The `cost` beat exists because a difference in percentage points is not a felt quantity and the narration is deliberately figure-free: the script says the gap is worth turning into money, and this is where the money appears. It states its own condition - only on a balance carried past the due date - because without that it is just a scare figure. Recut these fractions whenever a script line changes.",
         "spine": [
           {
-            "id": "what", "from": 0.0, "to": 0.207,
+            "id": "what", "from": 0.0, "to": 0.158,
             "elements": [
               { "type": "icon",  "name": "coin", "x": 50, "y": 22, "size": 18, "anim": "pop" },
               { "type": "label", "text": "APR", "x": 50, "y": 48, "size": 12, "anim": "rise" },
@@ -41,7 +41,7 @@ const LESSONS_V3 =
             ]
           },
           {
-            "id": "monthly", "from": 0.207, "to": 0.354,
+            "id": "monthly", "from": 0.158, "to": 0.283,
             "elements": [
               { "type": "label", "text": "applied every month", "x": 50, "y": 12, "size": 4.6, "anim": "fade" },
               { "type": "stack", "count": 4, "x": 50, "y": 32, "anim": "accumulate" },
@@ -49,7 +49,7 @@ const LESSONS_V3 =
             ]
           },
           {
-            "id": "paid_off", "from": 0.354, "to": 0.451,
+            "id": "paid_off", "from": 0.283, "to": 0.386,
             "elements": [
               { "type": "icon",  "name": "shield", "x": 50, "y": 24, "size": 16, "anim": "pop" },
               { "type": "label", "text": "cleared in time", "x": 50, "y": 50, "size": 5.6, "anim": "rise" },
@@ -57,7 +57,7 @@ const LESSONS_V3 =
             ]
           },
           {
-            "id": "compounding", "from": 0.451, "to": 0.592,
+            "id": "compounding", "from": 0.386, "to": 0.516,
             "elements": [
               { "type": "label", "text": "leave some behind", "x": 50, "y": 10, "size": 4.2, "tone": "muted", "anim": "fade" },
               { "type": "stack", "count": 6, "x": 50, "y": 28, "anim": "accumulate" },
@@ -65,7 +65,7 @@ const LESSONS_V3 =
             ]
           },
           {
-            "id": "card", "from": 0.592, "to": 0.677,
+            "id": "card", "from": 0.516, "to": 0.581,
             "elements": [
               { "type": "icon",  "name": "card", "x": 50, "y": 18, "size": 16, "anim": "rise" },
               { "type": "label", "text": "{cardName}", "x": 50, "y": 40, "size": 4.6, "anim": "fade" },
@@ -73,15 +73,27 @@ const LESSONS_V3 =
             ]
           },
           {
-            "id": "compare", "from": 0.677, "to": 0.787,
+            "id": "compare", "from": 0.581, "to": 0.679,
             "elements": [
               { "type": "label", "text": "where your rate sits", "x": 50, "y": 12, "size": 4.6, "anim": "fade" },
               { "type": "scale", "x": 12, "y": 40, "w": 76, "anim": "draw" }
             ]
           },
-          { "id": "bucket", "from": 0.787, "to": 0.872, "slot": "bucket" },
           {
-            "id": "settle", "from": 0.872, "to": 1.0, "hold": true,
+            "id": "cost", "from": 0.679, "to": 0.826,
+            "elements": [
+              { "type": "label", "text": "on every {perBalance} you carry for a year", "x": 50, "y": 10, "size": 3.6, "tone": "muted", "anim": "fade" },
+              { "type": "label", "text": "{dollarsAvg}", "x": 27, "y": 32, "size": 7.4, "anim": "rise" },
+              { "type": "label", "text": "typical", "x": 27, "y": 40, "size": 3.2, "tone": "muted", "anim": "fade" },
+              { "type": "label", "text": "{dollarsUser}", "x": 73, "y": 32, "size": 7.4, "anim": "rise" },
+              { "type": "label", "text": "{cardName}", "x": 73, "y": 40, "size": 3.2, "tone": "muted", "anim": "fade" },
+              { "type": "label", "text": "{dollarsGap} {dollarsWord} a year", "x": 50, "y": 57, "size": 6.0, "anim": "rise" },
+              { "type": "label", "text": "and only on what you carry past the due date", "x": 50, "y": 66, "size": 3.2, "tone": "muted", "anim": "fade" }
+            ]
+          },
+          { "id": "bucket", "from": 0.826, "to": 0.886, "slot": "bucket" },
+          {
+            "id": "settle", "from": 0.886, "to": 1.0, "hold": true,
             "elements": [
               { "type": "icon",  "name": "spark", "x": 50, "y": 16, "size": 12, "anim": "pop" },
               { "type": "label", "text": "{userApr}% vs {marketAvg}% typical", "x": 50, "y": 40, "size": 5.2, "anim": "fade" },

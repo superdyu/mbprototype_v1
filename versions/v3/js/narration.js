@@ -69,10 +69,23 @@ function narrationVoice() {
  * Speak one line. Returns true if speech actually started, so the caller can
  * fall back to its own clock when it did not.
  *
+ * opts.onStart — this line's voice actually began
  * opts.onEnd   — line finished (never fires for a superseded line)
  * opts.onError — speech failed; the caller should fall back
  * opts.rate    — defaults to 1, which lands near the 165 wpm the written
  *                timings assume, so captions and voice stay roughly together
+ *
+ * ── WHY onStart AND onEnd MATTER ─────────────────────────────────────────────
+ * "Roughly together" is not together. The written timings are a word-count
+ * estimate at DU_WPM; a browser voice reads at whatever pace it likes, and the
+ * two separate within a few lines — the caption moves on while the voice is
+ * still mid-sentence, and the scrub bar agrees with neither.
+ *
+ * So on any surface with no generated .wav, these two callbacks become the
+ * clock: the player pins its line index on `onStart` and only advances on
+ * `onEnd`. The estimate survives as the total-length figure and as the fallback
+ * for browsers with no speech at all. See "the sync contract" in
+ * docs/architecture.md §10.
  */
 function narrationSpeak(text, opts) {
   opts = opts || {};
@@ -88,6 +101,7 @@ function narrationSpeak(text, opts) {
     u.pitch = 1;
     const v = narrationVoice();
     if (v) u.voice = v;
+    u.onstart = function () { if (gen === narrationGen && opts.onStart) opts.onStart(); };
     u.onend   = function () { if (gen === narrationGen && opts.onEnd)   opts.onEnd(); };
     u.onerror = function () { if (gen === narrationGen && opts.onError) opts.onError(); };
     window.speechSynthesis.speak(u);

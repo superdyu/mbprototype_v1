@@ -66,9 +66,33 @@ function hfGapPhrase(user, avg) {
   return hfNum(Math.abs(diff)) + " points " + (diff > 0 ? "above" : "below") + " typical";
 }
 
+/**
+ * A rate difference in percentage points is not a felt quantity. The same gap
+ * in dollars is.
+ *
+ * Per $1,000 carried for a year at simple annual interest — the honest way to
+ * say it, since anything cleverer implies a repayment schedule nobody has
+ * given us. The visual carries the condition ("only on what you carry"); the
+ * script stays figure-free.
+ */
+const HF_PER_BALANCE = 1000;
+
+function hfDollarsOn(rate) {
+  if (rate == null || !isFinite(rate)) return null;
+  return (Number(rate) / 100) * HF_PER_BALANCE;
+}
+
+function hfMoney(v) {
+  if (v == null || !isFinite(v)) return "—";
+  const r = Math.round(Number(v) * 100) / 100;
+  return "$" + (r % 1 === 0 ? r.toLocaleString() : r.toFixed(2));
+}
+
 function hfTokens(data) {
   const band = data.band || {};
   const gap = data.gapPercent;
+  const dUser = hfDollarsOn(data.userFigure);
+  const dAvg  = hfDollarsOn(data.marketAvg);
   return {
     userApr:   hfNum(data.userFigure),
     marketAvg: hfNum(data.marketAvg),
@@ -76,7 +100,13 @@ function hfTokens(data) {
     bandHigh:  hfNum(band.high),
     gapPct:    gap == null ? "—" : (gap > 0 ? "+" : "") + gap,
     gapPhrase: hfGapPhrase(data.userFigure, data.marketAvg),
-    cardName:  data.cardName || "your card"
+    cardName:  data.cardName || "your card",
+    perBalance:  hfMoney(HF_PER_BALANCE),
+    dollarsUser: hfMoney(dUser),
+    dollarsAvg:  hfMoney(dAvg),
+    dollarsGap:  (dUser == null || dAvg == null) ? "—" : hfMoney(Math.abs(dUser - dAvg)),
+    dollarsWord: (dUser == null || dAvg == null) ? "apart"
+                 : (dUser > dAvg ? "more" : dUser < dAvg ? "less" : "the same")
   };
 }
 
@@ -248,19 +278,43 @@ function hfScale(el, data, uid, n, beat, totalSec) {
   const markCls = `hf-${uid}-${n}m`;
   const shift = (xAvg - xUser).toFixed(3);   // marker starts on typical, slides to theirs
 
+  // ── Label placement ───────────────────────────────────────────────────────
+  // These used to collide. "cards like yours" sat centred over the band at
+  // y-6.4, and the user's own rate sat at xUser, y-6.2 — for an Amex Platinum
+  // (25.5 in a 21.24-29.99 band) that is x 50.0 vs 49.36 and y 33.6 vs 33.8:
+  // 0.64 apart horizontally, 0.2 vertically, i.e. printed on top of each other.
+  // Neither offset was a function of the other, so they collided whenever the
+  // user's rate landed near the band's midpoint — the common case, not an edge.
+  //
+  // Now the two live in different registers entirely:
+  //   · band caption   — top-left, anchored to the axis start, out of the way
+  //   · user's rate    — ABOVE the line, bold, the one thing to read first
+  //   · typical's rate — directly UNDER its own tick, inside the graph
+  //   · band ends      — dropped to the bottom, where an axis scale belongs
+  // "typical" was at y+14.5 while its tick ended at y+4.4, stranded ten units
+  // below the thing it labelled and under the end labels, which is why it read
+  // as sitting outside the chart.
+  const yUserLabel = y - 6.2;
+  const yBandCap   = y - 13.5;
+  const yAvgLabel  = y + 8.4;
+  const yEnds      = y + 14.5;
+
+  // Keep a wide bold label inside the viewBox when the marker is near an edge.
+  const userAnchor = xUser < x + 8 ? "start" : xUser > x + w - 8 ? "end" : "middle";
+
   return {
     svg: `<g>
       <rect x="${xLo}" y="${y - 3.1}" width="${Math.max(0.6, xHi - xLo)}" height="6.2" rx="3.1"
             fill="${ink}" opacity=".2"/>
       <line x1="${x}" y1="${y}" x2="${x + w}" y2="${y}" stroke="${ink}" stroke-width=".45" opacity=".45"/>
-      <text x="${xLo}" y="${y + 9.5}" font-size="3.1" text-anchor="middle" fill="${ink}" opacity=".62">${hfNum(lo)}%</text>
-      <text x="${xHi}" y="${y + 9.5}" font-size="3.1" text-anchor="middle" fill="${ink}" opacity=".62">${hfNum(hi)}%</text>
-      <text x="${(xLo + xHi) / 2}" y="${y - 6.4}" font-size="3.1" text-anchor="middle" fill="${ink}" opacity=".62">cards like yours</text>
+      <text x="${x}" y="${yBandCap}" font-size="3.1" text-anchor="start" fill="${ink}" opacity=".62">cards like yours</text>
+      <text x="${xLo}" y="${yEnds}" font-size="3.1" text-anchor="middle" fill="${ink}" opacity=".62">${hfNum(lo)}%</text>
+      <text x="${xHi}" y="${yEnds}" font-size="3.1" text-anchor="middle" fill="${ink}" opacity=".62">${hfNum(hi)}%</text>
       <line x1="${xAvg}" y1="${y - 4.4}" x2="${xAvg}" y2="${y + 4.4}" stroke="${ink}" stroke-width=".7" opacity=".8"/>
-      <text x="${xAvg}" y="${y + 14.5}" font-size="3.3" text-anchor="middle" fill="${ink}" opacity=".8">typical ${hfNum(avg)}%</text>
+      <text x="${xAvg}" y="${yAvgLabel}" font-size="3.3" text-anchor="middle" fill="${ink}" opacity=".8">typical ${hfNum(avg)}%</text>
       <g class="${markCls}">
         <circle cx="${xUser}" cy="${y}" r="2.5" fill="${ink}"/>
-        <text x="${xUser}" y="${y - 6.2}" font-size="4.4" text-anchor="middle" fill="${ink}"
+        <text x="${xUser}" y="${yUserLabel}" font-size="4.4" text-anchor="${userAnchor}" fill="${ink}"
               font-weight="850">${hfNum(user)}%</text>
       </g>
     </g>`,

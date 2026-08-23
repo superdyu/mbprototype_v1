@@ -230,7 +230,12 @@ const state = {
     pendingAutoPlay: false,
     timer:           null,
     speed:           1,
-    scrubWasPlaying: false   // was it playing when the scrub started? resume after
+    scrubWasPlaying: false,  // was it playing when the scrub started? resume after
+    // True once live speech is driving the clock. Only ever set on lessons with
+    // no generated .wav — which is all of them but interest-builds. While it is
+    // set, lpTick's bar is capped inside the current line and only the voice's
+    // own `onend` advances the caption, so the two cannot separate.
+    speechDriven:    false
   },
 
   // Theme — picked from the admin panel, resets on page refresh (D03: no

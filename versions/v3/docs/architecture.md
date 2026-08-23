@@ -47,6 +47,8 @@ Both files are kept:
 | `data/*.json` | Verbatim copy of the spec. **Never edited.** Diffable against `v3 Files/spec/data/`. |
 | `data/zip-cost-of-living.json` | The one exception — authored here, with no spec twin to diff against. Derived from public datasets; the derivation is recorded in its own `method._note`. |
 
+| `data/*.js` | Generated wrapper. What the app actually loads. |
+
 **Two authored files are `.js` with no `.json` sibling** — `data/lesson-scripts.js`
 and `data/onboarding-storyboard.js`. Neither is spec data and neither has a
 reason to be JSON: `wrap-data.sh` hard-errors on any `.json` it has no global
@@ -54,7 +56,6 @@ mapped for, so a JSON twin would mean editing the generator to gain nothing.
 The rule is: **JSON when something outside the app has to read it** (the spec
 diff, or `gen-audio.sh`'s TTS extractor), plain `.js` otherwise.
 That is why `onboarding-script.json` *is* JSON and its storyboard is not.
-| `data/*.js` | Generated wrapper. What the app actually loads. |
 
 `scripts/wrap-data.sh` regenerates the `.js` from the `.json`. It is run by hand
 when data changes — that's not a build step in the npm sense, and nothing about
@@ -867,6 +868,46 @@ it removes cross-browser variance in whether boundary events fire at all.
 
 Same generator serves the 15 lesson script bodies (L8).
 
+### The sync contract: whatever is speaking is the clock
+
+**Audio and subtitle stay together, and the scrub bar moves both.** This binds
+on every narrated surface, not just the one that was reported.
+
+| Surface | The clock |
+|---|---|
+| Daily update | its `<audio>` element — already exact |
+| Lesson player, lesson **with** a `.wav` | `audio.currentTime` — already exact |
+| Lesson player, lesson **without** one | the utterance's `onstart`/`onend` |
+| Onboarding intro | the `.wav`'s `onplay`/`onended`, else the utterance's |
+
+The 165-wpm figure is a **word-count estimate**, and a browser voice reads at
+whatever pace it likes. Where the estimate was the clock, the two separated
+within a few lines: the caption moved on mid-sentence and the bar agreed with
+neither. Only `interest-builds` has a generated `.wav`, so that was every v3
+lesson and the whole intro film.
+
+So when a voice is driving, `speechDriven` goes true and:
+
+- **the line index is pinned on start** — the caption on screen is provably the
+  line being spoken, so the clock snaps to that line's cue rather than wherever
+  the estimate had drifted to;
+- **the tick keeps the bar moving but is capped** inside the current line
+  (`lpSpeechCap` / `onbSpeechCap`, one twentieth of a second short of the next
+  cue), so a fast estimate cannot run the film past the narrator;
+- **only the voice's own end event advances**, which is also what ends the piece.
+
+165 wpm survives as the total-length figure for the first paint, and as the
+whole clock on a browser with no speech engine at all (`onError` hands it back).
+
+**Seeking cancels and re-speaks.** `lpApplyElapsed` / `onbVideoApplyElapsed`
+drop the current utterance when the line changes; without that the voice
+finishes the line it was on and advances from *there*, narrating a passage the
+viewer has already scrubbed past.
+
+`narrationSpeak` carries `onStart`/`onEnd`/`onError` and keeps the generation
+guard, so a superseded line's callbacks are still dropped — see the cancel trap
+at the top of `js/narration.js`.
+
 ### 165 wpm is the one pacing knob
 
 `DU_WPM` (`screens/daily-update.js`) sets the pace for **every narrated
@@ -887,9 +928,18 @@ fraction cap survives as a ceiling so a very short beat cannot spend most of its
 life easing in.
 
 **Storyboard beat boundaries ARE script line boundaries.** The APR spine in
-`lessons.json` is cut from `lpCuesFromWords(apr_about_average)`; the other four
-buckets have different tail lengths, so their beats drift by up to 2%, which is
-inside a line. Rewriting a script means recutting the fractions.
+`lessons.json` is cut from `lpCuesFromWords(apr_about_average)` — now **ten
+lines and nine beats**, `what` spanning lines 1–2 and every other beat one line.
+The other four buckets have different tail lengths, so their beats drift by a
+fraction of a line. Rewriting a script means recutting the fractions.
+
+The ninth beat is **`cost`**, and it is there because the script is deliberately
+figure-free: narration says the gap between two rates is worth turning into
+money, and the beat is where the money appears — what a carried balance costs
+for a year at their rate against the typical one, and the difference. It states
+its own condition (only on a balance carried past the due date), because a
+figure without that is a scare number rather than an explanation. Naming the
+amount is fine; telling anyone what to do about it is not (D26).
 
 **The onboarding storyboard does not have that problem**, and the difference is
 worth copying if a third storyboard ever appears. `data/onboarding-storyboard.js`
