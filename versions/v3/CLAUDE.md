@@ -80,6 +80,16 @@ All verified against the raw JSON on 2026-08-07.
   faithfully rewind with it, which reads as a flicker at every line boundary.
   There are THREE snap sites: live speech in the lesson player, live speech in
   the onboarding player, and the onboarding `.wav` `onplay`.
+- **The wizard composes answers from the BASELINE, never from the preview.**
+  `preview = implied x drift`, where implied is the neutral peer figure times
+  every applied modifier and drift is the tester's drag as a *ratio*. Scaling
+  the live preview instead — which is what it used to do — compounds through
+  rounding when someone toggles between options, and produced $10 groceries for
+  "Very into it". Re-answering the same question clears that dimension's drift;
+  answering a different one keeps it.
+- **Paying a card in full costs nothing.** `lrSimBalance` returns 1 month and $0
+  interest when the payment covers the balance, because that is the grace period
+  the APR lesson teaches in its own script. It used to charge a month first.
 - **There are TWO quiz screens.** `quiz` (`screens/quiz.js`) serves the v2
   catalog; `lessonQuiz` (`screens/lesson-outcome.js`) serves v3, and every v3
   lesson including APR goes through that one. Fixing the wrong one changes

@@ -220,6 +220,14 @@ function lrSimBalance(v) {
   let bal = Number(v.balance) || 0;
   const pay = Number(v.monthlyPayment) || 0;
   let months = 0, interest = 0;
+
+  // PAYING IN FULL COSTS NOTHING. The grace period is the first thing the APR
+  // lesson teaches -- "if the balance is cleared before the due date, on most
+  // cards none of it costs you anything" -- and the loop below contradicted it:
+  // it charged a month of interest first, so clearing a $1,000 balance showed
+  // two months and $22. The calculator has to agree with the lesson it ends.
+  if (bal > 0 && pay >= bal) return { monthsToPayoff: 1, totalInterest: 0 };
+
   if (pay <= bal * apr) return { monthsToPayoff: null, totalInterest: null };
   while (bal > 0 && months < 1200) {
     const i = bal * apr;

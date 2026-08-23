@@ -225,9 +225,36 @@ function lessonSimOpen(lessonId, origin) {
   return true;
 }
 
-/** A value held inside its slider's range and snapped to its step. */
-function lessonSimClamp(key, value) {
+/**
+ * The live range for a slider.
+ *
+ * Everything is static except the monthly payment, whose ceiling has to reach
+ * the BALANCE. It was a flat $600 while balances go to $10,000, so "paid in
+ * full" — the healthy outcome, and the thing the lesson actually teaches — was
+ * unreachable for any balance above $600: the scenario clamped to 600 and the
+ * box then reported two months and interest.
+ *
+ * Derived from the balance, never from the payment itself. A slider whose max
+ * comes from its own value moves under the thumb and recoils on release; this
+ * one only changes when the OTHER slider does. The floor keeps a small balance
+ * from collapsing the track to nothing.
+ */
+const LESSON_SIM_PAYMENT_FLOOR_MAX = 600;
+
+function lessonSimRange(key, values) {
   const r = LESSON_SIM_RANGES[key];
+  if (!r) return null;
+  if (key !== "monthlyPayment") return r;
+  const v = values || (state.lessonSim && state.lessonSim.values) || {};
+  const balance = Number(v.balance) || 0;
+  return Object.assign({}, r, {
+    max: Math.max(LESSON_SIM_PAYMENT_FLOOR_MAX, Math.ceil(balance / r.step) * r.step)
+  });
+}
+
+/** A value held inside its slider's range and snapped to its step. */
+function lessonSimClamp(key, value, values) {
+  const r = lessonSimRange(key, values);
   const n = Number(value) || 0;
   if (!r) return n;
   // Round the STEP COUNT, then rebuild — and round the result to 2dp, because
@@ -240,7 +267,12 @@ function lessonSimClamp(key, value) {
 // debouncedRender, not render: fires on every pointer move of the slider, and
 // a full render replaces the element being dragged (see budgetSetPlan).
 function lessonSimSet(key, value) {
-  state.lessonSim.values[key] = Number(value) || 0;
+  const v = state.lessonSim.values;
+  v[key] = Number(value) || 0;
+  // Dropping the balance shrinks the payment slider's ceiling, so a payment
+  // left above the new max would sit off its own track — the thumb pins at the
+  // end while the readout shows a figure it cannot reach.
+  if (key === "balance") v.monthlyPayment = lessonSimClamp("monthlyPayment", v.monthlyPayment, v);
   debouncedRender();
 }
 
@@ -302,7 +334,7 @@ function renderLessonSimulation() {
 // Bounds come from LESSON_SIM_RANGES, not from the call site — scenarios clamp
 // against the same table, so a shortcut can never land outside its own slider.
 function simSlider(label, key, value, fmt) {
-  const r = LESSON_SIM_RANGES[key] || { min: 0, max: 1000, step: 1 };
+  const r = lessonSimRange(key) || { min: 0, max: 1000, step: 1 };
   return `
     <div class="card sim-row">
       <div class="row" style="align-items:baseline;margin-bottom:6px;">
@@ -337,27 +369,27 @@ function simSlider(label, key, value, fmt) {
 // That is what makes the boxes comparable: one variable moves, not two.
 const LESSON_SIM_SCENARIOS = {
   balance_calculator: {
-    _note: "Payment as a share of the balance. Balance and APR stay where they are, so only the payment varies — the point is what the payment does.",
+    _note: "The three things people actually do with a card balance, not three arbitrary fractions. Healthy is clearing the statement in full, which on most cards costs nothing at all — that is the lesson's own point, not a target we invented. Bad is the published minimum: interest plus about 1% of principal, floored near $25, which is how issuers actually compute it. Balance and APR stay put; only the payment moves.",
     rows: [
-      { tone: "healthy", label: "Healthy outcome", detail: "about a quarter of the balance each month", share: 0.25 },
-      { tone: "common",  label: "Common case",     detail: "about a tenth of the balance each month",   share: 0.10 },
-      { tone: "bad",     label: "Bad outcome",     detail: "roughly 2% — the usual minimum",            share: 0.02 }
+      { tone: "healthy", label: "Healthy outcome", detail: "Paid in full",   kind: "in_full" },
+      { tone: "common",  label: "Common case",     detail: "A fifth a month", kind: "share", share: 0.20 },
+      { tone: "bad",     label: "Bad outcome",     detail: "Minimum only",   kind: "minimum" }
     ]
   },
   savings_pace_calculator: {
     _note: "Target as a multiple of monthly outgoings, the usual way emergency funds are described. Current savings and contribution stay; only the target varies.",
     rows: [
-      { tone: "healthy", label: "Healthy outcome", detail: "three months of outgoings set aside", months: 3 },
-      { tone: "common",  label: "Common case",     detail: "one month of outgoings set aside",    months: 1 },
-      { tone: "bad",     label: "Bad outcome",     detail: "less than one month of outgoings",    months: 0.5 }
+      { tone: "healthy", label: "Healthy outcome", detail: "3 months' cover", months: 3 },
+      { tone: "common",  label: "Common case",     detail: "1 month's cover", months: 1 },
+      { tone: "bad",     label: "Bad outcome",     detail: "Half a month",    months: 0.5 }
     ]
   },
   subscription_tally: {
     _note: "The three states the rows can be in. No ratio involved — the arithmetic is a sum.",
     rows: [
-      { tone: "healthy", label: "Healthy outcome", detail: "nothing running",                       rows: "none" },
-      { tone: "common",  label: "Common case",     detail: "the ones flagged unused switched off",  rows: "used" },
-      { tone: "bad",     label: "Bad outcome",     detail: "every service running",                 rows: "all" }
+      { tone: "healthy", label: "Healthy outcome", detail: "All off",     rows: "none" },
+      { tone: "common",  label: "Common case",     detail: "Unused off",  rows: "used" },
+      { tone: "bad",     label: "Bad outcome",     detail: "All running", rows: "all" }
     ]
   }
 };
@@ -366,6 +398,33 @@ const LESSON_SIM_SCENARIOS = {
 function lessonSimMonthlyOutgoings() {
   const total = (typeof catTotal === "function" && state.plan) ? catTotal(state.plan) : 0;
   return total > 0 ? total : 3000;
+}
+
+/**
+ * The monthly payment a balance scenario describes.
+ *
+ *   in_full  the whole statement. On most cards that costs nothing at all --
+ *            the grace period -- which is exactly what the lesson teaches, so
+ *            the calculator has to agree with it (see lrSimBalance).
+ *   share    a flat fraction of the balance. A fifth clears a card in about
+ *            five months, which is what "paying it down" usually looks like.
+ *   minimum  how issuers actually compute it: the month's interest plus about
+ *            1% of principal, floored near $25. NOT a flat 2% -- that ignores
+ *            the rate, and on a high-rate card it produces a payment that never
+ *            clears anything, which is a different (and wrong) lesson.
+ */
+const LESSON_SIM_MIN_PAYMENT_FLOOR = 25;
+const LESSON_SIM_MIN_PRINCIPAL_SHARE = 0.01;
+
+function lessonSimPaymentFor(row, values) {
+  const balance = Number(values.balance) || 0;
+  if (row.kind === "in_full") return balance;
+  if (row.kind === "minimum") {
+    const monthlyInterest = balance * ((Number(values.apr) || 0) / 100 / 12);
+    return Math.max(LESSON_SIM_MIN_PAYMENT_FLOOR,
+                    Math.round(monthlyInterest + balance * LESSON_SIM_MIN_PRINCIPAL_SHARE));
+  }
+  return Math.max(10, Math.round(balance * (row.share || 0.1)));
 }
 
 /**
@@ -383,8 +442,7 @@ function lessonSimMonthlyOutgoings() {
 function lessonSimScenarioValues(type, row, values) {
   if (type === "balance_calculator") {
     return Object.assign({}, values, {
-      monthlyPayment: lessonSimClamp("monthlyPayment",
-        Math.max(10, Math.round((Number(values.balance) || 0) * row.share)))
+      monthlyPayment: lessonSimClamp("monthlyPayment", lessonSimPaymentFor(row, values), values)
     });
   }
   if (type === "savings_pace_calculator") {

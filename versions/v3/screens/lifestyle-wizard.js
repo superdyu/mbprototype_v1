@@ -136,29 +136,93 @@ function lwModifier(dim, value, category) {
   return entry[category];
 }
 
-/** What `category` becomes if this dimension is answered `value`. */
-function lwProjected(dim, value, category) {
-  const w = state.lifestyleWizard;
-  const current = Number(w.preview[category]) || 0;
-  const ratio = lwModifier(dim, value, category) / lwModifier(dim, w.applied[dim], category);
-  return Math.round((current * ratio) / 5) * 5;
+// ─── Answers compose; drags ride on top ──────────────────────────────────────
+// The preview used to be a RUNNING figure — each answer multiplied whatever was
+// already on screen. That is stable in theory and drifted badly in practice:
+//
+//   pick Moderate -> drag Groceries to the floor -> pick Very into it
+//
+// scaled the DRAGGED figure by 1.12 instead of the option's own figure, so
+// groceries stayed at the floor while dining out sat at its full starting
+// value. Toggling between options a few times, with each result rounded to the
+// nearest 5, walked the number somewhere neither answer implies. The reported
+// case ended at $10 a month of groceries for "Very into it".
+//
+// The model now has two separable parts:
+//
+//   IMPLIED  the neutral peer figure times every APPLIED dimension's modifier.
+//            Recomputed from the baseline every time, so it never accumulates
+//            rounding and re-answering a question always lands on the same
+//            number.
+//   DRIFT    the tester's own adjustment, held as a RATIO of what was implied
+//            when they dragged. It survives later answers, which is the point
+//            of the design: "the questions after this one adjust from wherever
+//            you leave it."
+//
+// Re-answering the SAME question clears the drift on the categories it moves,
+// because the drag described the old answer. Answering a DIFFERENT question
+// keeps it.
+
+/** The neutral peer figure with every dimension EXCEPT `dim` folded in. */
+function lwBaseWithout(dim, category) {
+  const w = state.lifestyleWizard || {};
+  // `applied` can be absent on a half-built session — an admin jump straight to
+  // the screen, or a harness driving one handler in isolation. Default it here
+  // rather than at each read.
+  const applied = w.applied || {};
+  let v = Number((w.neutral || {})[category]) || 0;
+  LW_QUESTIONS.forEach(q => {
+    if (q.dim === dim) return;
+    if (applied[q.dim] == null) return;
+    v *= lwModifier(q.dim, applied[q.dim], category);
+  });
+  return v;
 }
 
-/** Fold an answer into the running preview and record it as applied. */
+/** What every CURRENT answer implies for a category, before any dragging. */
+function lwImpliedNow(category) {
+  const w = state.lifestyleWizard || {};
+  const applied = w.applied || {};
+  let v = Number((w.neutral || {})[category]) || 0;
+  LW_QUESTIONS.forEach(q => {
+    if (applied[q.dim] == null) return;
+    v *= lwModifier(q.dim, applied[q.dim], category);
+  });
+  return Math.round(v / 5) * 5;
+}
+
+/** What this option IMPLIES for a category, before any dragging. */
+function lwImplied(dim, value, category) {
+  return Math.round((lwBaseWithout(dim, category) * lwModifier(dim, value, category)) / 5) * 5;
+}
+
+/** What `category` becomes if this dimension is answered `value`, drift included. */
+function lwProjected(dim, value, category) {
+  const w = state.lifestyleWizard;
+  const drift = (w.drift && w.drift[category]) || 1;
+  return Math.round((lwImplied(dim, value, category) * drift) / 5) * 5;
+}
+
+/** Fold an answer into the preview and record it as applied. */
 function lwApplyDimension(dim, value) {
   const w = state.lifestyleWizard;
   if (!w.anchors) w.anchors = {};
+  if (!w.drift) w.drift = {};
+  const cats = lwTouchedCategories(dim);
+
+  // Changing your mind on THIS question throws away the drag made under the
+  // previous answer — it was a refinement of an answer that no longer stands.
+  // Without this the drag is carried into every later option and compounds.
+  const isReanswer = w.applied[dim] != null && w.applied[dim] !== value;
+  if (isReanswer) cats.forEach(c => { delete w.drift[c]; });
+
   const anchor = {};
-  lwTouchedCategories(dim).forEach(c => {
-    const v = lwProjected(dim, value, c);
-    w.preview[c] = v;
-    anchor[c] = v;
+  cats.forEach(c => {
+    // The band is measured from the IMPLIED figure, not the drifted one, so
+    // dragging cannot recentre its own bounds and ratchet them outwards.
+    anchor[c] = lwImplied(dim, value, c);
+    w.preview[c] = lwProjected(dim, value, c);
   });
-  // What this option IMPLIES, before any dragging. The slider band is measured
-  // from here, not from the live preview — once an option is applied,
-  // lwProjected(dim, sameValue, cat) just returns the current figure, so a band
-  // built from it would recentre on every drag and ratchet outwards a quarter
-  // at a time until the bound meant nothing.
   w.anchors[dim] = anchor;
   w.applied[dim] = value;
 }
@@ -177,8 +241,10 @@ function lwStart() {
   state.lifestyleWizard = {
     step: 0,
     answers: answers,
-    applied: {},                 // what the running preview already has folded in
+    applied: {},                 // which answer each dimension currently has folded in
     anchors: {},                 // per dimension, the figure each answer implied
+    drift: {},                   // per category, the tester's drag as a ratio
+    neutral: lwNeutralPreview(), // the peer figures with every modifier at 1.0
     travel: null,                // trips a year x cost a trip (see lwTravelBlock)
     preview: lwNeutralPreview()
   };
@@ -246,9 +312,11 @@ function lwBack() {
 function lwBuildPreview() {
   const w = state.lifestyleWizard;
   if (!w.preview) {
+    w.neutral = lwNeutralPreview();
     w.preview = lwNeutralPreview();
     w.applied = {};
     w.anchors = {};
+    w.drift = {};
     Object.keys(w.answers).forEach(dim => lwApplyDimension(dim, w.answers[dim]));
     lwApplyStated();
   }
@@ -267,8 +335,18 @@ function lwAdjust(category, amount) {
   // min/max on the input it is attached to.
   if (bounds) v = Math.max(bounds.min, Math.min(bounds.max, v));
   w.preview[category] = v;
+
+  // Record the drag as a RATIO of what the current answers imply, not as an
+  // absolute. That is what lets a later question move this category and still
+  // respect "I want a bit less than that" — and what stops a raw figure being
+  // carried into an option it was never chosen under.
+  const implied = lwImpliedNow(category);
+  if (!w.drift) w.drift = {};
+  if (implied > 0) w.drift[category] = v / implied;
+  else delete w.drift[category];
+
   const el = document.getElementById("lwAmt" + CATEGORIES.indexOf(category));
-  if (el) el.textContent = budgetFmt(w.preview[category]);
+  if (el) el.textContent = budgetFmt(w.preview[category]) + " a month";
   debouncedRender();
 }
 
@@ -543,7 +621,7 @@ function lwOptionBounds(q, opt, category) {
 /** Bounds for whatever question is on screen, or null when it isn't bounded. */
 function lwBoundsForCategory(category) {
   const w = state.lifestyleWizard;
-  if (!w) return null;
+  if (!w || !w.applied) return null;
   // Question screens only. `step` still points at the last question once the
   // review opens, so without this the review's twelve full-range sliders would
   // silently clamp to the last question's band.

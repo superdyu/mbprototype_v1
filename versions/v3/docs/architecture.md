@@ -414,6 +414,39 @@ Worth knowing: BEA's "Other services" lumps restaurants with healthcare and
 insurance, which vary far less by place, so 1.071 probably understates a Los
 Angeles restaurant bill. It is still the best sourced figure available.
 
+### The wizard: answers compose, drags ride on top
+
+**This replaces the running-preview model.** That version multiplied whatever
+was already on screen, which is stable in theory and drifted badly in practice:
+picking Moderate, dragging Groceries to the floor, then picking "Very into it"
+scaled the *dragged* figure rather than the option's own. Toggling between
+options with each result rounded to the nearest 5 walked the number somewhere
+neither answer implies — the reported case ended at **$10 a month of groceries
+for "Very into it"** while Dining out sat at its untouched starting value.
+
+Two separable parts now:
+
+| | |
+|---|---|
+| **Implied** | the neutral peer figure × every applied dimension's modifier (`lwImpliedNow`, `lwBaseWithout`). Recomputed from the baseline every time, so it never accumulates rounding and re-answering always lands on the same number |
+| **Drift** | the tester's adjustment, held as a **ratio** of what was implied when they dragged (`w.drift[category]`, set in `lwAdjust`) |
+
+`preview = implied × drift`. Consequences worth knowing:
+
+- **Answering a different question keeps the drag.** That is the original
+  design — "the questions after this one adjust from wherever you leave it" —
+  and it still holds, because the ratio applies to whatever the new answer
+  implies.
+- **Re-answering the same question clears it**, for the categories that
+  dimension moves. The drag was a refinement of an answer that no longer stands,
+  and carrying it forward is what compounded.
+- **Order no longer matters.** Answering foodie → cooks → hobby gives the same
+  twelve figures as the reverse. Asserted.
+- **Bands are measured from `implied`, not from `preview`**, so dragging cannot
+  recentre its own bounds.
+- `lwBaseWithout` and `lwImpliedNow` default `applied` to `{}` — a half-built
+  session (admin jump, or one handler driven in isolation) reaches them.
+
 ### The wizard walks the product, it does not recompute it
 
 `benchAllPeerValues` is the right answer for a one-shot calculation. The
