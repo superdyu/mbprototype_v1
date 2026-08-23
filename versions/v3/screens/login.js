@@ -7,8 +7,13 @@
 // Yes / No, plus a "remember my choice" checkbox. If checked on first use, tell
 // them once that it's changeable in their profile. Never mention it again.
 //
-// Backgrounds are described placeholders (L15) — assets B1 (day) and B2 (night)
-// are not generated. The day/night SWITCH is real, driven by local time.
+// Backgrounds are described placeholders — assets B1 (day) and B2 (night) are
+// not generated. The day/night SWITCH is real, driven by local time.
+//
+// L22 allows owner-supplied buddy illustrations; it says nothing about these two
+// backgrounds, which stay described until the owner supplies them too. If they
+// arrive, they follow the same rule: the image is preferred and the description
+// is the fallback, never removed.
 
 function loginIsNight() {
   const hr = new Date().getHours();

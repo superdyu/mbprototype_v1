@@ -7,7 +7,7 @@ nobody opens another doc.
 
 | File | Why |
 |---|---|
-| `plan.md` §0 (repo root) | **21 locked decisions, L1–L21. Do not re-litigate them.** L1–L19 were settled across eight question rounds with the repo owner; L20 and L21 landed mid- and post-build |
+| `plan.md` §0 (repo root) | **22 locked decisions, L1–L22. Do not re-litigate them.** L1–L19 were settled across eight question rounds with the repo owner; L20 and L21 landed mid- and post-build; **L22 reverses L15** and is the only decision so far to overturn an earlier one |
 | `versions/v3/PROGRESS.md` | Start at `Current state:`, work the first unchecked item, tick as you go |
 | `versions/v3/docs/architecture.md` | Cross-cutting contracts — data loading, taxonomy, nav, top bar, audio |
 | `versions/v3/docs/spec-coverage.md` | Where each of the 53 spec items lands |
@@ -199,8 +199,16 @@ only under `~/.nvm`, off PATH) and no `jsc`. Don't assume either.
 
 - Don't edit `versions/v1/` or `versions/v2/` — both frozen. Versions are test
   variants a tester picks at the gate, not a migration path.
-- Don't build sprite-sheet `background-position` cropping — there is no buddy
-  art and never will be (L15).
+- Don't build sprite-sheet `background-position` cropping. **L22 allows
+  owner-supplied buddy illustrations, but they are separate files chosen by
+  buddy state — not sheets addressed by offset.** D39's cropping machinery stays
+  unbuilt.
+- Don't delete the descriptive buddy frame now that art exists. It is the
+  **fallback** (L22): no image set covers every breed x coat x pattern x eyes x
+  nose x size x pose, and D19 forbids a screen rendering empty. A missing image
+  must degrade to the description, never to a gap.
+- Don't generate buddy art. D10's prohibition is on *generation* and it holds —
+  the images are supplied by the owner.
 - Don't add variants to "cover" unmatched lesson tags — falling through to the
   fallback is the design.
 - Don't paraphrase `data/*.json` numbers into JS literals. Load them.

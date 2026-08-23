@@ -35,9 +35,9 @@ Run this again whenever scope shifts. Last run: **2026-08-07, pre-build**
 | D07 | Skip flag → 6-day streak | ✅ | P0e `SKIP_ONBOARDING` seam |
 | D08 | One fixed hardcoded persona | ✅ | P0c — `PERSONA` global |
 | D09 | Tester inputs override persona (ZIP, household, income) | ✅ | P3 onboarding · arch §2 |
-| D10 | Buddy art is externally generated raster sheets; **Claude must not generate** | 🔄 | **L15** — no art produced at all; descriptive placeholders. The prohibition is satisfied trivially |
-| D39 | Sheets flat cream `#FBF7F0`, CSS `background-position` cropping | 🔄 | **Void under L15** — no sheets exist. P3 explicitly does *not* build the cropping machinery |
-| D40 | 3 breeds, 4 fur colours, eye/nose **dropped** | 🔄 | **L18** — all five attributes restored. D40's constraint was a raster limitation; no raster, no limit |
+| D10 | Buddy art is externally generated raster sheets; **Claude must not generate** | 🔄 | **L15 → L22.** Art is now **externally supplied by the owner**, which is what D10 asked for; the prohibition on Claude generating it holds and is unchanged. Not sheets — separate files chosen by buddy state |
+| D39 | Sheets flat cream `#FBF7F0`, CSS `background-position` cropping | 🔄 | **Still void under L22** — the owner's art is separate files, not sheets addressed by offset, so there is nothing to crop. The cropping machinery stays unbuilt |
+| D40 | 3 breeds, 4 fur colours, eye/nose **dropped** | 🔄 | **L18** — all five attributes restored. Under L22 the pickers are **not** reduced to match the art: the image varies along whichever stats the owner's plan names, and the description carries the rest |
 
 ## Money Journal
 

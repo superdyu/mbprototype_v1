@@ -20,6 +20,10 @@ Pass log:
   JSON, plus a v2 cross-reference map for the strip. Found the household-index
   bug, two answer-key traps, three framing-tree traps, and the same wrong formula
   surviving in §6 (§16 logs it all).
+- **Post-build, round 4** — L22 reverses L15's "permanently": the owner has
+  produced buddy illustrations, so static owner-supplied art is allowed. Not a
+  planning pass either — logged because L15 is referenced in eleven places and
+  every one of them had to move with it.
 - **Post-build** — L21, four themes with Dark as the default (§17). Not a
   planning pass; the build was already complete and swept. Logged here because
   it changes the default a tester first sees, which L2/L19/D36 all speak to.
@@ -46,10 +50,11 @@ Settled across question rounds 1–8. Don't re-litigate.
 | L12 | **The Hulu task routes into the Money Journal**, not a dedicated screen. `journal-questions.json`'s `q_watched` already captures the engagement signal. | No `subscription_confirm` screen is built. §4 route-map note resolved. |
 | L13 | **Spec data ships as script-wrapped JSON.** Each `data/*.json` gets a generated `data/*.js` assigning it to a global, loaded by `<script>` like everything else. Both files kept. | Forced by L1: the app runs on `file://`, where `fetch()`/XHR are blocked and there's no dev server. v2 has zero runtime data loading, so this is new. See `versions/v3/docs/architecture.md` §1. |
 | L14 | **The ~18 unmentioned v2 screens stay, but off the main paths.** In the codebase, reachable from the admin jump list; nothing in the five tabs or the daily tasks routes to them unless v3 needs it. | D37 honored (nothing deleted, nothing invented) without widening the tester's surface. No deletion work. They still need porting *if* a v3 path reaches them. See §5. |
-| L15 | **Buddy art ships as descriptive placeholders permanently.** No AI-generated images, and no hand-drawn SVG puppy either. The stage renders a **labelled frame describing what the user would be seeing** given their choices — breed, fur, size, and current pose. | Honest about being a placeholder, while proving the customization plumbing works end to end. Character creation stays real: choices visibly change the description. Applies equally to the two login backgrounds and the kibble bowl. See `architecture.md` §13. |
+| L15 | ~~Buddy art ships as descriptive placeholders permanently.~~ **REVISED 2026-08-22 — see L22.** The original decision stands as the record of why the placeholder exists and why it is built the way it is; L22 supersedes only the "permanently" clause. | Original consequence: honest about being a placeholder while proving the customization plumbing works end to end. That plumbing is what makes L22 cheap — the frame and the description were kept separate on purpose. See `architecture.md` §13. |
+| L22 | **Owner-supplied static buddy illustrations are allowed**, selected by buddy state. Still forbidden: **AI-generated art** (D10 — the prohibition is on generation, and it holds), and **sprite-sheet `background-position` cropping** (D39 — these are separate files, not sheets). The descriptive frame **survives as the fallback** and is not deleted. | Reverses L15's "permanently". The owner has produced illustrations, so the thing L15 said would never exist now does. The fallback is not politeness: no image set will cover every combination of breed × coat × pattern × eyes × nose × size × pose, and D19 forbids a screen rendering empty — so a missing image must degrade to the description rather than to a gap. Mapping, file naming and which stats select which image arrive with the owner's plan; nothing here presumes them. |
 | L16 | **Kibble and buddy level are display-only.** Balance accrues from tasks and shows in the top bar / My Progress; nothing spends it. Buddy level is a displayed number with no progression rule. | Matches the spec: every kibble sink is on the deferred list, and D31 forbids gating anything. Least invention. |
 | L17 | **Journal entries feed month-to-date; observations recompute.** A submitted entry moves the figures the comparison, the daily update, and My Progress read from. | Closes the input→observation loop the prototype exists to test. Safe: journal entries only ever *add* spend, so a seeded gap can widen or hold but never vanish mid-session. Forces observation copy to be **templated, not static** — see `architecture.md` §5. |
-| L18 | **Character creation offers all five attributes** — breed, fur, eyes, nose, size — per 01-onboarding step 7. | **D40 is overridden.** It dropped eyes/nose and capped fur at four only because raster sheets can't recolour; under L15 there are no sheets, so the constraint is void and the cost is one line of description each. |
+| L18 | **Character creation offers all five attributes** — breed, fur, eyes, nose, size — per 01-onboarding step 7. | **D40 is overridden.** It dropped eyes/nose and capped fur at four only because raster sheets can't recolour; there are no sheets, so the constraint is void and the cost is one line of description each. **Re-read this under L22:** the attributes stay, but a static image cannot vary along all five, so the image is selected by whichever subset the owner's plan names and the description continues to carry the rest. The pickers are not reduced to match the art. |
 | L20 | **The no-advice guardrail is code, not data.** `advice_deflect`'s 10 keywords are a floor; `ADVICE_PATTERNS` in `chat-router.js` catches the shapes they miss. Any question asking what to do gets the safeguard reply, checked **before** scoring. | D26 is absolute. The data alone missed 12 of 15 natural phrasings — "help me decide", "can I afford", "what would you do" — and each would have been answered by whichever topic shared a noun. Over-eager deflection is the safe failure: a retry costs a tester seconds, giving advice breaks the prototype's core rule. Verified both ways: 20/20 advice shapes deflect, 0 of 24 legitimate questions do. |
 | L19 | **The Finch-like repaint is Phase 2.5** — after the budget screens settle, before the daily loop is authored. | Closes the only spec decision with no phase (D36). L2 deferred it; this schedules it. See §15. |
 | L21 | **Four themes, picked in the admin panel. Dark is the default.** `Light` + `Dark` reproduce v2's palette; `Natural Light` + `Natural Dark` are the D36 repaint. `THEMES` (`js/theme.js`) is the single source of truth; the class lands on `.screen` only. | Owner call, post-Phase-6. The v2 pair exists so the repaint can be **judged against what it replaced** rather than from memory — that only works if switching is instant and side-by-side. **Dark as default deliberately means a tester's first screen is not the D36 cream**, which is a knowing trade: L21 governs the default *view*, D36 still governs the *design*. One line in `state.js` reverses it. See §17. |
@@ -314,7 +319,7 @@ breaks `activeTabFor` and `destinations[]`.
 | Daily update + share | nothing | **NEW** — riskiest (§8) |
 | Login scene / daily prompt | `streak.js` splash is nearest | **NEW** |
 | Home daily loop | `home.js` 197L — "Stage" placeholder + task cards | **Extend** — top bar, tip banner, real buddy, 4 tasks w/ kibble |
-| Buddy character | none | **NEW** — descriptive placeholder, no art (L15). D39/D40 void |
+| Buddy character | none | **NEW** — descriptive frame (L15), plus owner-supplied static images on top of it (L22). D39/D40 still void — no sheets, no cropping |
 | Buddy chat | `chat.js` + `chat-router.js` 263L | **INHERIT** — v2's matcher already *is* D25. Swap in `buddy-responses.json` |
 | Onboarding (8 steps) | `about-me.js` 92L only | **NEW** |
 | Goals | full Goals V2 module | **REBUILD** (L3) — §7 |
@@ -546,10 +551,13 @@ Each decided once, not re-litigated mid-build.
    cream `#FBF7F0`, CSS `background-position` cropping, 3 breeds × 4 fur = 6
    sheets, **eye/nose selection explicitly dropped**. → DECISIONS wins by its own
    stated rule, so at the time this was logged `01-onboarding.md` was the stale one.
-   → **RESOLVED (L15 + L18), and the resolution inverted.** No art is produced at
-   all, so D39/D40's constraints — which existed *only* because raster can't
+   → **RESOLVED (L15 + L18), and the resolution inverted.** No art was produced at
+   the time, so D39/D40's constraints — which existed *only* because raster can't
    recolour — are void. There are no sheets to crop, and eyes/nose cost nothing,
-   so 01-onboarding's five attributes are restored. **Do not build the
+   so 01-onboarding's five attributes are restored.
+   → **Still true under L22.** Owner-supplied images are separate files chosen by
+   buddy state, not sheets addressed by offset, so nothing about D39's cropping
+   machinery comes back and the five attributes stay. **Do not build the
    `background-position` cropping machinery.** D10's "must not generate" is
    satisfied trivially.
 
@@ -977,7 +985,8 @@ Verified sound, so nobody re-checks them:
 ### 16.6 Doc-consistency fixes applied
 
 `§5` still said the ~18 screens were "Not decided" after L14 decided them, and
-its table still promised "external raster art" after L15 killed it. `§9.3` still
+its table still promised "external raster art" after L15 deferred it (L22 has
+since allowed owner-supplied stills, but never sheets). `§9.3` still
 said step 7 "must drop eyes/nose" — the exact opposite of L18. `§10` still said
 "Web Speech timing sync" after L10. `§12` claimed "all closed" while `§15` had an
 open item.

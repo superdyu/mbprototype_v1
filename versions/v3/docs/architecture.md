@@ -1,13 +1,16 @@
 # v3 Architecture — cross-cutting contracts
 
-**Status: draft for review. Nothing has been built yet.**
+**Status: built.** Phases 0-6 are complete and four rounds of manual-test fixes
+have landed on top. This file was written before the build and describes the
+contracts as they now stand — where a decision has moved since, the section says
+so and names the decision that moved it.
 
 This file covers only what *many* screens depend on — the contracts that are
 expensive to change once code exists. Per-screen layout, copy, and interaction
 detail live in per-phase docs written just before that phase is built.
 
 Read alongside:
-- `plan.md` §0 — the twenty-one locked decisions (L1–L21). Authoritative.
+- `plan.md` §0 — the twenty-two locked decisions (L1–L22). Authoritative.
 - `v3 Files/spec/docs/DECISIONS.md` — D01–D40. Beats every other spec doc.
 - `v3 Files/spec/docs/ASSUMPTIONS.md` — A1–A13. A1 is overridden by L1.
 
@@ -1164,7 +1167,28 @@ implemented in data. Don't add variants to "cover" them.
 
 ---
 
-## 13. Buddy representation (L15)
+## 13. Buddy representation (L15, revised by L22)
+
+**L22 (2026-08-22): owner-supplied static illustrations are allowed**, selected
+by buddy state. Two things are unchanged and one is new:
+
+- **Unchanged — nothing is generated here.** D10's prohibition is on *Claude*
+  generating art. The images come from the owner, which is what D10 asked for.
+- **Unchanged — no sprite sheets.** These are separate files chosen by state,
+  not one sheet addressed by `background-position`. D39's cropping machinery
+  stays unbuilt.
+- **New — the image is preferred, the description is the fallback.** No image
+  set covers every breed × coat × pattern × eyes × nose × size × pose, and D19
+  forbids a screen rendering empty, so a missing image degrades to the
+  description rather than to a gap. The frame below is therefore **not** deleted
+  now that art exists; it is load-bearing.
+
+The seam this rides on was built deliberately (see the note at the end of this
+section): `renderBuddyStage` is the frame and `renderBuddyInner` is the content,
+kept apart so only the content changes.
+
+The rest of this section describes the description layer, which still governs
+every combination the art does not cover.
 
 No AI-generated art and no hand-drawn SVG. The buddy stage renders a **labelled
 placeholder frame that describes, in text, what the user would be seeing** given
@@ -1210,9 +1234,10 @@ test. A flat colour swatch would test nothing.
      With a text placeholder there is no sheet to crop and no recolour cost, so
      none of those constraints bind. Do not build the background-position
      machinery for art that will never exist. -->
-<!-- If real art is ever produced, this swaps to an <img>/sprite behind the same
-     state.buddy shape. Keep the description generation separate from the frame
-     so only the frame changes. -->
+<!-- This note called it: real art arrived (L22), and the separation held. The
+     swap is inside renderBuddyInner — prefer an <img> when one resolves for the
+     current state, fall through to the description when it does not. Nothing
+     about renderBuddyStage, the idle tick, the pickers or state.buddy moves. -->
 
 ---
 

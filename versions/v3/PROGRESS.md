@@ -47,7 +47,7 @@ Re-running `/code-review max` is worth it, but **after** the browser — a
 rendering finding would change what is worth reviewing.
 
 > **Read before touching anything:**
-> 1. `plan.md` §0 — locked decisions **L1–L21**. Do not re-litigate them.
+> 1. `plan.md` §0 — locked decisions **L1–L22**. Do not re-litigate them.
 > 2. `plan.md` §17–§19 — why the recent work looks the way it does.
 > 3. `versions/v3/docs/architecture.md` — cross-cutting contracts.
 > 4. `plan.md` §13 — the session-start protocol.
@@ -253,13 +253,14 @@ palette rather than converted.
 - [ ] Lands on home with a 1-day streak and the tester's own ZIP reflected in peer numbers
 
 ### 3a — Login and home
-- [x] Login scene, day or night by local time, described placeholder (L15). Animated greeting
+- [x] Login scene, day or night by local time, described placeholder. Animated greeting
       ↳ the day/night **switch is real** (local hour); only the artwork is a described placeholder
 - [x] Daily update prompt: yes / no + "remember my choice". If checked on first use, say once it's changeable; never mention again
 - [x] Home top bar (kibble · streak · buddy level · hamburger) — from 0e's shared bar
 - [x] Tip banner — **hard 90-character limit**, puppy icon alongside
       ↳ enforced in `renderHomeTip()`, not trusted: a 200-char tip truncates with an ellipsis
-- [x] Buddy stage: labelled placeholder frame describing breed · fur · eyes · nose · size · current pose (L15)
+- [x] Buddy stage: labelled frame describing breed · fur · eyes · nose · size · current pose
+      ↳ **L22** — owner-supplied illustrations now render on top of this; the frame stays as the fallback
 - [x] Idle pose cycle across poses 1, 3, 4, 5 on a 4–6s cadence. Poses 2 and 6 event-driven. **Stops under `prefers-reduced-motion`**
       ↳ the tick repaints `#buddyStage` in place rather than calling `render()`, so it cannot steal focus every 5 seconds
 - [x] Four daily tasks, each routing somewhere real and paying kibble
@@ -282,9 +283,15 @@ palette rather than converted.
 - [x] Two responses have `bubble: null` (`advice_deflect`, `catch_all`) — keyword-only, never listed
       ↳ replies carry a `navigate:` action offered as a BUTTON; the chat never auto-navigates, so the answer gets read first
 
-### Assets — no generation (L15)
-- [ ] Buddy, login backgrounds (day/night), kibble bowl all ship as described placeholders
-- [ ] **Do not** build `background-position` sprite cropping — there are no sheets. D39/D40 are void under L15
+### Assets — nothing generated here (D10 holds; L15 → L22)
+- [x] Login backgrounds (day/night) and the kibble bowl ship as described placeholders
+- [ ] **Buddy illustrations — owner-supplied (L22).** Static files chosen by buddy
+      state. Awaiting the owner's plan for which stats select which image, the
+      file naming, and how many there are
+- [ ] The descriptive frame is the **fallback** and is not removed — no image set
+      covers every attribute combination, and D19 forbids an empty render
+- [ ] **Do not** build `background-position` sprite cropping — these are separate
+      files, not sheets. D39/D40 stay void
 
 ## Phase 4 — Daily update and share
 

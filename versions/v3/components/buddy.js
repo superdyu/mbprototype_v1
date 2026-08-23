@@ -1,18 +1,32 @@
-// ─── Buddy (L15) ──────────────────────────────────────────────────────────────
-// No AI-generated art and no hand-drawn SVG. The stage renders a LABELLED
-// PLACEHOLDER that describes, in text, what the user would be seeing given
-// their choices.
+// --- Buddy (L15, revised by L22) ---------------------------------------------
+// Nothing here is generated. L22 allows OWNER-SUPPLIED static illustrations,
+// selected by buddy state; D10's prohibition is on Claude generating art and it
+// still holds.
 //
-// Why this and not a coloured square: it proves the customization plumbing
-// works end to end. A tester picks a breed and the stage visibly reflects it —
-// the choice registers and is legible, which is what onboarding step 7 exists
-// to test. A swatch would test nothing.
+// -- THE IMAGE IS PREFERRED, THE DESCRIPTION IS THE FALLBACK ------------------
+// The labelled description below is NOT dead code now that art exists. No image
+// set covers every breed x coat x pattern x eyes x nose x size x pose, and D19
+// forbids a screen rendering empty — so a state with no matching image must
+// degrade to the description rather than to a gap. Deleting it would turn a
+// missing file into a blank stage.
 //
+// Why the description was worth building in the first place: it proves the
+// customization plumbing works end to end. A tester picks a breed and the stage
+// visibly reflects it — the choice registers and is legible, which is what
+// onboarding step 7 exists to test. A swatch would have tested nothing. That
+// same plumbing is what makes the art swap cheap now.
+//
+// -- STILL NO SHEETS ----------------------------------------------------------
 // D39/D40 are void in practice. Flat cream sheets, CSS background-position
 // cropping, six fixed sheets and the dropped eye/nose colours were all
-// consequences of raster art being unable to recolour. There is no sheet to
-// crop, so DO NOT build the cropping machinery — see the "Don't" list in
-// versions/v3/CLAUDE.md.
+// consequences of raster art being unable to recolour. The owner's art is
+// SEPARATE FILES chosen by state, not one sheet addressed by offset, so there
+// is still nothing to crop — DO NOT build the cropping machinery. See the
+// "Don't" list in versions/v3/CLAUDE.md.
+//
+// The pickers are also NOT reduced to match whatever the art covers (L18): the
+// image varies along whichever stats the owner's plan names, and the
+// description carries the attributes it does not.
 
 // The six poses from 10-ai-assets.md, in its cell order. Poses 1/3/4/5 are the
 // ambient idle cycle; 2 and 6 are event-driven (chat open, reward/streak).
@@ -28,7 +42,8 @@ const BUDDY_POSES = [
 const BUDDY_IDLE_POSES = BUDDY_POSES.filter(p => p.idle).map(p => p.id);
 
 // ─── Customization options (single source — creator + admin both read these) ──
-// No art (L15): these drive the labelled placeholder and the picker controls.
+// These drive the description and the picker controls, and they are the
+// vocabulary any image filename has to agree with (L22).
 // Values may carry underscores/spaces; the stage renders them with _ → space.
 const BUDDY_BREEDS = [
   "golden_retriever", "corgi", "beagle", "labrador",
@@ -147,7 +162,7 @@ function renderBuddyAdmin() {
   ];
   return `
     <div class="admin-card">
-      <p class="admin-card-title">Buddy (placeholder, L15)</p>
+      <p class="admin-card-title">Buddy (L15 → L22)</p>
       <p class="helper" style="margin-bottom:10px;">
         All attributes are live — D40 dropped eyes/nose only because raster
         sheets cannot recolour, and there are no sheets. The creator sets breed,

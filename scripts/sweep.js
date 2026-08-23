@@ -467,7 +467,7 @@ var DEAD_BASELINE = [
   // instead would repeat the lookup. Kept as the module's public
   // "is this area modeled?".
   "benchZipSupported",
-  "buddyDescription",           // L15 buddy plumbing, used once art lands
+  "buddyDescription",           // buddy plumbing, used once art lands (L22)
   "budgetDelta",
   "catRows",                    // taxonomy helper, pairs with catTotal/catValue
   "completeAndReward",
