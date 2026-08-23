@@ -46,7 +46,6 @@ Both files are kept:
 |---|---|
 | `data/*.json` | Verbatim copy of the spec. **Never edited.** Diffable against `v3 Files/spec/data/`. |
 | `data/zip-cost-of-living.json` | The one exception — authored here, with no spec twin to diff against. Derived from public datasets; the derivation is recorded in its own `method._note`. |
-
 | `data/*.js` | Generated wrapper. What the app actually loads. |
 
 **Two authored files are `.js` with no `.json` sibling** — `data/lesson-scripts.js`
@@ -431,6 +430,64 @@ and with no drags at all it lands on the same figures `benchAllPeerValues` would
 have produced, because it is the same six multipliers in the same order. The
 running state lives in `state.lifestyleWizard.{preview, applied}`
 (`screens/lifestyle-wizard.js`).
+
+### Sliders are bounded by the option that was picked
+
+`renderBudgetSliderRow` takes an optional `bounds`. Without it the track runs 0
+to `budgetSliderMax` — the review screen and the Budget tab, where every answer
+is in and the figure is the tester's. **With** it, on a question screen, the
+track is limited to ±25% of what that option projects for that category
+(`lwOptionBounds`). Picking "Not much" for food and then dragging groceries to a
+thousand left the description above the slider talking about somebody else.
+
+Three things that are easy to get wrong here:
+
+- **The band is measured from `w.anchors[dim]`, not the live preview.** Once an
+  option is applied, `lwProjected(dim, sameValue, cat)` just returns the current
+  figure — so a band built from it recentres on every drag and ratchets outwards
+  a quarter at a time until the bound means nothing. `lwApplyDimension` records
+  what each answer implied; that is the anchor.
+- **`lwBoundsForCategory` returns null off the question screen.** `w.step` still
+  points at the last question when the review opens, so without the
+  `state.screen` guard the review's twelve full-range sliders would silently
+  clamp to the last question's band.
+- **`travelFrequency` is exempt.** Its Other figure is composed, not
+  modifier-derived — see below.
+
+Bands **overlap** between neighbouring options and leave small gaps between
+distant ones. That is the deliberate trade against hard contiguous boundaries:
+more forgiving at the edges, where a tester is likeliest to be between two
+answers. The top option keeps an open ceiling — "A lot" of hobby spend has no
+option above it to be promoted to.
+
+### Travel is a named line inside Other
+
+`travelFrequency` multiplies exactly one category — `Other`, the catch-all — and
+its middle option is **×1.0, an exact no-op**. So "Now and then" produced Other's
+untouched peer base, identical to never answering, while the option's copy
+talked about trips. The number and the words described different things.
+
+There is no Travel category and there should not be one: `CATEGORIES` is the
+join key across four data files and `peer-benchmarks.json` has no Travel base to
+compare against. Instead the question asks **trips a year × a typical trip ÷ 12**
+and Other renders as that accrual plus a residual, summing to the category
+total. The frequency answer seeds trips-a-year (rare 1, moderate 3, frequent 8)
+and stops seeding once the tester moves it.
+
+Because that figure is composed rather than `base × multipliers`, the ±25% band
+above does not apply to it — `lwOptionBounds` returns null for this dimension
+and `lwTravelBlock` clamps its own two sliders.
+
+### Every figure names its period
+
+The cadence used to live only in `aria-label` — screen-reader only, never
+rendered — so at the moment a tester looked at "$85" beside "Other", nothing on
+screen said it was a month. `renderBudgetSliderRow` now spells it out on the
+figure, in words. The onboarding commute sliders use the same wording.
+
+The review's income line is **"Coming in each month"**, not "Take-home":
+onboarding stopped estimating tax (see §5, `monthlyIncome`), so a post-tax label
+would be a claim the app cannot back.
 
 **`state.lifestyleAnswered`** is the companion to this. `state.lifestyle` is
 fully populated from the persona at boot, so it cannot tell "you told me this"

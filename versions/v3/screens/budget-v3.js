@@ -31,7 +31,7 @@ function renderBudgetV3() {
         <span class="journal-total">${budgetFmt(total)}</span>
       </div>
       <div class="row" style="align-items:baseline;margin-top:4px;">
-        <span class="helper">Take-home</span>
+        <span class="helper">Coming in each month</span>
         <span class="helper">${budgetFmt(income)}</span>
       </div>
       <div class="budget-bar" aria-hidden="true">

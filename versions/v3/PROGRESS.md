@@ -1,9 +1,16 @@
 # v3 Build Progress
 
 **Current state:** **v3 IS BUILT — phases 0 → 6 complete**, plus four themes
-(L21) and three rounds of review fixes. `bash scripts/sweep.sh` → **60 checks,
-0 failed, 0 warnings.** Tree clean at `6cb62ad`.
-— *updated 2026-08-12*
+(L21) and four rounds of manual-test fixes. Round 4 (five phases: onboarding
+inputs, the intro film, the APR lesson, quiz/scenarios/rewards, the budget
+wizard) is complete. `bash scripts/sweep.sh` → **60 checks, 0 failed,
+0 warnings**; `check-syntax` 79/79; all 43 screens render.
+
+**Never opened in a browser.** Every round has been harness-verified and
+eye-unverified — the ±10s controls, the hyperframes stages, the APR scale, the
+speech-driven clock, the scenario boxes and the bounded sliders all need a
+human to look at them.
+— *updated 2026-08-22*
 
 ## ▶ RESUME HERE
 

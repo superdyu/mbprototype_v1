@@ -57,6 +57,11 @@ All verified against the raw JSON on 2026-08-07.
   still reading `monthlyIncomeNet`. It is `profile.incomeAnnual / 12` — what the
   tester said, no tax factor. Separate from `state.userProfile.monthlyIncome`,
   an unrelated v2 form field.
+- **`travelFrequency`'s middle option is a ×1.0 no-op**, and the dimension moves
+  only `Other`. Picking "Now and then" was mathematically identical to never
+  answering, which is why its figure looked broken. Travel is now an explicit
+  trips × cost ÷ 12 line inside Other and is exempt from the wizard's slider
+  bands, because its figure is composed rather than `base × multipliers`.
 - **There are TWO quiz screens.** `quiz` (`screens/quiz.js`) serves the v2
   catalog; `lessonQuiz` (`screens/lesson-outcome.js`) serves v3, and every v3
   lesson including APR goes through that one. Fixing the wrong one changes

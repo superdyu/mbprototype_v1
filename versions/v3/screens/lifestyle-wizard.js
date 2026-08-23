@@ -147,7 +147,19 @@ function lwProjected(dim, value, category) {
 /** Fold an answer into the running preview and record it as applied. */
 function lwApplyDimension(dim, value) {
   const w = state.lifestyleWizard;
-  lwTouchedCategories(dim).forEach(c => { w.preview[c] = lwProjected(dim, value, c); });
+  if (!w.anchors) w.anchors = {};
+  const anchor = {};
+  lwTouchedCategories(dim).forEach(c => {
+    const v = lwProjected(dim, value, c);
+    w.preview[c] = v;
+    anchor[c] = v;
+  });
+  // What this option IMPLIES, before any dragging. The slider band is measured
+  // from here, not from the live preview — once an option is applied,
+  // lwProjected(dim, sameValue, cat) just returns the current figure, so a band
+  // built from it would recentre on every drag and ratchet outwards a quarter
+  // at a time until the bound meant nothing.
+  w.anchors[dim] = anchor;
   w.applied[dim] = value;
 }
 
@@ -166,6 +178,8 @@ function lwStart() {
     step: 0,
     answers: answers,
     applied: {},                 // what the running preview already has folded in
+    anchors: {},                 // per dimension, the figure each answer implied
+    travel: null,                // trips a year x cost a trip (see lwTravelBlock)
     preview: lwNeutralPreview()
   };
   // Fold in whatever carried over, so the first question's figures start from
@@ -203,6 +217,13 @@ function lwAnswer(dim, value) {
   if (w.answers[dim] === value) return;
   w.answers[dim] = value;
   lwApplyDimension(dim, value);
+  if (dim === "travelFrequency") {
+    // Other just moved, so its travel/everything-else split has to be redrawn
+    // from the new figure rather than the old one.
+    if (w.travel) w.travel.residual = null;
+    lwTravelSyncToAnswer(value);
+    w.preview.Other = lwOtherResidual() + lwTravelMonthly();
+  }
   render();
 }
 
@@ -227,6 +248,7 @@ function lwBuildPreview() {
   if (!w.preview) {
     w.preview = lwNeutralPreview();
     w.applied = {};
+    w.anchors = {};
     Object.keys(w.answers).forEach(dim => lwApplyDimension(dim, w.answers[dim]));
     lwApplyStated();
   }
@@ -238,7 +260,13 @@ function lwBuildPreview() {
 // readout is painted directly so the figure still tracks during the gesture.
 function lwAdjust(category, amount) {
   const w = state.lifestyleWizard;
-  w.preview[category] = Math.max(0, Math.round(Number(amount) || 0));
+  const bounds = lwBoundsForCategory(category);
+  let v = Math.max(0, Math.round(Number(amount) || 0));
+  // Clamp in the handler too, not just on the element. A later answer can move
+  // a category the tester already dragged, and the browser only enforces
+  // min/max on the input it is attached to.
+  if (bounds) v = Math.max(bounds.min, Math.min(bounds.max, v));
+  w.preview[category] = v;
   const el = document.getElementById("lwAmt" + CATEGORIES.indexOf(category));
   if (el) el.textContent = budgetFmt(w.preview[category]);
   debouncedRender();
@@ -306,9 +334,144 @@ function renderLifestyleWizard() {
 // where that option puts it. The figures come from the peer model, so the ZIP's
 // cost of living is already in them; the copy above says what the behaviour is,
 // never what to do about it (D26).
+// ─── Travel: the arithmetic, shown ───────────────────────────────────────────
+// Picking "Now and then" produced $85 and the tester read it as a travel
+// budget. It never was. travelFrequency multiplies exactly one category —
+// "Other", the catch-all — and "Now and then" is x1.0, an exact no-op, so the
+// figure was Other's untouched peer base and identical to never answering at
+// all. The option's copy talked about trips while the number talked about
+// miscellaneous spending.
+//
+// There is no Travel category and there should not be one: CATEGORIES is the
+// join key across four data files, and peer-benchmarks.json has no Travel base
+// to compare against. So travel becomes a NAMED LINE INSIDE Other — trips a
+// year x a typical trip, divided by twelve — and Other renders as that plus
+// everything else, summing to the category total.
+//
+// The frequency answer still has a job: it seeds trips-a-year.
+const LW_TRIPS_FOR = { rare: 1, moderate: 3, frequent: 8 };
+const LW_TRIPS_RANGE = { min: 0, max: 12, step: 1 };
+const LW_TRIP_COST_RANGE = { min: 0, max: 4000, step: 50 };
+const LW_TRIP_COST_DEFAULT = 900;
+
+function lwTravel() {
+  const w = state.lifestyleWizard;
+  if (!w) return null;
+  if (!w.travel) {
+    const answer = w.answers.travelFrequency;
+    w.travel = {
+      trips: LW_TRIPS_FOR[answer] != null ? LW_TRIPS_FOR[answer] : 3,
+      costPerTrip: LW_TRIP_COST_DEFAULT
+    };
+  }
+  return w.travel;
+}
+
+/** Monthly accrual implied by the two figures. Rounded to the budget's 5s. */
+function lwTravelMonthly() {
+  const t = lwTravel();
+  if (!t) return 0;
+  return Math.round(((Number(t.trips) || 0) * (Number(t.costPerTrip) || 0)) / 12 / 5) * 5;
+}
+
+/** Re-seed trips when the frequency answer changes, unless it was hand-set. */
+function lwTravelSyncToAnswer(value) {
+  const w = state.lifestyleWizard;
+  if (!w) return;
+  const seeded = LW_TRIPS_FOR[value];
+  if (seeded == null) return;
+  if (!w.travel) { lwTravel(); return; }
+  if (!w.travel.tripsTouched) w.travel.trips = seeded;
+}
+
+function lwSetTravel(field, value) {
+  const w = state.lifestyleWizard;
+  const t = lwTravel();
+  const range = field === "trips" ? LW_TRIPS_RANGE : LW_TRIP_COST_RANGE;
+  const n = Math.max(range.min, Math.min(range.max, Math.round(Number(value) || 0)));
+  t[field] = n;
+  if (field === "trips") t.tripsTouched = true;
+  // Travel is a PART of Other, so the category moves with it — the rest of
+  // Other holds still.
+  const other = lwOtherResidual();
+  w.preview.Other = other + lwTravelMonthly();
+  const amt = document.getElementById("lwAmt" + CATEGORIES.indexOf("Other"));
+  if (amt) amt.textContent = budgetFmt(w.preview.Other) + " a month";
+  const line = document.getElementById("lwTravelLine");
+  if (line) line.innerHTML = lwTravelLineText();
+  debouncedRender();
+}
+
+/** Everything in Other that is NOT the travel accrual. */
+function lwOtherResidual() {
+  const w = state.lifestyleWizard;
+  if (!w) return 0;
+  if (w.travel && w.travel.residual != null) return w.travel.residual;
+  const residual = Math.max(0, (Number(w.preview.Other) || 0) - lwTravelMonthly());
+  if (w.travel) w.travel.residual = residual;
+  return residual;
+}
+
+function lwTravelLineText() {
+  const t = lwTravel();
+  const monthly = lwTravelMonthly();
+  const trips = Number(t.trips) || 0;
+  if (trips === 0 || monthly === 0) {
+    return "No trips planned, so nothing is going aside for one.";
+  }
+  return `${trips} trip${trips === 1 ? "" : "s"} a year at about
+    ${h(budgetFmt(t.costPerTrip))} each works out to
+    <strong>${h(budgetFmt(monthly))} a month</strong> set aside.`;
+}
+
+function lwTravelBlock() {
+  const t = lwTravel();
+  const residual = lwOtherResidual();
+  return `
+    <div class="card">
+      <p class="task-title" style="margin:0 0 8px;font-size:13px;">Trips</p>
+      <div class="row" style="align-items:baseline;margin-bottom:6px;">
+        <span class="budget-row-name">Trips a year</span>
+        <span class="budget-row-amt">${t.trips}</span>
+      </div>
+      <input class="journal-slider" type="range"
+             min="${LW_TRIPS_RANGE.min}" max="${LW_TRIPS_RANGE.max}" step="${LW_TRIPS_RANGE.step}"
+             value="${t.trips}" oninput="lwSetTravel('trips', this.value)"
+             aria-label="Trips a year">
+
+      <div class="row" style="align-items:baseline;margin:14px 0 6px;">
+        <span class="budget-row-name">A typical trip</span>
+        <span class="budget-row-amt">${budgetFmt(t.costPerTrip)}</span>
+      </div>
+      <input class="journal-slider" type="range"
+             min="${LW_TRIP_COST_RANGE.min}" max="${LW_TRIP_COST_RANGE.max}" step="${LW_TRIP_COST_RANGE.step}"
+             value="${t.costPerTrip}" oninput="lwSetTravel('costPerTrip', this.value)"
+             aria-label="Cost of a typical trip">
+
+      <p class="helper" id="lwTravelLine" style="margin:12px 0 0;">${lwTravelLineText()}</p>
+      <p class="helper" style="margin:8px 0 0;font-size:10px;">
+        That sits inside Other, alongside ${h(budgetFmt(residual))} a month of
+        everything else.
+      </p>
+    </div>`;
+}
+
 function lwMeaningBlock(q, opt) {
   const cats = lwTouchedCategories(q.dim);
   const zip = state.profile.zip;
+  // Travel gets the arithmetic instead of a bare Other slider — see above.
+  if (q.dim === "travelFrequency") {
+    return `
+      <div class="card lw-meaning">
+        <p class="task-title" style="margin:0 0 4px;font-size:13px;">${h(opt.label)}</p>
+        <p class="task-desc" style="margin:0;">${h(opt.meaning || "")}</p>
+        <p class="helper" style="margin:10px 0 0;font-size:11px;">
+          Trips are lumpy rather than monthly, so this works out what they come
+          to across a year. Change either figure if it looks wrong.
+        </p>
+      </div>
+      ${lwTravelBlock()}`;
+  }
   return `
     <div class="card lw-meaning">
       <p class="task-title" style="margin:0 0 4px;font-size:13px;">${h(opt.label)}</p>
@@ -324,8 +487,73 @@ function lwMeaningBlock(q, opt) {
           its own.
         </p>`}
     </div>
-    ${cats.map(c => renderBudgetSliderRow(c, state.lifestyleWizard.preview[c])).join("")}
+    ${cats.map(c => renderBudgetSliderRow(c, state.lifestyleWizard.preview[c], null,
+        lwOptionBounds(q, opt, c))).join("")}
   `;
+}
+
+// ─── Bounding a slider to the option that was picked ─────────────────────────
+// "Moderate" on food reached a thousand in groceries, which made the
+// description above the slider a claim about somebody else.
+//
+// The band is ±25% around what THIS option projects for THIS category. The
+// projection is lwProjected, which reads the running preview — so the BEA
+// cost-of-living multiplier, the household-size array index and every other
+// answered dimension are already inside it. Never re-derive from
+// PEER_BENCHMARKS.colTiers: that table is a retired guard and reading it
+// directly reintroduces the flattening the cost-of-living rebuild fixed.
+//
+// The bands OVERLAP between neighbouring options and leave small gaps between
+// distant ones — some figures are reachable from two options and a few from
+// none. That is the deliberate trade against hard contiguous boundaries: it is
+// the more forgiving of the two at the edges, where a tester is likeliest to be
+// between two answers anyway.
+//
+// The top option keeps an open ceiling. "A lot" of hobby spend should be able
+// to exceed its own +25% — there is no option above it to promote to.
+const LW_BAND = 0.25;
+
+function lwOptionBounds(q, opt, category) {
+  if (!q || !opt) return null;
+  // Travel is the exception, and has to be. Its Other figure is COMPOSED — a
+  // trips-a-year accrual plus the rest of the category — not the modifier table
+  // times a base, so a band measured off that table describes a number the
+  // screen never shows. lwTravelBlock owns those figures and clamps them itself.
+  if (q.dim === "travelFrequency") return null;
+  const w = state.lifestyleWizard;
+  const anchors = (w && w.anchors && w.anchors[q.dim]) || null;
+  // The anchor when this option is the applied one; the projection otherwise
+  // (Back to a question, before re-picking).
+  const projected = (anchors && w.applied[q.dim] === opt.value && anchors[category] != null)
+    ? anchors[category]
+    : lwProjected(q.dim, opt.value, category);
+  if (!projected) return null;
+  const isTop = q.options[q.options.length - 1].value === opt.value;
+  const floor = Math.round((projected * (1 - LW_BAND)) / 5) * 5;
+  const ceil  = Math.round((projected * (1 + LW_BAND)) / 5) * 5;
+  const hardMax = budgetSliderMax(category);
+  return {
+    min: Math.max(0, floor),
+    max: isTop ? Math.max(ceil, hardMax) : Math.min(ceil, hardMax),
+    openTop: isTop,
+    optionLabel: opt.label
+  };
+}
+
+/** Bounds for whatever question is on screen, or null when it isn't bounded. */
+function lwBoundsForCategory(category) {
+  const w = state.lifestyleWizard;
+  if (!w) return null;
+  // Question screens only. `step` still points at the last question once the
+  // review opens, so without this the review's twelve full-range sliders would
+  // silently clamp to the last question's band.
+  if (state.screen !== "lifestyleWizard") return null;
+  const q = LW_QUESTIONS[w.step];
+  if (!q) return null;
+  const opt = q.options.find(o => o.value === w.answers[q.dim]);
+  if (!opt) return null;
+  if (lwTouchedCategories(q.dim).indexOf(category) === -1) return null;
+  return lwOptionBounds(q, opt, category);
 }
 
 // ─── Review: the starting budget, with sliders ───────────────────────────────
@@ -354,7 +582,10 @@ function renderLifestyleWizardReview() {
             <span class="journal-total">${budgetFmt(total)}</span>
           </div>
           <div class="row" style="align-items:baseline;margin-top:4px;">
-            <span class="helper">Take-home</span>
+            <!-- Onboarding stopped estimating tax and uses the figure the
+                 tester gave, divided by twelve, so a post-tax label would be a
+                 claim we cannot back. -->
+            <span class="helper">Coming in each month</span>
             <span class="helper">${budgetFmt(income)}</span>
           </div>
           <p class="helper" style="margin:8px 0 0;color:${left < 0 ? "var(--warn)" : "var(--muted)"};">
@@ -379,19 +610,44 @@ function renderLifestyleWizardReview() {
 // max comes from budgetSliderMax(), which is derived from the seeded plan and
 // the peer figure — never from `amount`, which is what the drag changes. A
 // value-derived ceiling moves under the thumb and makes it recoil on release.
-function renderBudgetSliderRow(category, amount, _fmt) {
-  const max = budgetSliderMax(category);
+/**
+ * One category's slider.
+ *
+ * `bounds` is optional. Without it the track runs 0 to budgetSliderMax, which
+ * is what the review screen and the Budget tab want — by then every answer is
+ * in and the figure is the tester's to set.
+ *
+ * WITH it, the track is limited to the band the chosen option implies. On a
+ * question screen the description above and the number below have to agree:
+ * picking "Not much" for food and then dragging groceries to a thousand leaves
+ * the copy describing someone else. Going past the band means the answer above
+ * is the wrong one.
+ *
+ * The period is spelled out on the figure itself. It was only ever in the
+ * aria-label — screen-reader only, never rendered — so at the moment a tester
+ * looked at "$85" beside "Other", nothing on screen said it was a month.
+ */
+function renderBudgetSliderRow(category, amount, _fmt, bounds) {
+  const min = bounds ? bounds.min : 0;
+  const max = bounds ? bounds.max : budgetSliderMax(category);
   const idx = CATEGORIES.indexOf(category);
+  const value = Math.max(min, Math.min(max, Number(amount) || 0));
   return `
     <div class="card budget-row">
       <div class="row" style="align-items:baseline;margin-bottom:6px;">
         <span class="budget-row-name">${h(category)}</span>
-        <span class="budget-row-amt" id="lwAmt${idx}">${budgetFmt(amount || 0)}</span>
+        <span class="budget-row-amt" id="lwAmt${idx}">${budgetFmt(value)} a month</span>
       </div>
-      <input class="journal-slider" type="range" min="0" max="${max}" step="5"
-             value="${amount || 0}"
+      <input class="journal-slider" type="range" min="${min}" max="${max}" step="5"
+             value="${value}"
              oninput="lwAdjust('${h(category)}', this.value)"
              aria-label="${h(category)} monthly amount">
+      ${bounds ? `
+        <p class="helper" style="margin:6px 0 0;font-size:10px;">
+          ${h(budgetFmt(bounds.min))} to ${bounds.openTop
+            ? h(budgetFmt(bounds.max)) + " and up"
+            : h(budgetFmt(bounds.max))} — the range for ${h(bounds.optionLabel)}.
+        </p>` : ""}
     </div>
   `;
 }
