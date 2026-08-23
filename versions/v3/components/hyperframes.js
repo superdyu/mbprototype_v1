@@ -31,10 +31,19 @@ const HF_VIEW_W = 100;
 const HF_VIEW_H = 72;
 const HF_EASE = "cubic-bezier(.2,.7,.3,1)";
 
-/** Enough data to draw a personalized frame? No figure → the caller falls back. */
+/**
+ * Enough data to draw a personalized frame? No figure → the caller falls back.
+ *
+ * The figure check is for storyboards built around a NUMBER — the APR lesson
+ * plots the user's rate against the market, and without both there is nothing
+ * to draw. Storyboards that only explain something (the onboarding intro) have
+ * no figure by design and declare `requiresFigures: false`. The flag defaults
+ * to on, so every existing caller keeps the stricter gate.
+ */
 function hyperframesCanRender(plan) {
-  return !!(plan && plan.storyboard && plan.storyboard.spine &&
-            plan.userFigure != null && plan.marketAvg != null);
+  if (!plan || !plan.storyboard || !plan.storyboard.spine) return false;
+  if (plan.storyboard.requiresFigures === false) return true;
+  return plan.userFigure != null && plan.marketAvg != null;
 }
 
 // ── Formatting + tokens ──────────────────────────────────────────────────────

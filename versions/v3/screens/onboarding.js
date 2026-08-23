@@ -22,34 +22,62 @@ const ONB_STEPS = ["name", "zip", "household", "income", "lifestyle", "goal", "b
 // answer means the same thing in both places.
 const ONB_LIFESTYLE_DIMS = ["paysRent", "commute"];
 
-// Intro "video" narration — one caption per segment, spoken by live Web Speech
-// and advanced on each utterance's `onend` so text and voice stay in sync (the
-// spec's D04 intent; no recorded asset). Generalised, no figures. Buddy's voice.
-// Narration text is data (data/onboarding-script.json) so the build-time TTS
-// pipeline can read it — see scripts/gen-audio.sh. Falls back to the literals
-// only if that file failed to load.
-const ONB_VIDEO_SCRIPT_ID = "onboarding_intro";
-const ONB_VIDEO_SEGMENT_IDS = (function () {
+// Intro "video" narration — one caption per segment. Narration text is data
+// (data/onboarding-script.json) so the build-time TTS pipeline can read it; see
+// scripts/gen-audio.sh. The literals below are the fallback for a failed load.
+//
+// The film branches on the tester's PRIMARY goal — the first thing they picked
+// at step 6. Segments s1, s2, s5 and s6 are identical across all five scripts;
+// only s3 and s4 change. Four goals with up to three picks is sixteen
+// combinations, which is not authorable, so secondary picks change nothing.
+//
+// These are functions, not constants, because the goal is not known until step
+// 6 and the film is step 8. A const evaluated at load time would always be the
+// default.
+const ONB_VIDEO_DEFAULT_SCRIPT = "onboarding_intro";
+
+const ONB_VIDEO_FALLBACK = [
+  "A quick tour before we start. About a minute.",
+  "Most days I'll ask a few short questions about what you spent. That's your Money Journal.",
+  "Each answer fills in a bit more of the picture — where your money actually goes, and which parts move around.",
+  "Once there's enough of it, I'll show you what's steady, what's drifting, and what you might not have clocked.",
+  "You'll also see how you compare to peers — households near yours in size, income and area. Those are national figures, a mathematical aggregate, not other people's accounts.",
+  "That's the whole thing. Answer a little most days and the picture fills itself in. Let's get you set up."
+];
+
+/** The goal they picked first, or null when the step was skipped. */
+function onbPrimaryGoal() {
+  const o = state.onboarding;
+  const areas = (o && o.improveAreas) || [];
+  return areas.length ? areas[0] : null;
+}
+
+/** Which of the five scripts plays. Falls back to the goal-free default. */
+function onbVideoScriptId() {
+  const goal = onbPrimaryGoal();
+  if (!goal) return ONB_VIDEO_DEFAULT_SCRIPT;
   try {
-    const s = ONBOARDING_SCRIPT.scripts.find(x => x.id === ONB_VIDEO_SCRIPT_ID);
-    return s.segments.map(seg => seg.id);
-  } catch (e) { return ["s1","s2","s3","s4","s5","s6"]; }
-})();
-const ONB_VIDEO_SEGMENTS = (function () {
+    const hit = ONBOARDING_SCRIPT.scripts.find(x => x._goal === goal);
+    return hit ? hit.id : ONB_VIDEO_DEFAULT_SCRIPT;
+  } catch (e) { return ONB_VIDEO_DEFAULT_SCRIPT; }
+}
+
+function onbVideoScript() {
   try {
-    const s = ONBOARDING_SCRIPT.scripts.find(x => x.id === ONB_VIDEO_SCRIPT_ID);
-    return s.segments.map(seg => seg.text);
-  } catch (e) {
-    return [
-      "Here's the short version of how this works — no pressure, no jargon.",
-      "Each day I'll ask you a few quick questions about your money. That's your Money Journal.",
-      "Every answer fills in a little more of your picture — what you spend on, what matters to you, where things feel tight.",
-      "The more you tell me, the more your lessons and check-ins shape around your life, not some generic average.",
-      "So the read you get, and the peers I hold you up against, actually fit you.",
-      "That's it. Answer a little each day and I'll handle the rest. Let's get you set up."
-    ];
-  }
-})();
+    const id = onbVideoScriptId();
+    return ONBOARDING_SCRIPT.scripts.find(x => x.id === id) || null;
+  } catch (e) { return null; }
+}
+
+function onbVideoSegmentIds() {
+  const s = onbVideoScript();
+  return s ? s.segments.map(seg => seg.id) : ["s1","s2","s3","s4","s5","s6"];
+}
+
+function onbVideoSegments() {
+  const s = onbVideoScript();
+  return s ? s.segments.map(seg => seg.text) : ONB_VIDEO_FALLBACK.slice();
+}
 
 // Detached audio for the segment in flight. Module-level rather than on `state`
 // so the admin state inspector never tries to serialise a media element.
@@ -909,7 +937,7 @@ function onbVideoSegMs(seg) {
 function onbVideoInit() {
   const cues = [];
   let t = 0;
-  ONB_VIDEO_SEGMENTS.forEach(seg => { cues.push(t); t += onbVideoSegMs(seg) / 1000; });
+  onbVideoSegments().forEach(seg => { cues.push(t); t += onbVideoSegMs(seg) / 1000; });
   return {
     index: 0, playing: false, finished: false,
     elapsed: 0, total: Math.max(1, t), cues: cues,
@@ -932,9 +960,71 @@ function onbVideoIndexFor(elapsed, cues) {
   return idx;
 }
 
+// ── The stage ────────────────────────────────────────────────────────────────
+// Was renderBuddyStage(): a text card describing the buddy, which never moved
+// while the film narrated over it for forty seconds. Now it runs the same
+// hyperframes engine the lesson player uses.
+//
+// Beat boundaries come from the player's OWN cue map rather than being declared
+// as fractions the way lessons.json does. Beat N spans segment N, so rewriting a
+// line re-cuts the beats automatically — the cues and the beats read one source.
+
+/** The storyboard for this run, as a hyperframes spine with real fractions. */
+function onbStoryboard(v) {
+  if (typeof ONBOARDING_STORYBOARD === "undefined") return null;
+  const sb = ONBOARDING_STORYBOARD;
+  const goal = onbPrimaryGoal();
+  const mid = (sb.goals && (sb.goals[goal] || sb.goals._default)) || {};
+  const ids = onbVideoSegmentIds();
+  const total = Math.max(0.001, v.total);
+
+  const spine = ids.map((id, i) => {
+    const elements = sb.shared[id] || mid[id] || [];
+    const from = (v.cues[i] || 0) / total;
+    const to = i + 1 < ids.length ? (v.cues[i + 1] || total) / total : 1;
+    return {
+      id: id,
+      from: Math.max(0, Math.min(1, from)),
+      to: Math.max(0, Math.min(1, to)),
+      // The last beat holds rather than fading, so the film settles on
+      // something instead of emptying out.
+      hold: i === ids.length - 1,
+      elements: elements
+    };
+  }).filter(b => b.elements.length);
+
+  return { kind: sb.kind, requiresFigures: false, spine: spine };
+}
+
+function onbVideoStage(v) {
+  const storyboard = onbStoryboard(v);
+  const plan = { lessonId: "onboarding", storyboard: storyboard, bucket: null };
+  if (!storyboard || typeof hyperframesCanRender !== "function" ||
+      !hyperframesCanRender(plan)) {
+    // Nothing to draw — fall back to the buddy card rather than a blank stage
+    // (D19: no screen renders empty).
+    return renderBuddyStage({ square: true });
+  }
+  return `
+    <div class="lp-stage lp-stage-video onb-video-stage">
+      <div class="lp-hyperframes" id="onb-video-frames">
+        ${hyperframesMarkup(storyboard, plan, v.total, {})}
+      </div>
+    </div>`;
+}
+
+/** Drive the animation clock from the player's clock. */
+function onbVideoSyncFrames() {
+  if (typeof hyperframesSync !== "function") return;
+  const root = document.getElementById("onb-video-frames");
+  if (!root) return;
+  const v = onbVideo();
+  hyperframesSync(root, { elapsedSec: v.elapsed, playing: v.playing, rate: v.speed || 1 });
+}
+
 function onbVideoBody(o) {
   const v = onbVideo();
-  const segs = ONB_VIDEO_SEGMENTS;
+  const segs = onbVideoSegments();
   const seg = segs[v.index] || segs[segs.length - 1];
   const pct = (v.total > 0 ? (v.elapsed / v.total) * 100 : 0).toFixed(2);
   const playLabel = v.finished ? "↻" : (v.playing ? "⏸" : "▶");
@@ -943,17 +1033,21 @@ function onbVideoBody(o) {
     <p class="helper" style="margin:0 0 4px;">How Money Buddy works</p>
     <h1 class="title" style="font-size:20px;margin:0 0 12px;">A quick hello before we start</h1>
     <div class="onb-video">
-      ${renderBuddyStage({ square: true })}
+      ${onbVideoStage(v)}
       <p class="onb-video-caption" id="onb-video-caption">${h(seg)}</p>
 
       <!-- Same control set as the lesson player, and the same ids-based
            repainting: nothing here calls render(), because a repaint mid-drag
            replaces the element the pointer is captured on. -->
       <div class="lp-ctrl-row">
-        <button class="button secondary lp-ctrl-btn" type="button" onclick="onbVideoSkip(-1)">◀ Back</button>
+        <button class="button secondary lp-ctrl-btn" type="button"
+                onclick="onbVideoSeekBy(-ONB_VIDEO_SEEK_SEC)" aria-label="Back ten seconds"
+                title="Back 10 seconds">↺ ${ONB_VIDEO_SEEK_SEC}</button>
         <button class="button lp-ctrl-btn" id="onb-video-playbtn" type="button"
                 onclick="onbVideoPlayAction()">${playLabel}</button>
-        <button class="button secondary lp-ctrl-btn" type="button" onclick="onbVideoSkip(1)">Next ▶</button>
+        <button class="button secondary lp-ctrl-btn" type="button"
+                onclick="onbVideoSeekBy(ONB_VIDEO_SEEK_SEC)" aria-label="Forward ten seconds"
+                title="Forward 10 seconds">↻ ${ONB_VIDEO_SEEK_SEC}</button>
         <button class="button secondary lp-speed-btn" id="onb-video-speed" type="button"
                 onclick="onbVideoCycleSpeed()">${v.speed}×</button>
       </div>
@@ -976,7 +1070,7 @@ function onbVideoBody(o) {
 function onbVideoPaintCaption() {
   const v = onbVideo();
   const el = document.getElementById("onb-video-caption");
-  if (el) el.textContent = ONB_VIDEO_SEGMENTS[v.index] || "";
+  if (el) el.textContent = onbVideoSegments()[v.index] || "";
 }
 
 function onbVideoPaintProgress() {
@@ -1017,6 +1111,7 @@ function onbVideoTick() {
     onbVideoSpeak();          // the new segment's voice rides along beside the clock
   }
   onbVideoPaintProgress();
+  onbVideoSyncFrames();   // drift check only — the animation runs itself
 }
 
 function onbVideoClearTimer() {
@@ -1048,8 +1143,8 @@ function onbVideoStop() {
 
 /** Where gen-audio.sh writes this segment's narration. */
 function onbVideoAudioSrc(index) {
-  const segId = ONB_VIDEO_SEGMENT_IDS[index] || ("s" + (index + 1));
-  return "assets/audio/onboarding/" + ONB_VIDEO_SCRIPT_ID + "/" + segId + ".wav";
+  const segId = onbVideoSegmentIds()[index] || ("s" + (index + 1));
+  return "assets/audio/onboarding/" + onbVideoScriptId() + "/" + segId + ".wav";
 }
 
 /**
@@ -1065,7 +1160,7 @@ function onbVideoAudioSrc(index) {
 function onbVideoSpeak() {
   const o = state.onboarding;
   if (!o || !o.video || !o.video.playing) return;
-  const seg = ONB_VIDEO_SEGMENTS[o.video.index];
+  const seg = onbVideoSegments()[o.video.index];
   if (!seg) return;
 
   const speakFallback = function () { narrationSpeak(seg); };
@@ -1099,11 +1194,12 @@ function onbVideoFinish() {
   const v = onbVideo();
   onbVideoStop();
   v.elapsed  = v.total;
-  v.index    = ONB_VIDEO_SEGMENTS.length - 1;
+  v.index    = onbVideoSegments().length - 1;
   v.finished = true;
   onbVideoPaintCaption();
   onbVideoPaintProgress();
   onbVideoPaintPlayBtn();
+  onbVideoSyncFrames();
 }
 
 // ── Controls ─────────────────────────────────────────────────────────────────
@@ -1115,12 +1211,14 @@ function onbVideoPlay() {
   v.lastTick = Date.now();
   v.timer    = setInterval(onbVideoTick, ONB_VIDEO_TICK_MS);
   onbVideoPaintPlayBtn();
+  onbVideoSyncFrames();
   onbVideoSpeak();
 }
 
 function onbVideoPause() {
   onbVideoStop();
   onbVideoPaintPlayBtn();
+  onbVideoSyncFrames();
 }
 
 function onbVideoPlayAction() {
@@ -1139,12 +1237,14 @@ function onbVideoRestart() {
   onbVideoPlay();
 }
 
-/** ±1 segment, seeking the clock to that segment's cue — same as lpSkip. */
-function onbVideoSkip(delta) {
+// ±10 seconds — same control as the lesson player (lpSeekBy). It used to jump
+// ±1 segment behind "◀ Back" / "Next ▶", which reads as stepping through the
+// onboarding rather than seeking inside the film.
+const ONB_VIDEO_SEEK_SEC = 10;
+
+function onbVideoSeekBy(seconds) {
   const v = onbVideo();
-  if (v.finished && delta < 0) v.finished = false;
-  const idx = Math.max(0, Math.min(ONB_VIDEO_SEGMENTS.length - 1, v.index + delta));
-  onbVideoApplyElapsed(v.cues[idx] || 0);
+  onbVideoApplyElapsed(v.elapsed + seconds);
 }
 
 function onbVideoCycleSpeed() {
@@ -1153,6 +1253,7 @@ function onbVideoCycleSpeed() {
   const btn = document.getElementById("onb-video-speed");
   if (btn) btn.textContent = v.speed + "×";
   if (onbAudioEl) { try { onbAudioEl.playbackRate = v.speed; } catch (e) {} }
+  onbVideoSyncFrames();
   // The ticker reads v.speed live each tick — nothing more to do.
 }
 
@@ -1167,6 +1268,7 @@ function onbVideoApplyElapsed(sec) {
   if (changed) { onbVideoPaintCaption(); onbVideoSpeak(); }
   onbVideoPaintProgress();
   onbVideoPaintPlayBtn();
+  onbVideoSyncFrames();
   if (v.playing) v.lastTick = Date.now();
 }
 

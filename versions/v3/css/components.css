@@ -1962,6 +1962,17 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 
 /* Intro "video" — captioned narration synced to live Web Speech. */
 .onb-video { display: flex; flex-direction: column; gap: 12px; }
+
+/* The hyperframes stage. .lp-stage is written for the lesson player's
+   full-height flex column, where it takes 42% of the screen; inside the
+   onboarding card it has to state its own height instead, or it collapses to
+   its content. Rounded to match the buddy card it replaced. */
+.onb-video-stage {
+  flex: 0 0 auto;
+  height: 210px;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
 .onb-video-caption {
   font-size: 15px; line-height: 1.5; color: var(--text);
   min-height: 68px; margin: 0;

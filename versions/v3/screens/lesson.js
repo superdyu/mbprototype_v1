@@ -533,21 +533,19 @@ function lpRestart() {
 }
 
 // ±1 line per skip: seek the clock to the prev/next line's cue time.
-function lpSkip(delta) {
+// ±10 seconds, the transport control people already know from every other
+// player. It used to be ±1 script line labelled "◀ Back" / "Next ▶", which read
+// as leaving the lesson rather than seeking inside it — and a line is an
+// arbitrary unit the viewer can't see the length of.
+//
+// lpApplyElapsed already does the whole job: clamps, clears `ended`, moves the
+// audio playhead, repaints the caption only when the line actually changes, and
+// resyncs the hyperframes.
+const LP_SEEK_SEC = 10;
+
+function lpSeekBy(seconds) {
   const lp = state.lessonPlayback;
-  if (lp.ended && delta < 0) {
-    // Allow seeking backward after end — clears ended state
-    lp.ended = false;
-    lpLockNext();
-  }
-  lp.index   = Math.max(0, Math.min(lp.sentences.length - 1, lp.index + delta));
-  lp.elapsed = lp.cues[lp.index] || 0;
-  const audio = lpHasAudio() ? lpAudioEl() : null;
-  if (audio) audio.currentTime = lp.elapsed;
-  lpHighlight(lp.index);
-  lpUpdateProgress();
-  lpUpdatePlayBtn();
-  lpSyncHyperframes();
+  lpApplyElapsed(lp.elapsed + seconds);
   // Ticker keeps running; reset lastTick so the jump isn't counted as elapsed.
   if (lp.playing) lp.lastTick = Date.now();
 }
@@ -711,9 +709,13 @@ function renderLesson() {
       <!-- BOTTOM: audio controls -->
       <div class="lp-controls">
         <div class="lp-ctrl-row">
-          <button class="button secondary lp-ctrl-btn" type="button" onclick="lpSkip(-1)">◀ Back</button>
+          <button class="button secondary lp-ctrl-btn" type="button"
+                  onclick="lpSeekBy(-LP_SEEK_SEC)" aria-label="Back ten seconds"
+                  title="Back 10 seconds">↺ ${LP_SEEK_SEC}</button>
           <button class="button lp-ctrl-btn" id="lp-playbtn" type="button" onclick="lpPlayAction()">${playLabel}</button>
-          <button class="button secondary lp-ctrl-btn" type="button" onclick="lpSkip(1)">Next ▶</button>
+          <button class="button secondary lp-ctrl-btn" type="button"
+                  onclick="lpSeekBy(LP_SEEK_SEC)" aria-label="Forward ten seconds"
+                  title="Forward 10 seconds">↻ ${LP_SEEK_SEC}</button>
           <button class="button secondary lp-speed-btn" id="lp-speed" type="button" onclick="lpCycleSpeed()">${state.lessonPlayback.speed}×</button>
         </div>
         <div class="lp-progress-row">

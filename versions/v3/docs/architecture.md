@@ -46,6 +46,14 @@ Both files are kept:
 |---|---|
 | `data/*.json` | Verbatim copy of the spec. **Never edited.** Diffable against `v3 Files/spec/data/`. |
 | `data/zip-cost-of-living.json` | The one exception — authored here, with no spec twin to diff against. Derived from public datasets; the derivation is recorded in its own `method._note`. |
+
+**Two authored files are `.js` with no `.json` sibling** — `data/lesson-scripts.js`
+and `data/onboarding-storyboard.js`. Neither is spec data and neither has a
+reason to be JSON: `wrap-data.sh` hard-errors on any `.json` it has no global
+mapped for, so a JSON twin would mean editing the generator to gain nothing.
+The rule is: **JSON when something outside the app has to read it** (the spec
+diff, or `gen-audio.sh`'s TTS extractor), plain `.js` otherwise.
+That is why `onboarding-script.json` *is* JSON and its storyboard is not.
 | `data/*.js` | Generated wrapper. What the app actually loads. |
 
 `scripts/wrap-data.sh` regenerates the `.js` from the `.json`. It is run by hand
@@ -882,6 +890,35 @@ life easing in.
 `lessons.json` is cut from `lpCuesFromWords(apr_about_average)`; the other four
 buckets have different tail lengths, so their beats drift by up to 2%, which is
 inside a line. Rewriting a script means recutting the fractions.
+
+**The onboarding storyboard does not have that problem**, and the difference is
+worth copying if a third storyboard ever appears. `data/onboarding-storyboard.js`
+declares only *elements per segment id*; `onbStoryboard()` (`screens/onboarding.js`)
+builds the `from`/`to` fractions at render time from the player's own `v.cues`.
+Beat N spans segment N by construction, so rewriting a line re-cuts the beats
+automatically — the cues and the beats read one source instead of two that have
+to be kept in step by hand.
+
+### The intro film branches on the primary goal
+
+`ONB_GOALS` is four goals with up to three picks — sixteen combinations, which
+is not authorable. So the film uses a **shared spine with a goal-specific
+middle**: segments `s1`, `s2`, `s5` and `s6` are word-for-word identical across
+all five scripts and only `s3`/`s4` change, keyed on `improveAreas[0]`.
+Secondary picks change nothing. `data/onboarding-script.json` and
+`data/onboarding-storyboard.js` are keyed the same way and must be edited
+together.
+
+The five scripts are written out in full rather than composed at load time
+because `gen-audio.sh` cuts one `.wav` per script/segment pair and the player
+addresses them by path (`assets/audio/onboarding/<scriptId>/<segId>.wav`) — a
+composed script would have no folder of its own.
+
+**`hyperframesCanRender()` takes a `requiresFigures` flag.** It gates on
+`userFigure` + `marketAvg` because the APR storyboard *plots* a number. A
+storyboard that only explains something has no figure by design and declares
+`requiresFigures: false`. The flag defaults to on, so the lesson path is
+unchanged.
 
 ### Verified against the shipped scripts
 
