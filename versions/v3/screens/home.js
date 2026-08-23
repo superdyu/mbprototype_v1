@@ -30,12 +30,17 @@ const TIP_MAX_CHARS = 90;
 
 function renderHome() {
   return `
-    ${renderHomeTip()}
     <div class="home-stage-wrap">
       ${renderBuddyStage({ square: true })}
       <button class="home-chat-btn" type="button"
               onclick="homeOpenChat()">Chat with ${h(state.buddy.name || "Buddy")}</button>
     </div>
+
+    <!-- The tip sits BETWEEN the buddy and the task list, not above everything.
+         At the top it pushed the buddy down the screen for a line of copy that
+         is context for the day rather than the point of it. Here it reads as a
+         lead-in to Today, and the stage gets the top of the screen. -->
+    ${renderHomeTip()}
 
     <div class="row" style="margin-bottom:10px;">
       <div class="section-title" style="margin:0;">Today</div>

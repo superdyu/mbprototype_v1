@@ -601,26 +601,51 @@ one arriving there falls through to home and loses its badge XP. So
 flow picks the calculator up, and it only inserts a step — the XP and badge path
 is identical either way.
 
-### Preset shortcuts, and why the ranges moved
+### The calculator's shape: sliders, then three outcomes
 
-`LESSON_SIM_PRESETS` is keyed by sim **type**, because that is what a preset
-describes; a lesson may override with its own `simulation.presets`. They are
-cases, never instructions (D26) — "Minimum payments only" is a thing that
-happens to people, not advice.
+Sliders first, **Healthy · Common · Bad** beneath them, left to right. The boxes
+are buttons: each shows what its own figures produce and **moves the sliders
+there** when tapped. One source for both — `lessonSimScenarioValues` returns the
+values, `lessonSimScenarioOutcome` runs them through the same engine the sliders
+drive — so a box can never advertise an outcome the sliders then fail to
+reproduce.
 
-The slider bounds used to be literals at each `simSlider` call. They are now
-`LESSON_SIM_RANGES`, in one place, because a preset outside its slider's range
-leaves the thumb pinned at an end while the readout shows a figure it cannot
-reach. `lessonSimClamp` holds every preset to the same table, and the harness
-asserts that no authored preset or default is out of range or off-step.
+**APR is never part of a scenario.** It is seeded from the tester's own card
+(`lessonProfileFigure`) and stays wherever they leave it, so all three outcomes
+are computed against one rate. That is what makes them comparable: one variable
+moves, not two.
 
-That check immediately found a **pre-existing** bug: `lessons.json` ships
-`current: 620` for the emergency-fund calculator against a step-50 grid, so the
-thumb snapped away from the figure on first touch. `current` is step 10 now, and
-`monthlyPayment` step 5 — a minimum payment is usually an odd figure.
+This is a **recorded exception** to the sandbox rule in `lrSimDefaults` and
+`lessons.json`. That rule is about the *balance* — a made-up debt is something to
+poke at and a real one is a judgement. A rate is the subject of the lesson and
+public information about a product, and it stays draggable. `LESSON_SIM_RANGES.apr`
+steps by **0.5** so a real card rate is expressible; at step 1 the seed snapped
+to a rate the card does not charge.
 
-Taking a preset marks it selected; dragging any slider or toggling any row
-clears that, because it is no longer that preset's case.
+The preset chips this replaces are gone. They were a second, worse version of the
+same feature.
+
+### Why the slider bounds live in one table
+
+The bounds used to be literals at each `simSlider` call. They are now
+`LESSON_SIM_RANGES`, in one place, because anything that sets a slider
+programmatically — a scenario, a default, a seeded rate — can land outside its
+range and leave the thumb pinned at an end while the readout shows a figure it
+cannot reach. `lessonSimClamp` holds every one of them to the same table.
+
+That check has now caught three bugs, none of them in the code it was written
+for:
+
+- `lessons.json` ships `current: 620` for the emergency-fund calculator against
+  a **step-50** grid, so the thumb snapped away from the shipped figure on first
+  touch. `current` is step 10 now.
+- An authored `$75` payment sat off a step-10 grid. `monthlyPayment` is step 5 —
+  a minimum payment is usually an odd figure.
+- The APR seeded from a real card (25.5%) snapped to 26 on a **step-1** grid, so
+  the calculator opened on a rate the card does not charge. `apr` is step 0.5.
+
+`lessonSimClamp` rounds the step *count* and rebuilds, then rounds to 2dp —
+multiplying a count back by a fractional step reintroduces float dust.
 
 ### The estimator asks only what it does not already know
 
@@ -967,6 +992,21 @@ viewer has already scrubbed past.
 `narrationSpeak` carries `onStart`/`onEnd`/`onError` and keeps the generation
 guard, so a superseded line's callbacks are still dropped — see the cancel trap
 at the top of `js/narration.js`.
+
+### The snap is forwards only
+
+Three sites pin the clock to the current cue when a voice starts: the lesson
+player's live speech, the onboarding player's live speech, and the onboarding
+`.wav`'s `onplay`. All three take `Math.max(elapsed, cue)` rather than the cue
+outright.
+
+The cap (`lpSpeechCap` / `onbSpeechCap`) lets the tick run to just short of the
+*next* cue, so `elapsed` is normally **ahead** of the current one. An
+unconditional snap therefore moves the clock **backwards**, and
+`hyperframesSync` faithfully rewinds every animation to match — which is what
+showed as a flicker at each segment boundary. Forwards-only keeps the
+correction that matters (the voice is ahead of a slow estimate) and drops the
+one that was visible.
 
 ### 165 wpm is the one pacing knob
 

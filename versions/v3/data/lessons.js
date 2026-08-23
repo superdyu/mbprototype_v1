@@ -206,7 +206,7 @@ const LESSONS_V3 =
       ],
       "simulation": {
         "type": "balance_calculator",
-        "_note": "Bias toward simulation over quiz. Sandbox only — never uses the user's real figures.",
+        "_note": "Bias toward simulation over quiz. Sandbox for the BALANCE — never the user's real debt. The APR is the one exception: it is seeded from their own card, because a rate is the subject of the lesson and public information about a product rather than a fact about them. It stays draggable. See lrSimDefaults in js/lesson-rewards.js.",
         "inputs": ["balance", "apr", "monthlyPayment"],
         "outputs": ["monthsToPayoff", "totalInterest"],
         "defaults": { "balance": 1000, "apr": 24, "monthlyPayment": 40 }

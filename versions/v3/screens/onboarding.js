@@ -113,11 +113,22 @@ const ONB_INCOME_STEP = 500;
 
 // "If you could improve one thing about your money…" — multi-select, max 3,
 // presets only. Folds into the single state.strategicGoal the app expects.
+// The first four are the ones data/onboarding-script.json writes a film variant
+// for (matched on `_goal`). Everything after them falls through to the default
+// script -- which is the designed fallback, not a bug, but it does mean a tester
+// picking one of the newer goals gets the generic film. Adding a variant is a
+// content job; adding a goal is this list.
 const ONB_GOALS = [
   "Stop living paycheck to paycheck",
   "Build up some savings",
   "Get on top of what I owe",
-  "Just understand where it goes"
+  "Just understand where it goes",
+  "Spend less on eating out",
+  "Cancel what I don't use",
+  "Be ready for a surprise bill",
+  "Save for something big",
+  "Stop worrying about money",
+  "Put money aside for a trip"
 ];
 const ONB_GOALS_MAX = 3;
 
@@ -149,7 +160,18 @@ function onbStart() {
     // tell "you already told me this" from "a stranger's default".
     lifestyleAnswered: {},
     improveAreas: [],      // multi-select, max 3 (folds into strategicGoal)
-    buddy: Object.assign({}, PERSONA.buddy)
+    // The creator opens on the ILLUSTRATION rather than the persona's golden
+    // retriever -- it is the one option with real art behind it, so it is what
+    // the creator should be showing off. PERSONA.buddy is untouched, so a
+    // SKIP_ONBOARDING run still boots to the description frame.
+    buddy: Object.assign({}, PERSONA.buddy, {
+      breed:      BUDDY_PROTOTYPE,
+      furColor:   BUDDY_PROTOTYPE,
+      furPattern: BUDDY_PROTOTYPE,
+      eyeColor:   BUDDY_PROTOTYPE,
+      noseColor:  BUDDY_PROTOTYPE,
+      size:       BUDDY_PROTOTYPE
+    })
   };
   // Cosmetic name has no persona fallback (D09 override): an untouched or
   // skipped buddy shows as "Buddy", never "Biscuit". Appearance fields still
@@ -157,6 +179,11 @@ function onbStart() {
   // stage is never blank.
   state.onboarding.buddy.name = "";
   state.onboarding.buddy.furPattern = state.onboarding.buddy.furPattern || "solid";
+  // Mirror onto state.buddy, which is what the stage actually renders from
+  // (renderBuddyInner). Without this the draft says prototype while the stage
+  // above it still describes a golden retriever, and the default only takes
+  // effect once the tester taps something.
+  state.buddy = Object.assign({}, state.onboarding.buddy);
   return state.onboarding;
 }
 
@@ -297,8 +324,10 @@ function onbIncomeLabelText(o) {
   const v = onbIncomeValue(o);
   if (!band || v == null) return "";
   const atTop = band.openTop && v >= band.max;
-  return `${h(budgetFmt(v))}${atTop ? "+" : ""} a year
-          · about ${h(budgetFmt(v / 12))} a month`;
+  // One line: the year figure, then the month in parentheses after it. The
+  // month is the derived one, so it reads as a gloss rather than a second fact.
+  return `${h(budgetFmt(v))}${atTop ? "+" : ""} a year ` +
+         `(about ${h(budgetFmt(v / 12))} a month)`;
 }
 
 function onbIncomeSlider(o) {
@@ -307,10 +336,7 @@ function onbIncomeSlider(o) {
   const v = onbIncomeValue(o);
   return `
     <div class="card" style="margin-top:14px;">
-      <div class="row" style="align-items:baseline;margin-bottom:6px;">
-        <span class="budget-row-name">Your figure</span>
-        <span class="budget-row-amt" id="onbIncomeLabel">${onbIncomeLabelText(o)}</span>
-      </div>
+      <p class="slider-readout" id="onbIncomeLabel">${onbIncomeLabelText(o)}</p>
       <input class="journal-slider" type="range"
              min="${band.min}" max="${band.max}" step="${ONB_INCOME_STEP}"
              value="${v}"
@@ -410,7 +436,11 @@ function onbDetailLabelText(o, kind) {
 
 function onbCarAgeLabelText(o) {
   const yrs = onbDetail(o, ONB_CAR_AGE);
-  return yrs === 0 ? "Brand new" : `${yrs} year${yrs === 1 ? "" : "s"} old`;
+  if (yrs === 0) return "Brand new";
+  // Same open-top treatment as income band b5, for the same reason: a slider
+  // maximum that reads as an exact value lies about everyone above it.
+  if (yrs >= ONB_CAR_AGE.max) return `${ONB_CAR_AGE.max}+ years old`;
+  return `${yrs} year${yrs === 1 ? "" : "s"} old`;
 }
 
 /** Monthly transport figure implied by the commute answers, or null. */
@@ -578,7 +608,7 @@ function onbSkipPrompt() {
   return `
     <div class="ls-modal-bg" onclick="onbSkipCancel()">
       <div class="card" style="max-width:300px;" onclick="event.stopPropagation()">
-        <h1 class="title" style="font-size:19px;margin:0 0 6px;">No name, no problem</h1>
+        <h1 class="title onb-title" style="margin:0 0 6px;">No name, no problem</h1>
         <p class="task-desc" style="margin:0 0 14px;">
           I can just call you Buddy. Want to skip only this, or the whole setup?
         </p>
@@ -711,7 +741,7 @@ function onbColTeaser(typed) {
 
 function onbStepBody(key, o) {
   if (key === "name") return `
-    <h1 class="title" style="font-size:21px;margin:0 0 6px;">Hi! I'm Buddy, your money learning companion.</h1>
+    <h1 class="title onb-title" style="margin:0 0 6px;">Hi, I'm Buddy — your money companion.</h1>
     <p class="helper" style="margin:0 0 14px;">
       Nice to meet you! Sorry it's a bit awkward — but what should I call you?
     </p>
@@ -722,7 +752,7 @@ function onbStepBody(key, o) {
     </div>`;
 
   if (key === "zip") return `
-    <h1 class="title" style="font-size:21px;margin:0 0 6px;">Where are you these days?</h1>
+    <h1 class="title onb-title" style="margin:0 0 6px;">Where are you these days?</h1>
     <p class="helper" style="margin:0 0 14px;">
       A ZIP is plenty — it just helps me learn what things cost near you. Nothing gets shared.
     </p>
@@ -736,7 +766,7 @@ function onbStepBody(key, o) {
   if (key === "household") {
     const HH_LABELS = { 1: "Only me", 2: "2 people", 3: "3 people", 4: "4 or more people" };
     return `
-    <h1 class="title" style="font-size:21px;margin:0 0 6px;">Who's in your corner?</h1>
+    <h1 class="title onb-title" style="margin:0 0 6px;">Who's in your corner?</h1>
     <p class="helper" style="margin:0 0 14px;">How many people share your place, counting you?</p>
     <div class="journal-options">
       ${[1, 2, 3, 4].map(n => `
@@ -751,7 +781,7 @@ function onbStepBody(key, o) {
   }
 
   if (key === "income") return `
-    <h1 class="title" style="font-size:21px;margin:0 0 6px;">Roughly what comes in each year?</h1>
+    <h1 class="title onb-title" style="margin:0 0 6px;">Roughly what comes in each year?</h1>
     <p class="helper" style="margin:0 0 14px;">Pick the band that fits, then nudge it to your figure.</p>
     <div class="journal-options">
       ${ONB_INCOME_BANDS.map(b => `
@@ -771,7 +801,7 @@ function onbStepBody(key, o) {
     const q = lwq[o.lwIndex];
     return `
       <p class="helper" style="margin:0 0 4px;">A few quick ones about how you live (${o.lwIndex + 1}/${lwq.length})</p>
-      <h1 class="title" style="font-size:21px;margin:0 0 6px;">${h(q.prompt)}</h1>
+      <h1 class="title onb-title" style="margin:0 0 6px;">${h(q.prompt)}</h1>
       ${q.help ? `<p class="helper" style="margin:0 0 14px;">${h(q.help)}</p>` : ""}
       <div class="journal-options">
         ${q.options.map(opt => `
@@ -786,7 +816,7 @@ function onbStepBody(key, o) {
   if (key === "goal") {
     const atMax = o.improveAreas.length >= ONB_GOALS_MAX;
     return `
-    <h1 class="title" style="font-size:21px;margin:0 0 6px;">If you could improve one thing about your money, what would it be?</h1>
+    <h1 class="title onb-title" style="margin:0 0 6px;">What would you most like to improve?</h1>
     <p class="helper" style="margin:0 0 14px;">Pick up to ${ONB_GOALS_MAX} — we can always change these later.</p>
     <div class="journal-options">
       ${ONB_GOALS.map(g => {
@@ -812,7 +842,7 @@ function onbStepBody(key, o) {
   return `
     <div class="card">
       <p class="pill" style="display:inline-block;font-size:9px;padding:3px 9px;margin-bottom:10px;">7 days free</p>
-      <h1 class="title" style="font-size:21px;margin:0 0 6px;">Last thing — want to try Platinum with me?</h1>
+      <h1 class="title onb-title" style="margin:0 0 6px;">Last thing — want to try Platinum with me?</h1>
       <p class="task-desc" style="margin:0 0 12px;">
         Seven days free, then $6.99 a month. Cancel any time.
       </p>
@@ -890,9 +920,9 @@ function onbBuddyStep(o) {
 
   return `
     <p class="helper" style="margin:0 0 4px;">Your buddy (${o.buddyIndex + 1}/${ONB_BUDDY_STEPS.length})</p>
-    <h1 class="title" style="font-size:21px;margin:0 0 6px;">${h(copy[0])}</h1>
+    <h1 class="title onb-title" style="margin:0 0 6px;">${h(copy[0])}</h1>
     <p class="helper" style="margin:0 0 12px;">${h(copy[1])}</p>
-    ${renderBuddyStage({ square: true })}
+    ${renderBuddyStage({ square: true, cls: "onb-buddy-stage" })}
     ${control}`;
 }
 
@@ -1051,7 +1081,7 @@ function onbVideoBody(o) {
 
   return `
     <p class="helper" style="margin:0 0 4px;">How Money Buddy works</p>
-    <h1 class="title" style="font-size:20px;margin:0 0 12px;">A quick hello before we start</h1>
+    <h1 class="title onb-title" style="margin:0 0 12px;">A quick hello before we start</h1>
     <div class="onb-video">
       ${onbVideoStage(v)}
       <p class="onb-video-caption" id="onb-video-caption">${h(seg)}</p>
@@ -1059,7 +1089,7 @@ function onbVideoBody(o) {
       <!-- Same control set as the lesson player, and the same ids-based
            repainting: nothing here calls render(), because a repaint mid-drag
            replaces the element the pointer is captured on. -->
-      <div class="lp-ctrl-row">
+      <div class="lp-ctrl-row onb-video-controls-foot">
         <button class="button secondary lp-ctrl-btn" type="button"
                 onclick="onbVideoSeekBy(-ONB_VIDEO_SEEK_SEC)" aria-label="Back ten seconds"
                 title="Back 10 seconds">↺ ${ONB_VIDEO_SEEK_SEC}</button>
@@ -1206,7 +1236,14 @@ function onbVideoSpeak() {
         const v = onbVideo();
         if (!v || v.index !== idx) return;      // superseded by a seek
         v.speechDriven = true;
-        v.elapsed = v.cues[idx] || 0;
+        // FORWARDS ONLY. onbSpeechCap lets the tick run to just short of the
+        // NEXT cue, so elapsed is normally ahead of this segment's start --
+        // snapping to it unconditionally jumps the clock BACKWARDS, and
+        // onbVideoSyncFrames faithfully rewinds every hyperframes animation to
+        // match. That rewind is the flicker seen at each segment boundary.
+        // Taking the cue only when the clock is behind the voice keeps the
+        // correction that matters and drops the one that was visible.
+        v.elapsed = Math.max(v.elapsed, v.cues[idx] || 0);
         v.lastTick = Date.now();
         onbVideoPaintProgress();
         onbVideoSyncFrames();
@@ -1247,7 +1284,9 @@ function onbVideoSpeak() {
       const v = onbVideo();
       if (!v || v.index !== idx) return;
       v.speechDriven = true;
-      v.elapsed = v.cues[idx] || 0;
+      // Forwards only, exactly as in the live-speech path above: snapping down
+      // to this segment's start rewinds the hyperframes and shows as a flicker.
+      v.elapsed = Math.max(v.elapsed, v.cues[idx] || 0);
       v.lastTick = Date.now();
       onbVideoPaintProgress();
       onbVideoSyncFrames();

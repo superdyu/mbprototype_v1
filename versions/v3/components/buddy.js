@@ -141,8 +141,12 @@ function v3PrefersReducedMotion() {
 function renderBuddyStage(opts) {
   const compact = !!(opts && opts.compact);
   const square  = !!(opts && opts.square);
+  // `cls` lets one caller size the stage without touching the shared rules --
+  // the character creator needs a shorter one to fit its list and its footer on
+  // a single screen.
+  const extra   = (opts && opts.cls) || "";
   return `
-    <div class="buddy-stage ${compact ? "buddy-stage-compact" : ""} ${square ? "buddy-stage-square" : ""}">
+    <div class="buddy-stage ${compact ? "buddy-stage-compact" : ""} ${square ? "buddy-stage-square" : ""} ${h(extra)}">
       <div id="buddyStage" class="buddy-inner">${renderBuddyInner()}</div>
     </div>
   `;

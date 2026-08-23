@@ -250,8 +250,44 @@ function kbdMarkup() {
 
 // ── Wiring ───────────────────────────────────────────────────────────────────
 
+// ── THE BUTTON-PRESS LATCH ───────────────────────────────────────────────────
+// Tapping Continue while the keyboard was up did nothing: the keyboard went
+// away and the screen stayed. Three facts, all in this file and its stylesheet:
+//
+//   1. `.screen-scroll.kbd-open` adds 250px of padding-bottom (css/keyboard.css)
+//   2. kbdClose() drops that class, so closing REMOVES 250px of layout (kbdPaint)
+//   3. the focusout handler below closes on a setTimeout(…, 0)
+//
+// So: pointerdown blurs the field, focusout fires, the timeout lands BEFORE the
+// finger lifts, the footer jumps 250px down, and pointerup happens over
+// whatever is now under the finger. No `click` is ever dispatched on the button.
+//
+// The fix is to not close while a press is in flight. The blur still happens —
+// nothing exotic — but the LAYOUT holds still, so the button stays put and the
+// click lands normally. The keyboard then closes from kbdSyncAfterRender once
+// the handler has re-rendered and the field it belonged to no longer exists.
+//
+// Deliberately NOT preventDefault() on the pointerdown. That would also work,
+// by keeping focus on the field, and it is what the keyboard's own keys do —
+// but they act ON pointerdown and never need a click, so they prove nothing
+// about whether click survives a prevented pointerdown. That varies by browser
+// and cannot be tested here.
+let kbdPressPending = false;
+
+/** Close if the field the keyboard belongs to has gone away. */
+function kbdSyncAfterRender() {
+  if (!state.kbd || !state.kbd.open) return;
+  if (kbdTarget && document.body && document.body.contains(kbdTarget)) return;
+  kbdPressPending = false;
+  kbdClose();
+}
+
+function kbdClosest(el, sel) {
+  return el && el.closest ? el.closest(sel) : null;
+}
+
 /**
- * One delegated pair of listeners on #screenRoot, attached once at boot.
+ * One delegated set of listeners on #screenRoot, attached once at boot.
  *
  * focusin/focusout rather than focus/blur because those do not bubble — a
  * delegated listener would never see them. focusout is deferred a tick so that
@@ -266,9 +302,38 @@ function kbdInit() {
     else kbdClose();
   });
 
+  // Capture, so the latch is set before the blur this same gesture causes.
+  root.addEventListener("pointerdown", function (e) {
+    if (!state.kbd.open) return;
+    if (kbdClosest(e.target, "#keyboardRoot")) return;   // its own keys self-handle
+    if (kbdClosest(e.target, "button")) kbdPressPending = true;
+  }, true);
+
+  // The press resolved. If the handler re-rendered, the field is gone and
+  // kbdSyncAfterRender has already closed; if it did not, close now.
+  root.addEventListener("click", function () {
+    if (!kbdPressPending) return;
+    kbdPressPending = false;
+    kbdSyncAfterRender();
+  }, true);
+
+  // A press that never became a click — finger dragged off the button. Without
+  // this the latch sticks and the keyboard can never close again.
+  root.addEventListener("pointerup", function () {
+    if (!kbdPressPending) return;
+    setTimeout(function () {
+      if (!kbdPressPending) return;             // the click handler got there first
+      kbdPressPending = false;
+      const active = document.activeElement;
+      if (active && kbdAccepts(active)) return;
+      kbdClose();
+    }, 0);
+  }, true);
+
   root.addEventListener("focusout", function (e) {
     const from = e.target;
     setTimeout(function () {
+      if (kbdPressPending) return;                // a button press is mid-flight
       const active = document.activeElement;
       if (active && kbdAccepts(active)) return;   // moved to another field
       if (kbdTarget === from) kbdClose();

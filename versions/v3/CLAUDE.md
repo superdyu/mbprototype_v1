@@ -62,6 +62,18 @@ All verified against the raw JSON on 2026-08-07.
   answering, which is why its figure looked broken. Travel is now an explicit
   trips × cost ÷ 12 line inside Other and is exempt from the wizard's slider
   bands, because its figure is composed rather than `base × multipliers`.
+- **Closing the simulated keyboard moves the layout by 250px**
+  (`.screen-scroll.kbd-open`), so anything that closes it mid-gesture pulls the
+  button out from under the finger and no `click` is ever dispatched. That is
+  why `kbdInit` holds the close while a button press is in flight, and why
+  `render()` calls `kbdSyncAfterRender()`. Do not "simplify" the focusout
+  handler back to closing immediately.
+- **Both narrated players snap the clock forwards only.** `elapsed` is normally
+  ahead of the current cue (the speech cap lets the tick run to just short of
+  the next one), so an unconditional snap rewinds it — and the hyperframes
+  faithfully rewind with it, which reads as a flicker at every line boundary.
+  There are THREE snap sites: live speech in the lesson player, live speech in
+  the onboarding player, and the onboarding `.wav` `onplay`.
 - **There are TWO quiz screens.** `quiz` (`screens/quiz.js`) serves the v2
   catalog; `lessonQuiz` (`screens/lesson-outcome.js`) serves v3, and every v3
   lesson including APR goes through that one. Fixing the wrong one changes

@@ -229,8 +229,11 @@ function lpSpeakCurrent() {
       if (!l || l.index !== idx) return;      // superseded by a seek
       l.speechDriven = true;
       // The caption on screen is provably the line being spoken right now, so
-      // pin the clock to its cue rather than wherever the estimate had drifted.
-      l.elapsed = l.cues[idx] || 0;
+      // pin the clock to its cue -- but FORWARDS ONLY. lpSpeechCap lets the
+      // tick run to just short of the next cue, so elapsed is normally ahead of
+      // this line's start; snapping down would rewind the hyperframes and show
+      // as a flicker at every line boundary.
+      l.elapsed = Math.max(l.elapsed, l.cues[idx] || 0);
       l.lastTick = Date.now();
       lpUpdateProgress();
       lpSyncHyperframes();

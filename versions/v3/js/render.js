@@ -220,6 +220,11 @@ function render() {
   themeApply();   // one of four theme classes on .screen (js/theme.js, L21)
   screenRoot.innerHTML  = renderScreen();
   if (state.screen === "lesson") lpMountHook(lpWasPlaying);
+  // The keyboard survives a re-render — it lives in its own root outside
+  // screenRoot — but the FIELD it was opened for does not. Close it when that
+  // field is gone, which is also what lets a Continue press resolve: the press
+  // latch defers the close, and this is where the close actually happens.
+  if (typeof kbdSyncAfterRender === "function") kbdSyncAfterRender();
   if (state.screen === "chat")   chatMountHook();   // pin the thread to the newest message
 
   // The onboarding narrator is a timed surface like the lesson player, but it

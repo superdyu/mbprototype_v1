@@ -337,6 +337,18 @@ function lessonSkipFraming() {
  * state is in-memory, so a refresh clears it and we ask again — no persistent
  * cooldown, which does not matter for the prototype).
  */
+/**
+ * The figure framing inferred for this lesson, or null.
+ *
+ * For APR that is the card's rate -- an issuer + card lookup in CARD_APR, or a
+ * rate the tester typed. The calculator seeds its APR slider from this so it
+ * opens on their card rather than on a generic default.
+ */
+function lessonProfileFigure(lessonId) {
+  const prof = state.lessonProfile && state.lessonProfile[lessonId];
+  return (prof && prof.figure != null) ? prof.figure : null;
+}
+
 function lessonV3Start(lessonId) {
   const lesson = lessonV3(lessonId);
   if (!lesson) return;

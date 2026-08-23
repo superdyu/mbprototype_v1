@@ -1575,8 +1575,22 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 }
 
 .budget-row { margin-bottom: 8px; padding: 12px 14px; }
-.budget-row-name { font-size: 14px; font-weight: 700; }
-.budget-row-amt  { font-size: 15px; font-weight: 850; }
+/* Unbolded on purpose. These are the label and the readout on every slider row
+   -- onboarding's income and commute sliders, and the wizard's twelve category
+   rows. At 850 the readout competed with the screen's own heading and made a
+   column of sliders read as a column of headlines. */
+.budget-row-name { font-size: 14px; font-weight: 500; }
+.budget-row-amt  { font-size: 15px; font-weight: 500; }
+
+/* A slider that needs no label -- just its figure, above the track. Used by
+   onboarding's income step, where "Your figure" said nothing the number did not
+   already say. */
+.slider-readout {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
 /* Tappable category header → detail. The name button carries the label; the
    chevron is a second, obvious tap target. Neither overlaps the slider below. */
 .budget-row-head { gap: 8px; }
@@ -1972,7 +1986,10 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 
 /* Scroll list — breed, fur pattern. */
 .buddy-scroll-list {
-  max-height: 208px; overflow-y: auto;
+  /* 150, not 208: this list plus the stage plus the header and footer have to
+     fit one 390px frame, or the page grows a second scrollbar beside the list's
+     own and Continue drops below the fold. The creator is the only caller. */
+  max-height: 150px; overflow-y: auto;
   display: flex; flex-direction: column; gap: 8px;
   padding: 2px; -webkit-overflow-scrolling: touch;
 }
@@ -2005,8 +2022,31 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   margin: 10px 0 0; min-height: 16px; font-weight: 700;
 }
 
-/* Intro "video" — captioned narration synced to live Web Speech. */
-.onb-video { display: flex; flex-direction: column; gap: 12px; }
+/* --- Onboarding headers ---
+   ONE size for all ten, so "consistent throughout" is enforced by the
+   stylesheet rather than by ten inline literals agreeing with each other.
+   18px rather than 21px: at the old size the longest header wrapped to three
+   rows in a 354px column. Size alone was not enough -- the worst offender was
+   also shortened, because no size saves a 65-character question. */
+.onb-title { font-size: 18px; line-height: 1.25; }
+
+/* --- The character creator has to fit one screen ---
+   Step 7 had TWO scrollbars: the breed list's own, and the page's. The list is
+   meant to scroll; the page is not. The cause was height, not overflow -- a
+   square stage is ~354px tall in a 390px frame, which pushed Continue below the
+   fold on its own. Capping the stage here leaves room for the list and the
+   footer without touching the shared .buddy-stage rules. */
+.onb-buddy-stage { aspect-ratio: auto; height: 168px; min-height: 0; margin-bottom: 10px; }
+
+/* --- The intro film's controls sit at the foot of the screen ---
+   Mirrors the lesson player, which is a full-height flex column with
+   .lp-controls last. Without this the transport lands wherever the caption
+   happens to end, which is the middle of the screen. */
+.onb-video { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+.onb-video-controls-foot { margin-top: auto; }
+
+/* Intro "video" — captioned narration synced to live Web Speech.
+   The flex rule for .onb-video lives with the other onboarding rules above. */
 
 /* The hyperframes stage. .lp-stage is written for the lesson player's
    full-height flex column, where it takes 42% of the screen; inside the
@@ -2218,18 +2258,24 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   gap: 8px;
   margin-bottom: 4px;
 }
-.sim-scenario { padding: 12px 6px; margin: 0; }
+/* A button now, not a card: tapping one moves the sliders to that outcome.
+   Buttons need the reset — .card gives it the surface, these give it back the
+   block layout and the inherited type a <button> throws away. */
+.sim-scenario {
+  padding: 12px 6px; margin: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  width: 100%; text-align: center; font: inherit; cursor: pointer;
+}
+.sim-scenario:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .sim-scenario-tone {
-  margin: 0 0 6px; font-size: 9px; font-weight: 800;
-  letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+  font-size: 9px; font-weight: 800;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
 }
 .sim-scenario-head {
-  margin: 0; font-family: var(--font-display); font-size: 19px;
+  margin-top: 4px; font-family: var(--font-display); font-size: 19px;
   font-weight: 850; line-height: 1.1; color: var(--text);
 }
-.sim-scenario-label {
-  margin: 8px 0 0; font-size: 11px; font-weight: 700; color: var(--text);
-}
+.sim-scenario-sub { font-size: 10px; line-height: 1.35; color: var(--muted); }
 /* Tone is carried by the border only. A red/green fill would read as a verdict
    on which one to choose, and these are descriptions of arithmetic (D26). */
 .sim-scenario-good    { border-color: var(--good-border); }

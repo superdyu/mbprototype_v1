@@ -185,9 +185,16 @@ function lrQuizQuestions(lesson) {
 // "Bias toward simulation over quiz. A sandbox a user can push numbers through
 // beats a multiple-choice question about what a rate means."
 //
-// SANDBOX ONLY — never the user's real figures. lessons.json says so explicitly
-// on the APR calculator, and it holds for all three: a lesson is a safe place
-// to try a number, which it stops being if the number is yours.
+// SANDBOX, with ONE recorded exception. lessons.json says the same: a lesson is
+// a safe place to try a number, which it stops being if the number is yours.
+// That rule is about the BALANCE -- a made-up debt is something to poke at, and
+// your real one is a judgement.
+//
+// The APR is seeded from the tester's own card (lessonSimOpen). A rate is not
+// the same kind of figure: it is the subject of the lesson, it is public
+// information about a product rather than a fact about them, and it stays
+// draggable. Opening on a generic 24% asked them to dial in a number that
+// framing had already worked out.
 
 function lrSimDefaults(lesson) {
   const sim = lesson.simulation || {};
