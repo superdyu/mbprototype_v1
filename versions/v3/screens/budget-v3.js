@@ -11,7 +11,7 @@ function renderBudgetV3() {
   if (state.planStatus !== "complete") return renderBudgetEmpty();
 
   const total  = catTotal(state.plan);
-  const income = state.monthlyIncomeNet;
+  const income = state.monthlyIncome;
   const left   = income - total;
   const builtBy = BUDGET_BUILDER_LABELS[state.planBuiltWith] || state.planBuiltWith;
 

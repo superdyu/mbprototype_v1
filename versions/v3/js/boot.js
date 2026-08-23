@@ -31,6 +31,7 @@ function bootV3() {
   // The persona's answers are a fallback, not the user's — nothing is
   // "answered" until they say so (see state.lifestyleAnswered).
   state.lifestyleAnswered = {};
+  state.lifestyleDetail = {};
   state.buddy = v3Clone(PERSONA.buddy);
 
   // ── Engagement counters (display-only, L16) ────────────────────────────────
@@ -55,7 +56,12 @@ function bootV3() {
   state.plan = {};
   CATEGORIES.forEach(c => { state.plan[c] = catValue(SEED_STATE.budget.monthly, c); });
   state.planTotal = catTotal(state.plan);
-  state.monthlyIncomeNet = SEED_STATE.budget.monthlyIncomeNet;
+  // Seeded only. Onboarding overwrites this with incomeAnnual / 12 — there is
+  // no take-home estimate any more, the app uses the figure the tester gave.
+  // The JSON key is still `monthlyIncomeNet` because the seeded persona's 4390
+  // genuinely was a post-tax figure; the state field is not, hence the rename.
+  // (Unrelated to state.userProfile.monthlyIncome, a v2 form field.)
+  state.monthlyIncome = SEED_STATE.budget.monthlyIncomeNet;
 
   // Self-reported = monthToDateActuals, NOT the sum of journalHistory. Six days
   // of journal detail (~$168 dining) sits inside fabricated month-to-date totals

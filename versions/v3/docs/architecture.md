@@ -433,8 +433,50 @@ pre-selected. Onboarding step 5 marks the two dimensions it asks
 
 Bands are `b1`–`b5` with `min`/`max` on **annual** income:
 `b1` ≤35k · `b2` 35–60k · `b3` 60–90k · `b4` 90–140k · `b5` 140k+.
-Onboarding collects a *band*, never a precise figure (01-onboarding step 4), so
-map the chosen range straight to its id. The persona's $68,000 → `b3`.
+The persona's $68,000 → `b3`.
+
+**The band is still the peer model's only lookup key**, and `ONB_INCOME_BANDS`
+now mirrors `PEER_BENCHMARKS.incomeBands`' `min`/`max` so the two cannot drift.
+The five bands are fixed by that file, which is spec data — a sixth band is not
+available, which is why the fix for "over $140,000 is everything upwards" is a
+**slider inside the band**, not more bands.
+
+Onboarding collects the band, then refines the *figure* within it
+(`onbSetIncomeBand` → `onbSetIncomeExact`, `screens/onboarding.js`). `b5`'s
+track stops at **$400,000** and reads as open at the top; its data max is
+`999999999`, which no slider can express usefully.
+
+`ONB_INCOME_STEP` is **500, not 1000** — `b2` seeds at $47,500, and on a 1,000
+grid that figure is not a valid stop, so the browser would snap the thumb the
+moment you touched it. Every band's `min` and `annual` divides by 500. Adding a
+band means re-checking that.
+
+### `monthlyIncome`: what the tester said, not a take-home estimate
+
+`state.monthlyIncome` (renamed from `monthlyIncomeNet`) is
+`profile.incomeAnnual / 12`, written by `onbFinish()`. **There is no post-tax
+factor** — the app uses the figure given, and the name no longer claims
+otherwise.
+
+Before this it was written once at boot from `SEED_STATE.budget.monthlyIncomeNet`
+and never again, so every income band produced the same $4,390 budget. The JSON
+key keeps its old name because the seeded persona's 4,390 genuinely *was* a
+post-tax figure; only the state field changed. Not to be confused with
+`state.userProfile.monthlyIncome`, an unrelated v2 form field.
+
+### Stated figures beat peer guesses
+
+`state.lifestyleDetail` holds amounts the tester typed — `carMonthly`, `carAge`,
+`transitWeekly`, `walkMonthly`, and the derived `transportMonthly`. The peer
+model never reads them; the **wizard** does, through `lwApplyStated()`
+(`screens/lifestyle-wizard.js`), which overwrites `preview.Transport` after the
+answers are folded in.
+
+Order matters. Running it *before* the fold-in would let
+`lwApplyDimension('commute', …)` multiply a figure that already accounts for
+their commute. Running it after leaves `applied.commute` untouched, so a later
+commute change still scales from **their** number rather than snapping back to
+the peer one.
 
 ### Iterate `CATEGORIES`, never `Object.keys(data)`
 

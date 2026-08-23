@@ -171,7 +171,29 @@ function lwStart() {
   // Fold in whatever carried over, so the first question's figures start from
   // the same place the rest of the flow will.
   Object.keys(answers).forEach(dim => lwApplyDimension(dim, answers[dim]));
+  lwApplyStated();
   go("lifestyleWizard");
+}
+
+/**
+ * Overwrite peer guesses with figures the tester actually stated.
+ *
+ * Onboarding's commute follow-up asks what running a car, or a week of fares,
+ * actually costs them. A stated figure beats a peer average, so it replaces
+ * Transport rather than modifying it.
+ *
+ * Runs AFTER the answers are folded in, on purpose: applying it before would
+ * let lwApplyDimension('commute', …) multiply a figure that already accounts
+ * for their commute. Running it after leaves `applied.commute` untouched, so if
+ * they change the commute answer later in the wizard the ratio still scales
+ * from their own number instead of snapping back to the peer one.
+ */
+function lwApplyStated() {
+  const w = state.lifestyleWizard;
+  const stated = state.lifestyleDetail || {};
+  if (stated.transportMonthly != null) {
+    w.preview.Transport = Math.round(Number(stated.transportMonthly) / 5) * 5;
+  }
 }
 
 // Pick an option. Does NOT advance — the tester confirms with Continue, so a
@@ -206,6 +228,7 @@ function lwBuildPreview() {
     w.preview = lwNeutralPreview();
     w.applied = {};
     Object.keys(w.answers).forEach(dim => lwApplyDimension(dim, w.answers[dim]));
+    lwApplyStated();
   }
   return w.preview;
 }
@@ -311,7 +334,7 @@ function renderLifestyleWizardReview() {
   const w = state.lifestyleWizard;
   if (!w || !w.preview) { lwBuildPreview(); }
   const total = catTotal(w.preview);
-  const income = state.monthlyIncomeNet;
+  const income = state.monthlyIncome;
   const left = income - total;
 
   return `

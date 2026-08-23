@@ -53,6 +53,17 @@ All verified against the raw JSON on 2026-08-07.
   nothing and plays the fallback variant every time.
 - **The self-reported layer is `monthToDateActuals`** ($429 dining), *not* the
   sum of `journalHistory` (~$168). Getting it backwards breaks every observation.
+- **`state.monthlyIncome` is not a take-home figure**, despite the seed JSON key
+  still reading `monthlyIncomeNet`. It is `profile.incomeAnnual / 12` — what the
+  tester said, no tax factor. Separate from `state.userProfile.monthlyIncome`,
+  an unrelated v2 form field.
+- **Onboarding's option lists must test `lifestyleAnswered`, not the value.**
+  `state.onboarding.lifestyle` is seeded from the persona so the four dimensions
+  onboarding never asks still reach `state.lifestyle`. Comparing that seeded
+  value against an option renders it pre-picked — which is what put "Car" under
+  the tester's thumb before they touched anything. `paysRent` only looked fine
+  because its persona value is the boolean `true` and the option values are
+  strings, so it never matched. Use `onbLifestylePicked()`.
 
 Self-test for the benchmark model (`benchSelfTest`): Dining out, b3, household
 2, ZIP 90066, foodie moderate + cooks sometimes. Base **275** and lifestyle

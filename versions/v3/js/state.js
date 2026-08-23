@@ -188,6 +188,12 @@ const state = {
   // Onboarding step 5 sets the two it asks (ONB_LIFESTYLE_DIMS).
   lifestyleAnswered: {},
 
+  // Figures the onboarding follow-up sliders collect: carMonthly, carAge,
+  // transitWeekly, walkMonthly, and the derived transportMonthly. A stated
+  // amount, not an answer key — the peer model never reads these, but the
+  // budget prefers transportMonthly over its own guess when it is present.
+  lifestyleDetail: {},
+
   // Admin panel collapse — persists across screens
   adminCollapsed: false,
 

@@ -58,16 +58,30 @@ function onbLifestyleQuestions() {
   return LW_QUESTIONS.filter(q => ONB_LIFESTYLE_DIMS.indexOf(q.dim) !== -1);
 }
 
-// Five bands, presented as ranges, never a precise figure (01-onboarding).
-// The stored value is a representative annual figure so benchIncomeBand() maps
-// it back to the same band without a second code path.
+// Five bands, presented as ranges (01-onboarding). `annual` is the seed the
+// slider opens on, and it is a representative figure inside the band so
+// benchIncomeBand() maps it back to the same band without a second code path.
+//
+// min/max mirror PEER_BENCHMARKS.incomeBands, which is the peer model's actual
+// lookup key and is a verbatim spec copy we never edit. The bands themselves
+// therefore cannot change — the slider refines the FIGURE inside a band, it
+// does not add bands.
+//
+// b5's data max is 999999999. A slider cannot express that without making the
+// usable part of the track a couple of pixels wide, so it stops at 400k and the
+// top of the track reads as open.
 const ONB_INCOME_BANDS = [
-  { id: "b1", label: "Under $35,000",      annual: 25000 },
-  { id: "b2", label: "$35,000 – $60,000",  annual: 47500 },
-  { id: "b3", label: "$60,000 – $90,000",  annual: 75000 },
-  { id: "b4", label: "$90,000 – $140,000", annual: 115000 },
-  { id: "b5", label: "Over $140,000",      annual: 175000 }
+  { id: "b1", label: "Under $35,000",      annual: 25000,  min: 0,      max: 35000 },
+  { id: "b2", label: "$35,000 – $60,000",  annual: 47500,  min: 35000,  max: 60000 },
+  { id: "b3", label: "$60,000 – $90,000",  annual: 75000,  min: 60000,  max: 90000 },
+  { id: "b4", label: "$90,000 – $140,000", annual: 115000, min: 90000,  max: 140000 },
+  { id: "b5", label: "Over $140,000",      annual: 175000, min: 140000, max: 400000, openTop: true }
 ];
+// 500, not 1000: b2 seeds at 47,500. On a 1,000 grid that figure is not a valid
+// stop, so the browser would snap the thumb the moment you touched it and the
+// number shown before the drag would not be reachable after it. Every band's
+// min and seed divides by 500.
+const ONB_INCOME_STEP = 500;
 
 // "If you could improve one thing about your money…" — multi-select, max 3,
 // presets only. Folds into the single state.strategicGoal the app expects.
@@ -96,7 +110,12 @@ function onbStart() {
     zip: "",
     householdSize: null,
     incomeBand: null,
+    incomeExact: null,     // slider refinement inside the picked band
     lifestyle: Object.assign({}, PERSONA.lifestyle),   // persona is the fallback
+    // Figures the commute follow-up sliders collect (running cost, fare, car
+    // age). Separate from `lifestyle` because these are amounts, not answer
+    // keys — nothing in the peer model reads them.
+    lifestyleDetail: {},
     // Which lifestyle dims the tester actually picked here. The persona fills
     // state.lifestyle regardless, so this is the only way the budget wizard can
     // tell "you already told me this" from "a stranger's default".
@@ -205,6 +224,78 @@ function onbLiveInput(field, value, commit) {
   if (field === "zip") uiPatchHTML("onbColChart", onbColChart(value));
 }
 
+// ── Income: a band, then a slider inside it ──────────────────────────────────
+// "Over $140,000" covered a software director and a surgeon with one figure.
+// The five bands stay — they are PEER_BENCHMARKS.incomeBands, the peer model's
+// lookup key, and that file is a verbatim spec copy. The slider refines the
+// figure WITHIN the picked band, so the band lookup is untouched and the
+// budget's monthly figure stops being the same number for everyone above 140k.
+
+function onbIncomeBand(id) {
+  return ONB_INCOME_BANDS.find(b => b.id === id) || null;
+}
+
+/** The figure in play: their slider position, else the band's seed. */
+function onbIncomeValue(o) {
+  const band = onbIncomeBand(o.incomeBand);
+  if (!band) return null;
+  return o.incomeExact != null ? o.incomeExact : band.annual;
+}
+
+function onbSetIncomeBand(id) {
+  const o = state.onboarding;
+  const band = onbIncomeBand(id);
+  o.incomeBand = id;
+  // Re-seed on every band change. Carrying the old figure over would leave the
+  // slider outside its own track, which the browser silently clamps — so the
+  // number shown and the number stored would disagree.
+  o.incomeExact = band ? band.annual : null;
+  render();
+}
+
+function onbSetIncomeExact(value) {
+  const o = state.onboarding;
+  const band = onbIncomeBand(o.incomeBand);
+  if (!band) return;
+  const n = Math.round((Number(value) || 0) / ONB_INCOME_STEP) * ONB_INCOME_STEP;
+  o.incomeExact = Math.max(band.min, Math.min(band.max, n));
+  // Patch the label only. A render() here would replace the <input> the pointer
+  // is captured on and the thumb would stop tracking mid-drag.
+  uiPatchHTML("onbIncomeLabel", onbIncomeLabelText(o));
+}
+
+function onbIncomeLabelText(o) {
+  const band = onbIncomeBand(o.incomeBand);
+  const v = onbIncomeValue(o);
+  if (!band || v == null) return "";
+  const atTop = band.openTop && v >= band.max;
+  return `${h(budgetFmt(v))}${atTop ? "+" : ""} a year
+          · about ${h(budgetFmt(v / 12))} a month`;
+}
+
+function onbIncomeSlider(o) {
+  const band = onbIncomeBand(o.incomeBand);
+  if (!band) return "";
+  const v = onbIncomeValue(o);
+  return `
+    <div class="card" style="margin-top:14px;">
+      <div class="row" style="align-items:baseline;margin-bottom:6px;">
+        <span class="budget-row-name">Your figure</span>
+        <span class="budget-row-amt" id="onbIncomeLabel">${onbIncomeLabelText(o)}</span>
+      </div>
+      <input class="journal-slider" type="range"
+             min="${band.min}" max="${band.max}" step="${ONB_INCOME_STEP}"
+             value="${v}"
+             oninput="onbSetIncomeExact(this.value)"
+             aria-label="Annual income">
+      <p class="helper" style="margin:8px 0 0;font-size:11px;">
+        ${band.openTop
+          ? "Drag to your figure — the top of the track covers anything above it."
+          : "Drag to your figure. This is what the budget works from."}
+      </p>
+    </div>`;
+}
+
 // Step 5 picks. Records the dim as USER-answered as well as writing the value,
 // so the budget wizard can pre-select exactly the questions already answered
 // here and leave the other four blank.
@@ -214,6 +305,142 @@ function onbSetLifestyle(dim, value) {
   if (!o.lifestyleAnswered) o.lifestyleAnswered = {};
   o.lifestyleAnswered[dim] = true;
   render();
+}
+
+/**
+ * Is this option selected — because the TESTER picked it, not because the
+ * persona seeded it?
+ *
+ * o.lifestyle is seeded Object.assign({}, PERSONA.lifestyle) so the four
+ * dimensions onboarding never asks still reach state.lifestyle. That seeding
+ * also pre-selected "Car", because persona.json's commute is the string "car"
+ * and it matches an option value exactly. paysRent never showed the same bug
+ * only because its persona value is the boolean `true` while the option values
+ * are strings — it never matched anything, so it looked fine by accident.
+ *
+ * lifestyleAnswered already tracks exactly this distinction for the budget
+ * wizard; the display just wasn't reading it.
+ */
+function onbLifestylePicked(o, dim, value) {
+  const answered = o.lifestyleAnswered || {};
+  return !!answered[dim] && o.lifestyle[dim] === value;
+}
+
+// ── The commute follow-up ────────────────────────────────────────────────────
+// A transport answer on its own is a category, not a cost. Each option opens
+// the slider that suits it — a car's running cost, a fare per week, or the odd
+// ride — so the figure the budget uses is theirs rather than a peer average.
+//
+// These describe what the number MEANS. They never suggest a different choice
+// (D26): "about what a mainstream sedan runs", never "a cheaper car would".
+
+const ONB_CAR_CLASSES = [
+  { upTo: 275,      label: "an older economy car, bought used" },
+  { upTo: 425,      label: "an economy car" },
+  { upTo: 600,      label: "a mainstream sedan or small SUV" },
+  { upTo: 850,      label: "a large or premium car" },
+  { upTo: Infinity, label: "a luxury car, or a big payment on any car" }
+];
+
+const ONB_COMMUTE_DETAIL = {
+  car:     { key: "carMonthly",    min: 150, max: 1200, step: 25, def: 400 },
+  transit: { key: "transitWeekly", min: 0,   max: 120,  step: 5,  def: 30  },
+  none:    { key: "walkMonthly",   min: 0,   max: 150,  step: 5,  def: 40  }
+};
+const ONB_CAR_AGE = { key: "carAge", min: 0, max: 20, step: 1, def: 6 };
+
+function onbCarClass(monthly) {
+  const hit = ONB_CAR_CLASSES.find(c => monthly <= c.upTo);
+  return hit ? hit.label : ONB_CAR_CLASSES[ONB_CAR_CLASSES.length - 1].label;
+}
+
+/** Stored figure for one detail slider, falling back to its default. */
+function onbDetail(o, spec) {
+  const d = o.lifestyleDetail || {};
+  return d[spec.key] != null ? Number(d[spec.key]) : spec.def;
+}
+
+function onbSetDetail(key, value, kind) {
+  const o = state.onboarding;
+  if (!o.lifestyleDetail) o.lifestyleDetail = {};
+  o.lifestyleDetail[key] = Number(value) || 0;
+  // Label-only patch — a render() would destroy the slider mid-drag.
+  uiPatchHTML("onbDetailLabel", onbDetailLabelText(o, kind));
+  if (kind === "car") uiPatchHTML("onbCarAgeLabel", onbCarAgeLabelText(o));
+}
+
+function onbDetailLabelText(o, kind) {
+  const spec = ONB_COMMUTE_DETAIL[kind];
+  if (!spec) return "";
+  const v = onbDetail(o, spec);
+  if (kind === "transit") {
+    const monthly = Math.round((v * 52) / 12);
+    return `${h(budgetFmt(v))} a week · about ${h(budgetFmt(monthly))} a month`;
+  }
+  return `${h(budgetFmt(v))} a month`;
+}
+
+function onbCarAgeLabelText(o) {
+  const yrs = onbDetail(o, ONB_CAR_AGE);
+  return yrs === 0 ? "Brand new" : `${yrs} year${yrs === 1 ? "" : "s"} old`;
+}
+
+/** Monthly transport figure implied by the commute answers, or null. */
+function onbTransportMonthly(o) {
+  if (!o || !(o.lifestyleAnswered || {}).commute) return null;
+  const kind = o.lifestyle.commute;
+  const spec = ONB_COMMUTE_DETAIL[kind];
+  if (!spec) return null;
+  const v = onbDetail(o, spec);
+  return kind === "transit" ? Math.round((v * 52) / 12) : v;
+}
+
+function onbCommuteDetail(o, q) {
+  if (q.dim !== "commute") return "";
+  if (!(o.lifestyleAnswered || {}).commute) return "";
+  const kind = o.lifestyle.commute;
+  const spec = ONB_COMMUTE_DETAIL[kind];
+  if (!spec) return "";
+  const v = onbDetail(o, spec);
+
+  const caption =
+    kind === "car"     ? `At that level you're describing ${h(onbCarClass(v))} — fuel, insurance and repairs included.`
+  : kind === "transit" ? "Fares and passes, before anything you'd pay for the odd ride."
+  :                      "The occasional fare or ride, rather than something you pay every month.";
+
+  const heading =
+    kind === "car"     ? "What does running it cost you?"
+  : kind === "transit" ? "What do fares run you?"
+  :                      "What does getting around cost you?";
+
+  return `
+    <div class="card" style="margin-top:14px;">
+      <div class="row" style="align-items:baseline;margin-bottom:6px;">
+        <span class="budget-row-name">${h(heading)}</span>
+        <span class="budget-row-amt" id="onbDetailLabel">${onbDetailLabelText(o, kind)}</span>
+      </div>
+      <input class="journal-slider" type="range"
+             min="${spec.min}" max="${spec.max}" step="${spec.step}" value="${v}"
+             oninput="onbSetDetail('${spec.key}', this.value, '${kind}')"
+             aria-label="${h(heading)}">
+      <p class="helper" style="margin:8px 0 0;font-size:11px;">${caption}</p>
+    </div>
+    ${kind === "car" ? `
+      <div class="card" style="margin-top:10px;">
+        <div class="row" style="align-items:baseline;margin-bottom:6px;">
+          <span class="budget-row-name">How old is it?</span>
+          <span class="budget-row-amt" id="onbCarAgeLabel">${onbCarAgeLabelText(o)}</span>
+        </div>
+        <input class="journal-slider" type="range"
+               min="${ONB_CAR_AGE.min}" max="${ONB_CAR_AGE.max}" step="${ONB_CAR_AGE.step}"
+               value="${onbDetail(o, ONB_CAR_AGE)}"
+               oninput="onbSetDetail('${ONB_CAR_AGE.key}', this.value, 'car')"
+               aria-label="Age of your car">
+        <p class="helper" style="margin:8px 0 0;font-size:11px;">
+          Newer cars tend to carry more payment and less repair; older ones the
+          other way round.
+        </p>
+      </div>` : ""}`;
 }
 
 // "A" · "A and B" · "A, B and C" — a readable phrase for strategicGoal.label.
@@ -234,13 +461,24 @@ function onbFinish() {
   state.profile.name = o.name || "Buddy";
   if (o.zip) state.profile.zip = o.zip;
   if (o.householdSize) state.profile.householdSize = o.householdSize;
-  if (o.incomeBand) {
-    const band = ONB_INCOME_BANDS.find(b => b.id === o.incomeBand);
-    if (band) state.profile.incomeAnnual = band.annual;
+  // The slider's figure if they moved it, else the band's seed. This also
+  // drives the budget's monthly figure — which until now was frozen at the
+  // seeded persona's $4,390 no matter which band you picked, so "Under $35,000"
+  // and "Over $140,000" produced an identical budget.
+  const income = onbIncomeValue(o);
+  if (income != null) {
+    state.profile.incomeAnnual = income;
+    state.monthlyIncome = Math.round(income / 12);
   }
 
   state.lifestyle = Object.assign({}, o.lifestyle);
   state.lifestyleAnswered = Object.assign({}, o.lifestyleAnswered || {});
+  state.lifestyleDetail = Object.assign({}, o.lifestyleDetail || {});
+  // The commute sliders are a stated figure, so they beat the peer model's
+  // guess for Transport. Only when the tester actually answered the question —
+  // otherwise the peer value stands.
+  const transport = onbTransportMonthly(o);
+  if (transport != null) state.lifestyleDetail.transportMonthly = transport;
   state.buddy = Object.assign({}, o.buddy);
 
   // The multi-select folds into the single strategic goal the app renders as
@@ -486,14 +724,15 @@ function onbStepBody(key, o) {
 
   if (key === "income") return `
     <h1 class="title" style="font-size:21px;margin:0 0 6px;">Roughly what comes in each year?</h1>
-    <p class="helper" style="margin:0 0 14px;">A range is all I need here — just pick the band that fits.</p>
+    <p class="helper" style="margin:0 0 14px;">Pick the band that fits, then nudge it to your figure.</p>
     <div class="journal-options">
       ${ONB_INCOME_BANDS.map(b => `
         <button class="journal-opt ${o.incomeBand === b.id ? "picked" : ""}" type="button"
-                onclick="state.onboarding.incomeBand='${b.id}';render()">
+                onclick="onbSetIncomeBand('${b.id}')">
           <span class="journal-opt-label">${h(b.label)}</span>
         </button>`).join("")}
-    </div>`;
+    </div>
+    ${onbIncomeSlider(o)}`;
 
   // A subset of the standalone budget builder's questions — same dimensions and
   // keys, so an answer means the same thing either way; onboarding just asks the
@@ -508,11 +747,12 @@ function onbStepBody(key, o) {
       ${q.help ? `<p class="helper" style="margin:0 0 14px;">${h(q.help)}</p>` : ""}
       <div class="journal-options">
         ${q.options.map(opt => `
-          <button class="journal-opt ${o.lifestyle[q.dim] === opt.value ? "picked" : ""}" type="button"
+          <button class="journal-opt ${onbLifestylePicked(o, q.dim, opt.value) ? "picked" : ""}" type="button"
                   onclick="onbSetLifestyle('${q.dim}','${opt.value}')">
             <span class="journal-opt-label">${h(opt.label)}</span>
           </button>`).join("")}
-      </div>`;
+      </div>
+      ${onbCommuteDetail(o, q)}`;
   }
 
   if (key === "goal") {
@@ -1008,6 +1248,22 @@ function renderOnboardingAdmin() {
             zip → ${h(o.zip || "—")}<br>
             household → ${h(o.householdSize || "—")}<br>
             income band → ${h(o.incomeBand || "—")}
+            ${onbIncomeValue(o) != null
+              ? ` · ${h(budgetFmt(onbIncomeValue(o)))}/yr
+                  · ${h(budgetFmt(onbIncomeValue(o) / 12))}/mo`
+              : ""}
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Commute detail (stated, beats the peer guess for Transport)</label>
+          <div class="helper" style="line-height:1.7;">
+            ${(o.lifestyleAnswered || {}).commute
+              ? `${h(o.lifestyle.commute)} → ${h(budgetFmt(onbTransportMonthly(o) || 0))} a month
+                 ${o.lifestyle.commute === "car"
+                   ? `<br>${h(onbCarClass(onbDetail(o, ONB_COMMUTE_DETAIL.car)))}
+                      · ${h(onbCarAgeLabelText(o))}`
+                   : ""}`
+              : "not answered — peer value stands"}
           </div>
         </div>
         <p class="helper" style="font-size:10px;">
