@@ -329,7 +329,20 @@ function completeLesson() {
   // distinct lines — PRD intent: bonus should feel like a bonus, not just
   // a merged larger number.
   const xpBase  = lesson.xp;
-  const xpBonus = lesson.dailyTask ? lesson.xp * (state.xpConfig.bonusMultiplier - 1) : 0;
+
+  // The daily-task bonus applies when the lesson was opened from TODAY'S task.
+  // `lesson.dailyTask` is a static flag on the v2 catalog row — v2's
+  // approximation of the same idea, from before tasks carried routes — so it is
+  // permanently true for one lesson and permanently false for the rest. A v3
+  // lesson opened from a daily task that isn't the seeded APR one therefore
+  // earned nothing, because selectLesson prefers the v2 row and never reaches
+  // the shim in lessonOpenPlayer that derives it.
+  //
+  // Ask the task list, and keep the seed flag as an OR so nothing v2 already
+  // does regresses.
+  const fromDailyTask = (typeof lessonIsActiveTask === "function" &&
+                         lessonIsActiveTask(lesson.id)) || !!lesson.dailyTask;
+  const xpBonus = fromDailyTask ? lesson.xp * (state.xpConfig.bonusMultiplier - 1) : 0;
   const xpTotal = xpBase + xpBonus; // total applied per badge
 
   // Apply XP to every badge this lesson contributes to and collect results

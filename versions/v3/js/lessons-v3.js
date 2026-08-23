@@ -21,6 +21,41 @@ function lessonV3(id) {
   return (LESSONS_V3.lessons || []).find(l => l.id === id) || null;
 }
 
+// ─── "Did today's task send me here?" ────────────────────────────────────────
+// Two things hang off the answer: the daily-task XP bonus, and whether the
+// reward screen itemises the task's Charity Points beside the lesson's own.
+//
+// It used to be the literal comparison `state.activeTaskId === "t_lesson_apr"`,
+// written in two files. One hardcoded id, so a second lesson-routed daily task
+// — an emergency-fund task, say — would silently pay no bonus and show no task
+// line on the reward screen, while the home card that sent the tester there
+// still promised bones. Nothing would error; the figures would just be wrong.
+//
+// The data already answers the question. A task carries a `route`, and the
+// route grammar is the one navRouteTask parses: "name" or "name:param", where
+// `lesson:apr` names a lesson. So ask the task list rather than a string.
+//
+// state.dailyTasks is the V3 array. state.tasks is v2's parked one and no v3
+// screen renders it — see the table in js/utils.js appStateSnapshot.
+
+/** The lesson id a task route points at, or null if it points elsewhere. */
+function lessonRouteTarget(route) {
+  const parts = String(route || "").split(":");
+  return parts[0] === "lesson" && parts[1] ? parts[1] : null;
+}
+
+/** The daily task that opens this lesson, if there is one. */
+function lessonDailyTask(lessonId) {
+  if (!lessonId) return null;
+  return (state.dailyTasks || []).find(t => lessonRouteTarget(t.route) === lessonId) || null;
+}
+
+/** True when the task currently in progress is the one that opens this lesson. */
+function lessonIsActiveTask(lessonId) {
+  const task = lessonDailyTask(lessonId);
+  return !!(task && state.activeTaskId === task.id);
+}
+
 function lessonQuestion(lesson, qid) {
   return (lesson.framing || []).find(q => q.id === qid) || null;
 }
@@ -274,7 +309,9 @@ function lessonOpenPlayer(lesson, variantId) {
       description: (lesson.courses || []).join(" · "),
       badges: lessonV3Badges(lesson),
       xp: (LESSONS_V3.badges && LESSONS_V3.badges.xpLessonComplete) || 100,
-      dailyTask: state.activeTaskId === "t_lesson_apr",
+      // Drives the "⚡ Daily Bonus" line on the reward screen. Derived from the
+      // task's route, never a hardcoded id — see lessonIsActiveTask.
+      dailyTask: lessonIsActiveTask(lesson.id),
       status: "in-progress"
     };
   }

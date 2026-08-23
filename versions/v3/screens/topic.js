@@ -1,13 +1,28 @@
 // ─── Topic (Badge Detail) Page ────────────────────────────────────────────────
-// The entry point into a specific badge's course content. Shows the badge's
-// current mastery state (ring + tier/level), then lists all lessons associated
-// with this badge from state.lessons. Lessons are not hardcoded here — they
-// come from state so admin controls and test resets work correctly.
+// TAB: Education (sub-screen) | NAV BAR: Visible
+//
+// One badge, and every lesson that moves it. Reached from the Learn tab's badge
+// board or its search results; leaves into the lesson player via selectLesson.
+//
+// ── A LESSON BELONGS TO SEVERAL BADGES ───────────────────────────────────────
+// This is the structural fact the whole screen is arranged around, and it is
+// lessons.json's own stated design: "A lesson belongs to several courses.
+// Progress is on the lesson, so cross-cutting lessons level faster." The APR
+// lesson sits under three badges and finishing it moves all three.
+//
+// Two consequences visible here:
+//   · the same lesson appears on more than one topic page — not duplication
+//   · each row discloses the OTHER badges it moves, so a tester can see why
+//     one lesson advanced three rings
+//
+// ── NOTHING IS HARDCODED ─────────────────────────────────────────────────────
+// The list is filtered out of state.lessons at render time, so the admin panel's
+// status overrides and a test reset both take effect immediately. A literal list
+// here would drift from the catalog the moment either was used.
 
 function renderTopic() {
   const badge   = currentBadge();
-  // Filter lessons that list this badge as a contributor.
-  // A lesson can appear on multiple topic pages (cross-badge design).
+  // Every lesson naming this badge as one of its contributors — see the header.
   const lessons = state.lessons.filter(l => l.badges.includes(badge.name));
 
   return `
@@ -66,7 +81,14 @@ function renderTopic() {
       `}
     </div>
 
-    <!-- Practice section — freely accessible in prototype, not gated on lesson completion -->
+    <!-- ── Practice ──
+         Deliberately NOT gated on finishing the lessons above. Nothing in the
+         prototype locks content behind progress (L16/D31), and a quiz you have
+         to earn would imply a progression system that does not exist.
+
+         This button goes to the V2 quiz (screen "quiz"). The v3 lessons reach
+         their own quiz — screen "lessonQuiz" — at the end of the player
+         instead, so the two never collide. See the trap note in CLAUDE.md. -->
     <div class="card">
       <div class="section-title">Practice</div>
       <div class="flow-footer" style="margin-top:8px;">

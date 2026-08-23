@@ -554,7 +554,10 @@ function lessonRewardStart() {
   const lesson = lessonV3(state.lessonSim ? state.lessonSim.lessonId : null);
   if (!lesson) { navGoHome(); return; }
   const correct = state.lessonQuiz ? state.lessonQuiz.correct : 0;
-  const fromTask = state.activeTaskId === "t_lesson_apr";
+  // Gates both the XP bonus and the task's own Charity Points line. Asked of
+  // the task list rather than a hardcoded id, so a second lesson-routed daily
+  // task works without a code change (js/lessons-v3.js lessonIsActiveTask).
+  const fromTask = lessonIsActiveTask(lesson.id);
 
   // v3 progression still accrues — course XP and Charity Points are v3's own
   // ledgers and nothing else writes them.

@@ -1,9 +1,36 @@
 // ─── Learn Tab ────────────────────────────────────────────────────────────────
-// The Education tab. Primary surface is the badge board — a collection of
-// finance topic mastery objects. Search and suggested lessons provide quick
-// entry. Daily tasks remain the primary guided flow.
+// TAB: Education | NAV BAR: Visible
+//
+// The Education tab. Three bands, top to bottom:
+//
+//   1. SEARCH        — filters badges and lessons, and takes over the screen
+//                      while it has a query
+//   2. SUGGESTED     — at most two rows: a badge with a bonus lesson available,
+//                      and the last badge the tester actually opened
+//   3. BADGE BOARD   — every topic, always unlocked (L16/D31: nothing gates)
+//
+// ── WHERE THE CONTENT COMES FROM ─────────────────────────────────────────────
+// This screen renders the V2 catalog — `state.badges` and `state.lessons` — not
+// LESSONS_V3. The two coexist deliberately (L9/L14): v3's three authored
+// lessons live in LESSONS_V3 and are reachable through the same rows, because
+// selectLesson looks up state.lessons and lessonOpenPlayer swaps in the v3
+// script. So a tester sees one catalog and never learns there are two.
+//
+// ── THIS TAB IS NOT THE GUIDED PATH ──────────────────────────────────────────
+// Daily tasks are. A task is a contextual bookmark that opens the same lesson
+// from Home (architecture §9), and it carries the Charity Points and the XP
+// bonus. This tab is for browsing on purpose rather than being pointed.
 
-// Debounce timer for search — prevents render thrashing on fast typing
+// ── Search ───────────────────────────────────────────────────────────────────
+// Search is the one place on this screen that does NOT go through render().
+//
+// The app's whole model is "mutate state, call render(), replace the screen's
+// innerHTML". That is fatal for a text input: the element being typed into is
+// destroyed mid-keystroke and focus and cursor position go with it. So search
+// writes state and then patches ONE element (#searchResults) by hand.
+//
+// The debounce is a second, smaller concern — it stops a fast typist rebuilding
+// the result list on every character.
 let _searchDebounce = null;
 function onSearchInput(val) {
   state.searchQuery = val;
@@ -11,8 +38,13 @@ function onSearchInput(val) {
   _searchDebounce = setTimeout(renderSearch, 200);
 }
 
-// Updates only the #searchResults element — does NOT call render() so the
-// input keeps focus and cursor position. Called via onSearchInput (debounced).
+/**
+ * Repaint the results list in place.
+ *
+ * Two elements move: #searchResults gets the matches, and #learnMain is hidden
+ * while a query is active so results own the screen rather than being pushed
+ * below a full badge board. Both are found by id — nothing here re-renders.
+ */
 function renderSearch() {
   const q    = state.searchQuery.toLowerCase().trim();
   const el   = document.getElementById("searchResults");
@@ -82,15 +114,23 @@ function renderSearch() {
 }
 
 function renderLearn() {
-  // Suggested: first badge that has a bonus lesson
+  // ── The two suggested rows ──
+  // "Suggested" is the first badge with a bonus lesson going — a reason to open
+  // that topic now rather than any other.
   const suggestedBadge = state.badges.find(b => badgeHasBonus(b.name));
 
-  // Previous: first in recentlyActive that is NOT the suggested badge (avoid duplicate)
+  // "Previous" is the most recent badge the tester opened, SKIPPING whatever is
+  // already in the suggested slot. Without that filter the same badge appears
+  // twice, which reads as a bug rather than as two different recommendations.
   const previousBadge = (state.recentlyActive || [])
     .map(name => state.badges.find(b => b.name === name))
     .filter(b => b && (!suggestedBadge || b.name !== suggestedBadge.name))
     .find(Boolean);
 
+  // Both rows can be absent — a fresh tester has opened nothing and may have no
+  // bonus available. The whole Suggested card is then omitted rather than
+  // rendering an empty heading (D19: no screen renders empty, and an empty
+  // section is the same failure in miniature).
   const hasSearch = !!state.searchQuery;
 
   return `
@@ -150,6 +190,11 @@ function renderLearn() {
       </div>
       ` : ""}
 
+      <!-- ── Badge board ──
+           Every topic, always open. "All topics unlocked" is a statement of
+           design rather than a status: nothing in the prototype gates content
+           behind progress, and badges are vanity (L16). A locked-looking grid
+           would imply a progression system that does not exist. -->
       <div class="row" style="margin-bottom:12px;">
         <div class="section-title" style="margin:0;">Badge Board</div>
         <div class="helper">All topics unlocked</div>
@@ -175,8 +220,13 @@ function renderLearn() {
 }
 
 // ─── Learn Admin Panel ────────────────────────────────────────────────────────
-// Exposes XP tuning levers, lesson state overrides, and badge progress controls
-// so prototype behavior can be adjusted without touching code during testing.
+// XP tuning levers, lesson status overrides and badge progress, so a test
+// session can be steered without a code edit or a reload.
+//
+// This is the surface state.xpConfig exists for (L9): lessons.json fixes the
+// five-tier progression and the XP values, and xpConfig keeps the multipliers
+// hot-editable. Change bonusMultiplier here and the next lesson completion uses
+// it — see completeLesson in js/navigation.js.
 
 function renderLearnAdmin() {
   return `

@@ -8,6 +8,30 @@
 // So there is no wrong answer here and nothing is scored. The tree decides
 // which pre-written script plays; an "I don't know" path lands on the fallback,
 // which exists for exactly that.
+//
+// -- THIS IS WHERE PERSONALIZATION ACTUALLY HAPPENS ---------------------------
+// The lesson player looks personalized. It is not: the narration is written
+// general on purpose, and the specific figures live in the storyboard's tokens.
+// What varies is WHICH of the pre-written variants plays, and that is decided
+// here, from these answers. Three moving parts:
+//
+//   1. ANSWERS become inputs -- issuer, then card, or a rate typed in, or
+//      nothing at all.
+//   2. lessonInferFigure turns those into ONE number (js/lessons-v3.js). For
+//      APR that is a CARD_APR lookup; the market average when nothing was
+//      given.
+//   3. lessonBucketFor compares that number to the market average and picks a
+//      bucket -- deeply_below through deeply_above -- and the bucket names the
+//      script variant AND the storyboard's bucket beat.
+//
+// Two traps worth knowing before editing this file, both in architecture 12b:
+//   * options key on `tag`, SINGULAR. A `.tags` lookup collects nothing and
+//     silently plays the fallback every time.
+//   * unmatched tags falling through to the fallback is the DESIGN. Do not add
+//     variants to "cover" them.
+//
+// The result is cached per lesson for the session (state.lessonProfile), so
+// re-opening the same lesson replays the same variant rather than re-asking.
 
 function renderLessonFraming() {
   const f = state.lessonFraming;

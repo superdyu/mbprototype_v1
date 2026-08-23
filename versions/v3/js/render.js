@@ -8,8 +8,34 @@
 //   adminSubtitle() — maps state.screen → admin header subtitle
 //
 // render() rebuilds both the screen and the admin panel on every call.
-// This is intentional — the app is small enough that full re-renders are
+// This is intentional -- the app is small enough that full re-renders are
 // cheaper than fine-grained diffing and simpler to reason about.
+//
+// -- WHAT "FULL RE-RENDER" COSTS, AND THE THREE ESCAPES -----------------------
+// Replacing screenRoot.innerHTML destroys every element inside it. Three kinds
+// of element mind that, and each has an established way out:
+//
+//   TEXT INPUTS   -- lose focus and cursor position. Commit on `onchange`
+//                    (blur), not `oninput`. Where a value has to be live, patch
+//                    the one dependent element by id -- uiSetEnabled /
+//                    uiPatchHTML in js/utils.js -- and skip render entirely.
+//   SLIDERS       -- the browser's pointer capture dies with the old node, so
+//                    the thumb stops following the finger mid-drag. Sliders use
+//                    `oninput` + debouncedRender(), which defers the repaint
+//                    until the gesture is over.
+//   TIMED MEDIA   -- the lesson player and the onboarding narrator own timers
+//                    and audio that outlive a repaint. They are stopped before
+//                    the DOM goes and re-armed after (lpMountHook), or exempted
+//                    entirely (the onboarding block at the end of render).
+//
+// Anything that seems to need "just a small update" almost always wants one of
+// those three, not a new partial-render mechanism.
+//
+// -- ADDING A SCREEN NEEDS FIVE EDITS, THREE OF THEM HERE ---------------------
+// renderScreen(), adminSubtitle(), renderAdmin(), plus the jump list below and
+// activeTabFor in js/utils.js. Miss one and the admin panel quietly degrades to
+// its generic fallback rather than erroring -- which is what a cold session
+// misreads as a finished screen. See the checklist in architecture section 11.
 
 function adminSubtitle() {
   if (state.screen === "streak")         return "Streak splash — static launch screen shown first on every refresh.";
@@ -171,6 +197,17 @@ function render() {
   const lpWasPlaying = state.lessonPlayback.playing;
   lpStopPlayback();
 
+  // -- FULL-BLEED MODE CLASSES --
+  // A handful of screens hide the nav bar and run edge to edge. The class does
+  // two things at once: it zeroes BOTH the top-bar and nav offsets in the CSS,
+  // and it opts the screen out of the standard padding.
+  //
+  // journal-mode is toggled several times below rather than once, because the
+  // screens that want it were added in different phases and each block reads as
+  // its own feature. The `|| contains("journal-mode")` on the later calls is
+  // load-bearing: toggle() with an explicit false REMOVES the class, so without
+  // it each block would undo the one before and only the last list would win.
+  // Any new full-bleed screen should join an existing list, not add a call.
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");
   screenRoot.classList.toggle("journal-mode",     ["lessonFraming","lessonQuiz","lessonSimulation","lessonReward"].includes(state.screen) || screenRoot.classList.contains("journal-mode"));
   screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","lifestyleWizard","lifestyleWizardReview","budgetDone","spendEstimator"].includes(state.screen));

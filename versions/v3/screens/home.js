@@ -8,7 +8,23 @@
 //   buddy stage  the puppy with an idle cycle → components/buddy.js
 //   chat button  below the stage
 //   daily tasks  four at a time, each routing somewhere real and paying kibble
-//   bottom nav   → components/nav.js
+//   bottom nav   -> components/nav.js
+//
+// -- THE TASK CARDS ARE THE GUIDED PATH -----------------------------------------
+// Everything else in the app can be browsed. These four cards are what the
+// prototype is actually testing: whether a person opens the thing they were
+// pointed at, and whether doing it visibly pays.
+//
+// A task is a CONTEXTUAL BOOKMARK, not a screen of its own. Its `route` names
+// somewhere that already exists -- "lesson:apr", "budget", "money_journal" --
+// and navRouteTask (js/navigation.js) decides whether that means switching to a
+// tab or launching a flow from Home. Tapping a card must be indistinguishable
+// from reaching the same place any other way.
+//
+// Each card advertises its Charity Points up front, and completing it credits
+// exactly that. The reward screen itemises it beside whatever the activity
+// itself earned, so the promise and the payout can be checked against each
+// other -- see lrPointsRecord in js/lesson-rewards.js.
 
 const TIP_MAX_CHARS = 90;
 
@@ -124,7 +140,7 @@ function renderHomeAdmin() {
                onchange="state.kibble=parseInt(this.value,10)||0;render()">
       </div>
       <div class="input-group">
-        <label>Charity Points — 💎 diamonds (display-only, L16)</label>
+        <label>Charity Points — 💎 diamonds (subscriber tier; 1 per lesson on trial)</label>
         <input type="number" value="${state.charityDiamonds}"
                onchange="state.charityDiamonds=parseInt(this.value,10)||0;render()">
       </div>

@@ -7,10 +7,34 @@
 //
 // Derives ENTIRELY from structured answers. The free-text box contributes
 // nothing and is never shown here (D12).
+//
+// -- WHY THIS SCREEN EXISTS AT ALL --------------------------------------------
+// The journal never asks for a figure. It asks what you did -- "coffee out",
+// "picked something up on the way home" -- and turns each answer into an
+// estimate from the persona profile. Estimates are a guess, so nothing is
+// written until the tester has seen the numbers and had a chance to move them.
+// This is the confirm step that makes that guess honest.
+//
+// -- THREE KINDS OF ROW, AND THE MIDDLE ONE IS THE INTERESTING ONE ------------
+//   SPEND   -- an amount and a slider. The number is editable, and the label
+//              says whether it is still an estimate or has been adjusted.
+//   NO COST -- things that happened but cost nothing THIS entry. Toast from a
+//              loaf you already bought is not a new expense; the money left
+//              when the groceries were paid for (D15, cash flow). Showing them
+//              as $0 rather than hiding them is what makes that rule visible
+//              instead of looking like a missed question.
+//   NOTED   -- signal-only answers with no money attached. They shape later
+//              questions (journalProfile) rather than the ledger.
+//
+// Submitting writes into month-to-date, which is what moves the comparison, the
+// daily update and My Progress (L17) -- so Confirm is the moment the
+// prototype's whole input-to-observation loop closes.
 
 function renderJournalConfirm() {
   const s = state.journalSession;
   if (!s) return `<div class="card"><p class="helper">Nothing to confirm.</p></div>`;
+  // Entries are built once and cached on the session: rebuilding on every
+  // render would throw away the tester's slider adjustments.
   const entries = s.entries || journalBuildEntries();
   const spend = entries.filter(e => e.amount > 0);
   const zero  = entries.filter(e => e.amount === 0);
@@ -43,6 +67,12 @@ function renderJournalConfirm() {
             <p class="helper" style="margin:0 0 10px;">
               ${h(e.category)}${e.estimated && !e.adjusted ? " · estimated" : ""}${e.adjusted ? " · adjusted" : ""}
             </p>
+            <!-- The ceiling is derived from baseAmount, the ORIGINAL estimate,
+                 not from e.amount, which is what the drag changes. A
+                 value-derived max moves under the thumb as you drag it and
+                 makes the handle recoil on release. Same trap as
+                 budgetSliderMax; floored at 20 so a tiny estimate still has a
+                 usable track. -->
             <input class="journal-slider" type="range" min="0"
                    max="${Math.max(Math.ceil((e.baseAmount != null ? e.baseAmount : e.amount) * 2.5), 20)}" step="0.5"
                    value="${e.amount}"
@@ -97,7 +127,19 @@ function renderJournalConfirm() {
 // entries the same day. Like filling out several pages of a physical journal.
 // The second entry asks DIFFERENT questions, because submitting set cooldowns.
 
+// -- THE PAYOFF SCREEN --------------------------------------------------------
+// It shows observations recomputed from what was just submitted, which is the
+// point of the whole loop: you told it something, and the figures moved. The
+// observations are DERIVED at render time, never stored, so they always reflect
+// the entry that just landed rather than a snapshot from before it.
+//
+// Capped at two. Every observation the engine produces is true, but a wall of
+// them reads as nagging rather than as a read on the day.
+
 function renderJournalDone() {
+  // Two families, deduped: how the plan is going, and how the month is going.
+  // A single observation can belong to both, and showing it twice would look
+  // like the engine repeating itself.
   const obs = observationsFor("budget_comparison").concat(observationsFor("progress"))
     .filter((o, i, a) => a.indexOf(o) === i)
     .slice(0, 2);

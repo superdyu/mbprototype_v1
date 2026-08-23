@@ -1,5 +1,19 @@
-// ─── My Debts ─────────────────────────────────────────────────────────────────
-// TAB: Analysis (sub-screen) | NAV BAR: Visible — Analysis tab highlighted
+// --- My Debts ----------------------------------------------------------------
+// TAB: Analysis (sub-screen) | NAV BAR: Visible -- Analysis tab highlighted
+//
+// -- V2 SCREEN, PARKED OFF THE MAIN PATH (L14) --------------------------------
+// v3 never specified this screen, and nothing in the five tabs or the daily
+// tasks routes to it. It stays because the decision was "keep the v2 screens,
+// keep them reachable, do not widen the tester's surface" -- so its only door is
+// the admin jump list.
+//
+// The header below says "Analysis tab", which is v2's nav. v3 has five tabs and
+// Analysis is not one of them (L5/D34). Read that line as v2 history, not as a
+// description of where this sits today.
+//
+// Before building on this: it renders v2 state (state.budget.debts), not any of
+// the v3 data files, and it has no part in the plan / self-reported / peer model
+// that the rest of v3 is arranged around (architecture section 5).
 //
 // PURPOSE
 // All cashflow debt instruments in one place — view, add, edit, and remove
