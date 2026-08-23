@@ -57,6 +57,15 @@ All verified against the raw JSON on 2026-08-07.
   still reading `monthlyIncomeNet`. It is `profile.incomeAnnual / 12` — what the
   tester said, no tax factor. Separate from `state.userProfile.monthlyIncome`,
   an unrelated v2 form field.
+- **There are TWO quiz screens.** `quiz` (`screens/quiz.js`) serves the v2
+  catalog; `lessonQuiz` (`screens/lesson-outcome.js`) serves v3, and every v3
+  lesson including APR goes through that one. Fixing the wrong one changes
+  nothing a tester sees. `render.js` says which is which on its own subtitle
+  lines.
+- **HTML comments inside a template literal are rendered into the DOM.** Naming
+  a function or a class in one puts that identifier in the markup and in any
+  grep over it — which is how a deleted button appeared to still exist. Describe
+  the thing, don't name it.
 - **Onboarding's option lists must test `lifestyleAnswered`, not the value.**
   `state.onboarding.lifestyle` is seeded from the persona so the four dimensions
   onboarding never asks still reach `state.lifestyle`. Comparing that seeded

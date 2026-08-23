@@ -2162,6 +2162,34 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 
 .sim-row { margin-bottom: 8px; padding: 12px 14px; }
 .sim-out { text-align: center; padding: 18px 14px; background: var(--accent-soft); border-color: var(--accent-border); }
+
+/* Three scenario boxes above the sliders. Same .sim-out card language, sized
+   to sit three-across in a 390px frame — hence the tighter padding and the
+   1fr grid rather than flex, so all three keep the same width whatever the
+   figures inside them run to. */
+.sim-scenarios {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.sim-scenario { padding: 12px 6px; margin: 0; }
+.sim-scenario-tone {
+  margin: 0 0 6px; font-size: 9px; font-weight: 800;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+}
+.sim-scenario-head {
+  margin: 0; font-family: var(--font-display); font-size: 19px;
+  font-weight: 850; line-height: 1.1; color: var(--text);
+}
+.sim-scenario-label {
+  margin: 8px 0 0; font-size: 11px; font-weight: 700; color: var(--text);
+}
+/* Tone is carried by the border only. A red/green fill would read as a verdict
+   on which one to choose, and these are descriptions of arithmetic (D26). */
+.sim-scenario-good    { border-color: var(--good-border); }
+.sim-scenario-average { border-color: var(--accent-border); }
+.sim-scenario-bad     { border-color: var(--warn-border); }
 .sim-sub-row { padding: 8px 0; border-bottom: 1px solid var(--line); gap: 10px; }
 .sim-sub-row:last-of-type { border-bottom: 0; }
 .reward-course { margin-bottom: 8px; padding: 12px 14px; }

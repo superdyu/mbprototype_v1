@@ -39,7 +39,14 @@ function renderLessonQuiz() {
   return `
     <div class="journal-shell">
       <div class="journal-head">
-        <p class="helper" style="margin:0 0 4px;">Question ${q.index + 1} of ${q.questions.length}</p>
+        <div class="row" style="align-items:flex-start;gap:10px;">
+          <p class="helper" style="margin:0 0 4px;">Question ${q.index + 1} of ${q.questions.length}</p>
+          <!-- Leaving lives top right, away from where the primary action
+               lands. The skip control used to sit bottom right, which is
+               exactly where Next appears once you answer. -->
+          <button class="button secondary small" type="button"
+                  onclick="lessonQuizExit()" title="Leave the quiz">✕ Exit</button>
+        </div>
         <div class="journal-progress" aria-hidden="true">
           ${q.questions.map((_, i) => `<span class="journal-pip ${i <= q.index ? "on" : ""}"></span>`).join("")}
         </div>
@@ -71,14 +78,18 @@ function renderLessonQuiz() {
           ? `<button class="button" type="button" onclick="lessonQuizNext()">
                ${q.index >= q.questions.length - 1 ? "Try the calculator" : "Next"}
              </button>`
-          : `<button class="button secondary" type="button" onclick="lessonQuizNext()">Skip</button>`}
+          : `<p class="helper" style="margin:0;">Pick the right one to carry on.</p>`}
       </div>
     </div>
   `;
 }
 
-// A wrong pick stays disabled but the question stays open — this is a lesson,
-// not an exam, and there is no score to protect.
+// A wrong pick goes red and stays disabled; the question stays open until the
+// right one is found. There is no skip — a question you can click past teaches
+// nothing, and the button that did it sat where "Next" appears.
+//
+// Not being able to LEAVE is a different problem, and the top-right ✕ solves it:
+// nav is hidden on this screen, so without an exit the tester would be trapped.
 function lessonQuizAnswer(i) {
   const q = state.lessonQuiz;
   const item = q.questions[q.index];
@@ -89,9 +100,19 @@ function lessonQuizAnswer(i) {
 
 function lessonQuizNext() {
   const q = state.lessonQuiz;
+  // Guard, not just an absent button: this is the only advance path, and it
+  // used to be reachable with nothing answered.
+  if (q.picked == null) return;
   if (q.index >= q.questions.length - 1) { lessonSimStart(); return; }
   q.index++; q.picked = null; q.wrong = [];
   render();
+}
+
+/** Leave the quiz. The lesson stays done; only the quiz session is dropped. */
+function lessonQuizExit() {
+  state.lessonQuiz = null;
+  if (typeof navGoTabRoot === "function") { navGoTabRoot("learn"); return; }
+  go("learn");
 }
 
 // ── Simulation ───────────────────────────────────────────────────────────────
@@ -296,6 +317,7 @@ function renderLessonSimulation() {
       </div>
       <div class="journal-body">
         ${renderSimPresets(s, spec)}
+        ${renderSimScenarios(s, spec)}
         ${type === "balance_calculator"      ? renderSimBalance(s)   : ""}
         ${type === "savings_pace_calculator" ? renderSimSavings(s)   : ""}
         ${type === "subscription_tally"      ? renderSimSubs(s)      : ""}
@@ -349,6 +371,120 @@ function simSlider(label, key, value, fmt) {
              value="${value}" oninput="lessonSimSet('${key}', this.value)"
              aria-label="${h(label)}">
     </div>`;
+}
+
+// ── Three scenarios, from ordinary arithmetic ────────────────────────────────
+// A calculator that opens on one set of numbers gives you nothing to judge them
+// against. These three run the SAME engine the sliders drive, so a box can
+// never disagree with the calculator below it.
+//
+// The labels describe the ARITHMETIC, not a choice. "About the minimum payment"
+// is a fact about a ratio; "you should pay more than the minimum" would be
+// advice (D26). Each box names its own ratio and lets the computed outcome
+// speak. Nothing is marked as the one to pick.
+//
+// Ratios are the common ones, not invented: card minimums are typically around
+// 2% of the balance, and emergency-fund targets are usually talked about in
+// months of outgoings.
+const LESSON_SIM_SCENARIOS = {
+  balance_calculator: {
+    _note: "Payment as a share of the balance. Balance and APR held at the current values so only the payment varies — the point is what the payment does.",
+    rows: [
+      { tone: "bad",     label: "About the minimum",   detail: "roughly 2% of the balance each month", share: 0.02 },
+      { tone: "average", label: "A steady chip",       detail: "about a tenth of the balance each month", share: 0.10 },
+      { tone: "good",    label: "Clearing it briskly", detail: "about a quarter of the balance each month", share: 0.25 }
+    ]
+  },
+  savings_pace_calculator: {
+    _note: "Target as a multiple of monthly outgoings, the usual way emergency funds are described. Current savings and contribution held; only the target varies.",
+    rows: [
+      { tone: "bad",     label: "Under a month",   detail: "less than one month of outgoings", months: 0.5 },
+      { tone: "average", label: "One month",       detail: "one month of outgoings set aside", months: 1 },
+      { tone: "good",    label: "Three months",    detail: "three months of outgoings set aside", months: 3 }
+    ]
+  },
+  subscription_tally: {
+    _note: "The three states the rows can be in. No ratio involved — the arithmetic is a sum.",
+    rows: [
+      { tone: "bad",     label: "Everything on",  detail: "every service running", rows: "all" },
+      { tone: "average", label: "Only what's used", detail: "the ones flagged unused switched off", rows: "used" },
+      { tone: "good",    label: "All off",        detail: "nothing running", rows: "none" }
+    ]
+  }
+};
+
+/** Monthly outgoings, for the savings scenarios. Falls back to the peer plan. */
+function lessonSimMonthlyOutgoings() {
+  const total = (typeof catTotal === "function" && state.plan) ? catTotal(state.plan) : 0;
+  return total > 0 ? total : 3000;
+}
+
+/** Run one scenario through the real engine and return its headline + detail. */
+function lessonSimScenarioOutcome(type, row, values) {
+  if (type === "balance_calculator") {
+    const v = Object.assign({}, values, {
+      monthlyPayment: lessonSimClamp("monthlyPayment",
+        Math.max(10, Math.round((Number(values.balance) || 0) * row.share)))
+    });
+    const out = lrSimBalance(v);
+    if (out.monthsToPayoff == null) {
+      return { headline: "Never", sub: "the interest outruns the payment" };
+    }
+    return {
+      headline: out.monthsToPayoff + " mo",
+      sub: budgetFmt(out.totalInterest) + " of interest",
+      figure: budgetFmt(v.monthlyPayment) + " a month"
+    };
+  }
+  if (type === "savings_pace_calculator") {
+    const target = lessonSimClamp("target",
+      Math.round(lessonSimMonthlyOutgoings() * row.months));
+    const out = lrSimSavings(Object.assign({}, values, { target: target }));
+    if (out.monthsToTarget == null) return { headline: "Never", sub: "nothing going in" };
+    if (out.monthsToTarget === 0) return { headline: "Already there", sub: "", figure: budgetFmt(target) };
+    return {
+      headline: out.monthsToTarget + " mo",
+      sub: "to reach it",
+      figure: budgetFmt(target) + " target"
+    };
+  }
+  if (type === "subscription_tally") {
+    const rows = (values.rows || []).map(r => Object.assign({}, r, {
+      on: row.rows === "all" ? true : row.rows === "none" ? false : r.status !== "flagged_unused"
+    }));
+    const out = lrSimSubscriptions(rows);
+    return {
+      headline: budgetFmt(out.monthlyTotal),
+      sub: "a month",
+      figure: budgetFmt(out.annualTotal) + " a year"
+    };
+  }
+  return null;
+}
+
+function renderSimScenarios(s, spec) {
+  const set = LESSON_SIM_SCENARIOS[spec.type];
+  if (!set) return "";
+  return `
+    <div class="section-title" style="margin:0 0 8px;">Three ways it can go</div>
+    <div class="sim-scenarios">
+      ${set.rows.map(row => {
+        const out = lessonSimScenarioOutcome(spec.type, row, s.values);
+        if (!out) return "";
+        return `
+          <div class="card sim-out sim-scenario sim-scenario-${h(row.tone)}">
+            <p class="sim-scenario-tone">${h(row.tone)}</p>
+            <p class="sim-scenario-head">${h(out.headline)}</p>
+            ${out.sub ? `<p class="helper" style="margin:2px 0 0;font-size:10px;">${h(out.sub)}</p>` : ""}
+            <p class="sim-scenario-label">${h(row.label)}</p>
+            <p class="helper" style="margin:2px 0 0;font-size:10px;">${h(row.detail)}</p>
+          </div>`;
+      }).join("")}
+    </div>
+    <p class="helper" style="margin:8px 0 14px;font-size:11px;">
+      Labelled by the arithmetic, not by what anyone ought to do. Drag the
+      sliders below and these move with them.
+    </p>`;
 }
 
 function renderSimBalance(s) {
@@ -422,6 +558,11 @@ function lessonRewardStart() {
 
   // v3 progression still accrues — course XP and Charity Points are v3's own
   // ledgers and nothing else writes them.
+  // Open the Charity Points ledger BEFORE anything credits, so both the
+  // lesson's own bones and the daily task's are itemised on the reward screen
+  // instead of landing silently in state.kibble.
+  lrPointsReset();
+
   const award = lrComputeAward(lesson, correct, fromTask);
   state.lessonReward = {
     lessonId: lesson.id,

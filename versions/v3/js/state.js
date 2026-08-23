@@ -836,6 +836,13 @@ const state = {
   rewardXp: 0,             // total XP across all badges (base + bonus combined)
   rewardLessonTitle: "",   // lesson title shown in reward screen header
 
+  // Charity Points earned by this completion, itemised. Two awards can land —
+  // the lesson's own bones and the daily task's — and before this they both
+  // went silently into state.kibble, so the reward screen showed neither and
+  // the total came to roughly double what the home card had promised.
+  // Opened by lessonRewardStart / completeLesson, written through lrPointsRecord.
+  rewardPoints: null,
+
   // ─── Budget ───────────────────────────────────────────────────────────────
   // Main budget dashboard state. Status drives which experience renders.
   // status values: "empty" | "in-progress" | "complete" | "refresh" | "checkup"
@@ -938,6 +945,7 @@ function resetUserData() {
   state.rewardBadgeGains     = null;
   state.rewardXp             = 0;
   state.rewardLessonTitle    = "";
+  state.rewardPoints         = null;
   state.accountBalances      = [];
   state.commitments          = [];
   state.flowOrigin           = null;

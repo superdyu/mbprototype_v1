@@ -61,9 +61,12 @@ function renderQuiz() {
         <div style="display:flex;align-items:center;gap:10px;">
           <!-- Progress indicator: question N of total required -->
           <span class="helper">Question ${state.activeQuizIndex + 1} of ${questions.length}</span>
-          <!-- Exit path — prevents trapped-in-quiz dead end -->
+          <!-- The one exit, now that the footer's duplicate is gone. Routed
+               through the reset path rather than a bare navigation, so the quiz
+               position and both answer sets clear — the footer button did that
+               and this one silently did not. -->
           <button class="button secondary small" type="button"
-                  onclick="go('topic')" title="Exit quiz">✕ Exit</button>
+                  onclick="exitQuiz()" title="Exit quiz">✕ Exit</button>
         </div>
       </div>
       <p class="subtitle">${h(lesson.title)}</p>
@@ -123,8 +126,10 @@ function renderQuiz() {
     ` : ""}
 
     <div class="flow-footer">
-      <!-- Exit: lesson stays in-progress, quiz position resets -->
-      <button class="button secondary" type="button" onclick="exitQuiz()">Exit</button>
+      <!-- No exit control down here. The footer has no justify-content, so
+           its children pack together on the left — which put it immediately
+           beside Next, one mis-tap apart. The one in the header above is now
+           the single way out, matching the v3 quiz. -->
 
       <!-- Next / Submit only appears after the correct answer is chosen -->
       ${isCorrect ? `

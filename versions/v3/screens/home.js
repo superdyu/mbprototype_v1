@@ -83,6 +83,14 @@ function homeCompleteTask(taskId) {
   if (!task || task.completed) return;
   task.completed = true;
   state.kibble += task.kibble;
+  // Itemise it if a lesson reward is being tallied right now. This is the
+  // figure the home card promised, so the reward screen has to name it as such
+  // — the lesson's own bones land on top and the total would otherwise read as
+  // twice what was advertised. No-op for the journal and budget tasks, which
+  // have no reward screen and no open ledger.
+  if (typeof lrPointsRecord === "function") {
+    lrPointsRecord("bones", task.kibble, "Today's task");
+  }
 }
 
 function homeOpenChat() {

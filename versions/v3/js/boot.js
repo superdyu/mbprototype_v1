@@ -41,6 +41,10 @@ function bootV3() {
   // now). Buddy level is a shown number with no progression rule.
   state.kibble = PERSONA.state.kibbleBalance;
   state.charityDiamonds = PERSONA.state.diamondBalance || 0;
+  // Cleared on every boot. It was write-only until diamonds got an accrual rule
+  // (lrDiamondsForLesson), so nothing noticed it surviving a reset — now a stale
+  // `true` would credit a subscriber reward on a run that never saw the trial.
+  state.trialAccepted = null;
   state.buddyLevel = PERSONA.state.buddyLevel;
 
   // D06/D07 — the only thing SKIP_ONBOARDING changes at boot.

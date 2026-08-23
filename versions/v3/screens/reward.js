@@ -293,9 +293,65 @@ function renderReward() {
       </div>
     </div>
 
+    ${renderRewardPoints()}
+
     <div class="flow-footer" style="margin-top:8px;">
       <button class="button secondary" type="button" onclick="navGoTabRoot('learn')">Back to Learn</button>
       <button class="button full" type="button" onclick="navGoHome()">Return Home</button>
+    </div>
+  `;
+}
+
+// ── Charity Points, under the experience reward ──────────────────────────────
+// This screen showed XP and badge rings and nothing else, while state.kibble
+// quietly went up by two separate awards — the lesson's own, and the bones the
+// home task card had promised. The tester saw neither, and the total was
+// roughly double the figure on the card that sent them here.
+//
+// Both are real, so both are listed, each named for what earned it. A single
+// merged number would read as the home card being wrong.
+//
+// Diamonds are the subscriber tier (L16). Off the trial nothing is credited,
+// but the line still shows — a tier whose value is invisible is not a tier.
+function renderRewardPoints() {
+  const p = state.rewardPoints;
+  if (!p || !p.entries.length) return "";
+
+  const bones = p.entries.filter(e => e.kind === "bones");
+  const diamonds = p.entries.filter(e => e.kind === "diamonds");
+  const onTrial = state.trialAccepted === true;
+
+  return `
+    <div class="card" style="padding:12px 14px;">
+      <p class="section-title" style="margin:0 0 8px;">Charity Points</p>
+
+      ${bones.map(e => `
+        <div class="row" style="padding:3px 0;">
+          <span class="helper">${h(e.label)}</span>
+          <span style="font-weight:850;">🦴 ${e.amount}</span>
+        </div>`).join("")}
+
+      ${bones.length > 1 ? `
+        <div class="row" style="padding:6px 0 2px;border-top:1px solid var(--line);margin-top:4px;">
+          <span style="font-weight:850;">Bones earned</span>
+          <span style="font-weight:850;">🦴 ${p.bones}</span>
+        </div>` : ""}
+
+      ${diamonds.length ? diamonds.map(e => `
+        <div class="row" style="padding:3px 0;border-top:1px solid var(--line);margin-top:4px;">
+          <span class="helper">${h(e.label)} · subscriber</span>
+          <span style="font-weight:850;">💎 ${e.amount}</span>
+        </div>`).join("") : `
+        <div class="row" style="padding:6px 0 2px;border-top:1px solid var(--line);margin-top:4px;">
+          <span class="helper" style="opacity:.7;">Diamonds come with the subscription</span>
+          <span class="helper" style="opacity:.7;">💎 ${LR_DIAMONDS_PER_LESSON} a lesson</span>
+        </div>`}
+
+      <p class="helper" style="margin:8px 0 0;font-size:10px;">
+        ${onTrial
+          ? "Points turn into donations. They don't unlock anything in the app."
+          : "Points turn into donations. Bones come from showing up; diamonds come with the plan."}
+      </p>
     </div>
   `;
 }

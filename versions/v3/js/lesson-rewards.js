@@ -89,10 +89,68 @@ function lrApplyAward(lesson, award) {
   return gains;
 }
 
+// ── The Charity Points ledger ────────────────────────────────────────────────
+// Finishing a lesson credited bones in two places — lrAwardKibble here, and
+// homeCompleteTask for the daily task that sent you — and the screen the tester
+// actually lands on showed neither. state.kibble simply went up, silently, by
+// roughly double what the home card had promised.
+//
+// Both awards stand: one is for finishing the lesson, one is for doing today's
+// task. They are different things. But they have to be VISIBLE and itemised, or
+// the total looks like a discrepancy against the card that promised 25.
+//
+// The ledger is a per-completion record, opened by whichever reward path is
+// running and closed by completeLesson (the one funnel every lesson exits
+// through). homeCompleteTask only writes while a ledger is open, so finishing
+// the journal task does not leave an entry lying around for the next lesson.
+
+function lrPointsReset() {
+  state.rewardPoints = { entries: [], bones: 0, diamonds: 0, open: true };
+  return state.rewardPoints;
+}
+
+function lrPointsOpen() {
+  return !!(state.rewardPoints && state.rewardPoints.open);
+}
+
+/** Record something already credited. Never credits on its own. */
+function lrPointsRecord(kind, amount, label) {
+  const n = Number(amount) || 0;
+  if (!lrPointsOpen() || n <= 0) return;
+  const p = state.rewardPoints;
+  p.entries.push({ kind: kind, amount: n, label: label });
+  if (kind === "diamonds") p.diamonds += n; else p.bones += n;
+}
+
+function lrPointsClose() {
+  if (state.rewardPoints) state.rewardPoints.open = false;
+}
+
+/**
+ * Diamonds are the subscriber tier (L16, buddy-responses: they "lean on your
+ * plan tier"). They had a seeded balance and no accrual rule at all, so the
+ * trial step at the end of onboarding decided nothing.
+ *
+ * One diamond per lesson while the trial is on. Off it, the reward screen still
+ * shows the line — greyed, saying what the subscriber tier would have earned —
+ * because a tier you can't see the value of is not a tier.
+ */
+const LR_DIAMONDS_PER_LESSON = 1;
+
+function lrDiamondsForLesson() {
+  return state.trialAccepted === true ? LR_DIAMONDS_PER_LESSON : 0;
+}
+
 /** Kibble for finishing. Accrues and shows; nothing spends it (L16). */
 function lrAwardKibble(award) {
   const k = Math.max(10, Math.round(award.total / 10));
   state.kibble += k;
+  lrPointsRecord("bones", k, "Finishing the lesson");
+  const d = lrDiamondsForLesson();
+  if (d > 0) {
+    state.charityDiamonds = (state.charityDiamonds || 0) + d;
+    lrPointsRecord("diamonds", d, "Finishing the lesson");
+  }
   return k;
 }
 

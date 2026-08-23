@@ -344,6 +344,17 @@ function completeLesson() {
     };
   }).filter(Boolean);
 
+  // Charity Points. The v3 path (lessonRewardStart) has already opened the
+  // ledger and credited both the lesson and the daily task; a v2 lesson arrives
+  // here with nothing open, so it earns its bones on the same rule rather than
+  // showing an empty section. Closing it means a later task completion cannot
+  // append to a reward that has already been rendered.
+  if (typeof lrPointsOpen === "function" && !lrPointsOpen()) {
+    lrPointsReset();
+    lrAwardKibble({ total: xpTotal });
+  }
+  if (typeof lrPointsClose === "function") lrPointsClose();
+
   // Write reward screen data
   state.rewardBadgeGains   = gains;
   state.rewardXp           = xpTotal * gains.length; // total across all badges
