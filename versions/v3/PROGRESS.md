@@ -1,16 +1,27 @@
 # v3 Build Progress
 
 **Current state:** **v3 IS BUILT — phases 0 → 6 complete**, plus four themes
-(L21) and four rounds of manual-test fixes. Round 4 (five phases: onboarding
-inputs, the intro film, the APR lesson, quiz/scenarios/rewards, the budget
-wizard) is complete. `bash scripts/sweep.sh` → **60 checks, 0 failed,
+(L21) and **five rounds of manual-test fixes**. Round 5 is complete: the
+simulated keyboard no longer swallows Continue, onboarding's type and the
+character creator fit, the intro film's flicker is gone, and the APR calculator
+is sliders-then-three-outcomes. `bash scripts/sweep.sh` → **60 checks, 0 failed,
 0 warnings**; `check-syntax` 79/79; all 43 screens render.
 
-**Never opened in a browser.** Every round has been harness-verified and
-eye-unverified — the ±10s controls, the hyperframes stages, the APR scale, the
-speech-driven clock, the scenario boxes and the bounded sliders all need a
-human to look at them.
-— *updated 2026-08-22*
+**Still never opened in a browser.** Every round has been harness-verified and
+eye-unverified. The two that most need a human:
+
+- **Continue with the keyboard up** (round 5). Whether `click` lands with the
+  press latch in place is a browser question; no harness here can settle it.
+- **The buddy illustration's crop** (L22). The stage is square, the image is
+  1.4:1, so `object-fit: cover` crops the sides.
+
+Behind those: the ±10s controls, the hyperframes stages, the APR scale, the
+speech-driven clock, the scenario boxes and the bounded sliders.
+
+**Known and deliberate:** the six goals added in round 5 have no intro-film
+variant, so they fall through to the default script (the designed fallback).
+Authoring six more is a content job, not a defect.
+— *updated 2026-08-23*
 
 ## ▶ RESUME HERE
 
