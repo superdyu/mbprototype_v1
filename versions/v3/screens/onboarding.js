@@ -918,12 +918,17 @@ function onbBuddyStep(o) {
       </div>`;
   }
 
+  // Wrapped in a flex column so the control below the stage takes the space the
+  // header and stage leave, rather than sitting at a fixed height with a gap
+  // under it. See .onb-buddy-step in css/components.css.
   return `
-    <p class="helper" style="margin:0 0 4px;">Your buddy (${o.buddyIndex + 1}/${ONB_BUDDY_STEPS.length})</p>
-    <h1 class="title onb-title" style="margin:0 0 6px;">${h(copy[0])}</h1>
-    <p class="helper" style="margin:0 0 12px;">${h(copy[1])}</p>
-    ${renderBuddyStage({ square: true, cls: "onb-buddy-stage" })}
-    ${control}`;
+    <div class="onb-buddy-step">
+      <p class="helper" style="margin:0 0 4px;">Your buddy (${o.buddyIndex + 1}/${ONB_BUDDY_STEPS.length})</p>
+      <h1 class="title onb-title" style="margin:0 0 6px;">${h(copy[0])}</h1>
+      <p class="helper" style="margin:0 0 12px;">${h(copy[1])}</p>
+      ${renderBuddyStage({ square: true, cls: "onb-buddy-stage" })}
+      ${control}
+    </div>`;
 }
 
 // Vertical scrollable list — breed, fur pattern.

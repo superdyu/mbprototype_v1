@@ -225,6 +225,19 @@ function render() {
   // field is gone, which is also what lets a Continue press resolve: the press
   // latch defers the close, and this is where the close actually happens.
   if (typeof kbdSyncAfterRender === "function") kbdSyncAfterRender();
+
+  // The intro film's storyboard is CSS animations, and a CSS animation starts
+  // the moment it is inserted. So the stage played itself the instant step 8
+  // rendered — silently, because the narration is on the clock and the clock
+  // was still paused. Sync them to the (paused, zeroed) player state on mount,
+  // the same way lpMountHook re-arms the lesson player above.
+  if (typeof onbVideoSyncFrames === "function") {
+    const onb = state.onboarding;
+    if (state.screen === "onboarding" && onb &&
+        typeof ONB_STEPS !== "undefined" && ONB_STEPS[onb.step] === "video") {
+      onbVideoSyncFrames();
+    }
+  }
   if (state.screen === "chat")   chatMountHook();   // pin the thread to the newest message
 
   // The onboarding narrator is a timed surface like the lesson player, but it

@@ -1457,7 +1457,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   padding: 4px 18px 18px;
 }
 .journal-head { flex-shrink: 0; padding-bottom: 14px; }
-.journal-body { flex: 1; }
+.journal-body { flex: 1; min-height: 0; }
 .journal-foot {
   flex-shrink: 0;
   display: flex;
@@ -1986,10 +1986,10 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 
 /* Scroll list — breed, fur pattern. */
 .buddy-scroll-list {
-  /* 150, not 208: this list plus the stage plus the header and footer have to
-     fit one 390px frame, or the page grows a second scrollbar beside the list's
-     own and Continue drops below the fold. The creator is the only caller. */
-  max-height: 150px; overflow-y: auto;
+  /* A ceiling for any caller that is not in a flex column. Inside the creator
+     the rule below overrides it and the list FILLS the space instead — a fixed
+     height there showed two and a half breeds with a dead gap underneath. */
+  max-height: 208px; overflow-y: auto;
   display: flex; flex-direction: column; gap: 8px;
   padding: 2px; -webkit-overflow-scrolling: touch;
 }
@@ -2036,7 +2036,28 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    square stage is ~354px tall in a 390px frame, which pushed Continue below the
    fold on its own. Capping the stage here leaves room for the list and the
    footer without touching the shared .buddy-stage rules. */
-.onb-buddy-stage { aspect-ratio: auto; height: 168px; min-height: 0; margin-bottom: 10px; }
+/* --- The character creator fills its screen ---
+   The step used to overflow, so the stage was shrunk to make room. That was the
+   wrong lever: the stage is the thing the tester is here to look at, and the
+   real cause was the LIST being a fixed height inside a body that stretches —
+   so whatever the list did not use became dead space above the footer.
+   The stage keeps its full square size and the list takes what is left. */
+.onb-buddy-step {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;          /* or a nested scroller cannot shrink below content */
+}
+.onb-buddy-stage { margin-bottom: 18px; }
+.onb-buddy-step .buddy-scroll-list {
+  max-height: none;
+  flex: 1;
+  min-height: 96px;       /* two options, so it never collapses to nothing */
+}
+/* Breathing room under the stage for the controls that are NOT a list — the
+   swatch rows and the name field sat hard against the illustration. */
+.onb-buddy-step .buddy-swatch-row,
+.onb-buddy-step .input-group { margin-top: 4px; }
 
 /* --- The intro film's controls sit at the foot of the screen ---
    Mirrors the lesson player, which is a full-height flex column with
