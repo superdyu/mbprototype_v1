@@ -834,8 +834,24 @@ function onbStepBody(key, o) {
 }
 
 function onbSetBuddy(key, value) {
-  state.onboarding.buddy[key] = value;
-  state.buddy[key] = value;      // so the stage above updates live
+  const set = (k, v) => {
+    state.onboarding.buddy[k] = v;
+    state.buddy[k] = v;          // so the stage above updates live
+  };
+  set(key, value);
+
+  // Picking the illustration on the FIRST step fills the rest in. The image is
+  // one fixed picture with its background baked in, so it cannot show a
+  // prototype breed with chocolate fur -- and leaving the later steps on real
+  // values would put the tester in a state the stage has to silently ignore.
+  // Filling them makes the remaining steps show what actually applies.
+  //
+  // Only forward, and only from breed: picking a real breed later is how a
+  // tester leaves prototype mode, and that must not drag the others with it.
+  if (key === "breed" && value === BUDDY_PROTOTYPE) {
+    ["furColor", "furPattern", "eyeColor", "noseColor", "size"]
+      .forEach(k => set(k, BUDDY_PROTOTYPE));
+  }
   render();
 }
 

@@ -285,9 +285,14 @@ palette rather than converted.
 
 ### Assets — nothing generated here (D10 holds; L15 → L22)
 - [x] Login backgrounds (day/night) and the kibble bowl ship as described placeholders
-- [ ] **Buddy illustrations — owner-supplied (L22).** Static files chosen by buddy
-      state. Awaiting the owner's plan for which stats select which image, the
-      file naming, and how many there are
+- [x] **Buddy illustration — owner-supplied (L22).** `prototype` is the first
+      value in every attribute list and renders `assets/img/buddy-prototype.png`
+      ↳ cropped from a 762x635 phone screenshot to 762x545 — the source carried a
+        status bar, dynamic island and rounded corners
+- [ ] **Pose images** — the owner has more for the home stage's changing
+      positions. `BUDDY_POSES` already carries the six ids and the idle tick
+      already repaints `#buddyStage` in place, so this is a filename function
+      inside `renderBuddyImage`
 - [ ] The descriptive frame is the **fallback** and is not removed — no image set
       covers every attribute combination, and D19 forbids an empty render
 - [ ] **Do not** build `background-position` sprite cropping — these are separate

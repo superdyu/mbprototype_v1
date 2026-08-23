@@ -45,17 +45,38 @@ const BUDDY_IDLE_POSES = BUDDY_POSES.filter(p => p.idle).map(p => p.id);
 // These drive the description and the picker controls, and they are the
 // vocabulary any image filename has to agree with (L22).
 // Values may carry underscores/spaces; the stage renders them with _ → space.
+// -- "prototype": the one attribute value backed by a real illustration -------
+// L22 allows owner-supplied art, and the first image to arrive is ONE fixed
+// illustration with its background baked in. It cannot vary by breed, coat,
+// eyes or size -- so it is not a breed, it is a MODE. Picking it on any
+// attribute means "show me the picture"; every other value keeps the
+// description exactly as it was.
+//
+// First in every list on purpose: it is the option a tester is meant to find.
+const BUDDY_PROTOTYPE = "prototype";
+const BUDDY_PROTOTYPE_IMG = "assets/img/buddy-prototype.png";
+
 const BUDDY_BREEDS = [
+  BUDDY_PROTOTYPE,
   "golden_retriever", "corgi", "beagle", "labrador",
   "poodle", "dachshund", "husky", "shiba_inu"
 ];
-const BUDDY_FUR_PATTERNS = ["solid", "patches", "spots", "brindle", "merle", "tuxedo"];
-const BUDDY_FUR_COLORS = ["cream", "golden", "chocolate", "grey", "tan and white", "tricolor"];
-const BUDDY_EYE_COLORS = ["brown", "amber", "blue", "green"];
+const BUDDY_FUR_PATTERNS = [BUDDY_PROTOTYPE, "solid", "patches", "spots", "brindle", "merle", "tuxedo"];
+const BUDDY_FUR_COLORS = [BUDDY_PROTOTYPE, "cream", "golden", "chocolate", "grey", "tan and white", "tricolor"];
+const BUDDY_EYE_COLORS = [BUDDY_PROTOTYPE, "brown", "amber", "blue", "green"];
+
+// Nose and size have no onboarding step -- they are admin-only dropdowns. They
+// carry the value anyway so the admin can reach every state the creator can.
+const BUDDY_NOSE_COLORS = [BUDDY_PROTOTYPE, "black", "brown", "pink"];
+const BUDDY_SIZES = [BUDDY_PROTOTYPE, "small", "medium", "large"];
 
 // value → CSS background for the circular swatches. Multi-tone coats use a
 // gradient so the swatch still reads as that coat.
 const BUDDY_FUR_COLOR_CSS = {
+  // Without an entry here the swatch renders as a blank circle -- these two
+  // pickers draw a colour, not a label. Deliberately NOT a coat colour: a
+  // checker reads as "a picture goes here" rather than implying a cream dog.
+  "prototype":     "repeating-conic-gradient(#CFC6B8 0 25%, #F2ECDF 0 50%) 50% / 10px 10px",
   "cream":         "#EFE3C6",
   "golden":        "#D9A441",
   "chocolate":     "#5A3A22",
@@ -64,6 +85,7 @@ const BUDDY_FUR_COLOR_CSS = {
   "tricolor":      "linear-gradient(90deg,#3A2A20 33%,#D9A441 33% 66%,#F2ECDD 66%)"
 };
 const BUDDY_EYE_COLOR_CSS = {
+  "prototype": "repeating-conic-gradient(#CFC6B8 0 25%, #F2ECDF 0 50%) 50% / 10px 10px",
   "brown": "#6B4423", "amber": "#D99B2B", "blue": "#4A90D9", "green": "#4A9D5B"
 };
 
@@ -126,10 +148,84 @@ function renderBuddyStage(opts) {
   `;
 }
 
+/**
+ * The illustration, filling the stage.
+ *
+ * -- THE FALLBACK IS NOT POLITENESS (L22, D19) -------------------------------
+ * If the file is missing the <img> must degrade to the DESCRIPTION, never to a
+ * blank card. Same shape onbVideoSpeak uses when a .wav has not been generated:
+ * try the asset, and hand back to the text path on error. Without it, a
+ * mistyped filename is a silently empty stage rather than a visible fallback.
+ *
+ * -- WHY THE NAME IS OVERLAID -------------------------------------------------
+ * The stage exists to prove the customization plumbing works: you pick a thing
+ * and the stage visibly reflects it. A fixed illustration cannot do that for
+ * breed or coat -- but the final creator step is NAMING, and a bare picture
+ * would mean typing a name and watching nothing happen. The name rides on top
+ * so that step still lands.
+ */
+function renderBuddyImage(b) {
+  const name = String((b && b.name) || "").trim();
+  return `
+    <img class="buddy-img" src="${BUDDY_PROTOTYPE_IMG}"
+         alt="${h(name || "Your buddy")}, sitting in a garden"
+         onerror="buddyImageFailed(this)">
+    ${name ? `<p class="buddy-img-name">${h(name)}</p>` : ""}
+  `;
+}
+
+/**
+ * The asset did not load. Fall back to the description in place, and remember
+ * it for the rest of the session so every later stage skips the broken path
+ * instead of re-requesting a file that is not there.
+ */
+let buddyImgBroken = false;
+function buddyImageFailed(el) {
+  buddyImgBroken = true;
+  const host = el && el.closest ? el.closest(".buddy-inner") : null;
+  if (host) host.innerHTML = renderBuddyDescription(state.buddy || {});
+}
+
+/**
+ * Clear the broken-asset latch. Called by bootV3, because the flag is
+ * module-level and a reset would otherwise leave a previous session's missing
+ * file suppressing art that is now present -- the stage would show the
+ * description forever with nothing in `state` to explain why.
+ */
+function buddyResetArt() {
+  buddyImgBroken = false;
+}
+
+/**
+ * Is the buddy in prototype mode -- i.e. should the stage show the illustration?
+ *
+ * ANY attribute set to `prototype` counts. A single baked illustration cannot be
+ * half-applied: "prototype breed with chocolate fur" describes nothing the image
+ * can show, so there is no useful state between "picture" and "description".
+ * Onboarding reinforces this by filling the rest in when breed is picked
+ * (onbSetBuddy), but the check stays permissive so an admin poking one dropdown
+ * still gets a coherent stage rather than a contradiction.
+ */
+function buddyIsPrototype() {
+  const b = state.buddy || {};
+  return [b.breed, b.furColor, b.furPattern, b.eyeColor, b.noseColor, b.size]
+    .indexOf(BUDDY_PROTOTYPE) !== -1;
+}
+
 // Kept separate so the idle tick can repaint just this, rather than calling
 // render() every 4–6 seconds and blowing away focus across the whole screen.
+//
+// This is the swap architecture section 13 predicted: the image branch lives
+// HERE, inside the content, so the frame, the idle tick, the pickers and
+// state.buddy are all untouched by art arriving.
 function renderBuddyInner() {
   const b = state.buddy || {};
+  if (buddyIsPrototype() && !buddyImgBroken) return renderBuddyImage(b);
+  return renderBuddyDescription(b);
+}
+
+/** The labelled frame. Still governs every state the art does not cover. */
+function renderBuddyDescription(b) {
   const pose = buddyCurrentPose();
   const breed = String(b.breed || "").replace(/_/g, " ");
   const coat = [b.furColor && h(b.furColor), b.furPattern && h(b.furPattern)].filter(Boolean).join(" ");
@@ -157,8 +253,8 @@ function renderBuddyAdmin() {
     ["furColor", BUDDY_FUR_COLORS],
     ["furPattern", BUDDY_FUR_PATTERNS],
     ["eyeColor", BUDDY_EYE_COLORS],
-    ["noseColor", ["black", "brown", "pink"]],
-    ["size", ["small", "medium", "large"]]
+    ["noseColor", BUDDY_NOSE_COLORS],
+    ["size", BUDDY_SIZES]
   ];
   return `
     <div class="admin-card">

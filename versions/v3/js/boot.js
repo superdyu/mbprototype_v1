@@ -33,6 +33,10 @@ function bootV3() {
   state.lifestyleAnswered = {};
   state.lifestyleDetail = {};
   state.buddy = v3Clone(PERSONA.buddy);
+  // The buddy illustration's broken-asset latch lives in components/buddy.js,
+  // not in `state`, so a reset has to clear it explicitly or a missing file from
+  // a previous session keeps suppressing art that is now there.
+  if (typeof buddyResetArt === "function") buddyResetArt();
 
   // ── Engagement counters (display-only, L16) ────────────────────────────────
   // Charity Points accrue and show; nothing spends them. Two non-converting

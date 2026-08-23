@@ -1187,6 +1187,51 @@ The seam this rides on was built deliberately (see the note at the end of this
 section): `renderBuddyStage` is the frame and `renderBuddyInner` is the content,
 kept apart so only the content changes.
 
+### The first image: `prototype`
+
+**`prototype` is a MODE, not a breed.** The illustration is one fixed picture
+with its background painted in, so it cannot vary by breed, coat, eyes or size.
+Rather than pretend otherwise, `prototype` is the **first value in every
+attribute list** (`BUDDY_BREEDS`, `BUDDY_FUR_COLORS`, `BUDDY_FUR_PATTERNS`,
+`BUDDY_EYE_COLORS`, plus the admin-only `BUDDY_NOSE_COLORS` / `BUDDY_SIZES`),
+and `buddyIsPrototype()` is true when **any** attribute holds it.
+
+- **Picking it on `breed` fills the rest in** (`onbSetBuddy`). Leaving the later
+  steps on real values would put the tester in a state the stage has to ignore —
+  "prototype breed, chocolate fur" describes nothing the picture can show.
+- **Leaving is one attribute at a time.** Picking a real breed does *not* reset
+  the others, so the image persists until every attribute is real. The cascade
+  is deliberately one-directional.
+- **Both colour pickers need a swatch entry.** Fur and eyes render as circles,
+  not labels, so a value missing from `BUDDY_FUR_COLOR_CSS` /
+  `BUDDY_EYE_COLOR_CSS` draws a blank. `prototype` uses a neutral checker — not
+  a coat colour, which would imply a dog the picture may not be.
+
+**The asset was cropped before shipping.** The supplied file was a phone
+screenshot: 762×635 carrying a status bar, the dynamic island and rounded dark
+corners. Dropping that into the app's own phone frame would have put a status
+bar inside a status bar. The chrome occupies rows 35–89, so the shipped asset is
+the same image from row 90 down — **762×545**, re-encoded RGB (the alpha channel
+was uniformly opaque). Done with stdlib `zlib`/`struct`; there is no Pillow or
+ImageMagick on the build machine.
+
+**Fitting:** `.buddy-img` is `position: absolute; inset: 0` so it fills the
+stage's *padding box* — edge to edge, ignoring the 22px padding that exists to
+inset text — and escapes `.buddy-inner`'s 240px `max-width` without that rule
+knowing art exists. `object-fit: cover` because the background is meant to fill
+the card; letterboxing against the sage would read as a mistake. The stage is
+square on Home and in the creator while the image is 1.4:1, so cover crops the
+sides; the dog is centred and survives.
+
+**The name is overlaid** (`.buddy-img-name`). The creator's last step is naming,
+and a bare picture would mean typing a name and watching nothing change — which
+is precisely the feedback the stage exists to give.
+
+**`buddyImgBroken` is a module-level latch, cleared by `bootV3`** via
+`buddyResetArt()`. It is not in `state`, so a reset would otherwise leave a
+previous session's missing file suppressing art that is now present, with
+nothing in the state inspector to explain why.
+
 The rest of this section describes the description layer, which still governs
 every combination the art does not cover.
 
