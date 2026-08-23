@@ -66,8 +66,14 @@ All verified against the raw JSON on 2026-08-07.
   (`.screen-scroll.kbd-open`), so anything that closes it mid-gesture pulls the
   button out from under the finger and no `click` is ever dispatched. That is
   why `kbdInit` holds the close while a button press is in flight, and why
-  `render()` calls `kbdSyncAfterRender()`. Do not "simplify" the focusout
-  handler back to closing immediately.
+  `render()` calls `kbdSyncAfterRender()`.
+  **BOTH focus handlers have to respect that latch, not just `focusout`.**
+  Chrome and Edge focus a `<button>` on mousedown, so pressing Continue fires
+  `focusin` with the BUTTON as target — and that path closed the keyboard
+  synchronously, defeating the latch entirely. Safari and Firefox on macOS do
+  not focus buttons this way, so the bug is invisible on half the machines you
+  might check it on. Any test for this must fire the **whole** sequence:
+  `pointerdown → focusout(field) → focusin(button) → pointerup → click`.
 - **Both narrated players snap the clock forwards only.** `elapsed` is normally
   ahead of the current cue (the speech cap lets the tick run to just short of
   the next one), so an unconditional snap rewinds it — and the hyperframes

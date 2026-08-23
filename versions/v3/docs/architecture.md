@@ -1008,6 +1008,31 @@ showed as a flicker at each segment boundary. Forwards-only keeps the
 correction that matters (the voice is ahead of a slow estimate) and drops the
 one that was visible.
 
+### The keyboard's press latch, and the event that defeats it
+
+Closing the simulated keyboard removes 250px of `padding-bottom`, so closing it
+mid-gesture moves the button out from under the finger and the `click` is never
+dispatched. `kbdInit` therefore holds the close while a button press is in
+flight and lets `kbdSyncAfterRender()` (called from `render()`) close once the
+field is gone.
+
+**The latch has to be checked in `focusin` as well as `focusout`.** Chrome and
+Edge focus a `<button>` on mousedown, so pressing Continue fires `focusin` with
+the *button* as target — a path that closed the keyboard synchronously and
+defeated the latch completely. The first fix guarded only `focusout` and looked
+correct in a harness that never fired `focusin`.
+
+Two consequences worth keeping in mind:
+
+- **This bug is invisible on macOS.** Safari and Firefox do not focus buttons on
+  mousedown, so the same code behaves correctly there.
+- **Any test must fire the whole sequence** — `pointerdown → focusout(field) →
+  focusin(button) → pointerup → click` — and should be run against a
+  deliberately reverted fix to confirm it fails.
+
+When a press does *not* re-render, focus is handed back to the field: the
+keyboard is still up, and a caret sitting on a button is not.
+
 ### 165 wpm is the one pacing knob
 
 `DU_WPM` (`screens/daily-update.js`) sets the pace for **every narrated

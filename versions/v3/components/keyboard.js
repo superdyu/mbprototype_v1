@@ -298,8 +298,17 @@ function kbdInit() {
   if (!root || !kbdIsSimulated()) return;
 
   root.addEventListener("focusin", function (e) {
-    if (kbdAccepts(e.target)) kbdOpen(e.target);
-    else kbdClose();
+    if (kbdAccepts(e.target)) { kbdOpen(e.target); return; }
+    // A BUTTON TAKING FOCUS IS NOT A REASON TO CLOSE.
+    //
+    // This is the half the first fix missed. Chrome and Edge focus a <button>
+    // on mousedown, so pressing Continue fires focusin with the BUTTON as the
+    // target — and this branch closed the keyboard immediately, synchronously,
+    // before the latch on focusout ever mattered. The layout dropped 250px and
+    // the click was lost exactly as before. (Safari and Firefox on macOS do not
+    // focus buttons this way, which is how it can look fixed on one machine.)
+    if (kbdPressPending) return;
+    kbdClose();
   });
 
   // Capture, so the latch is set before the blur this same gesture causes.
@@ -315,6 +324,13 @@ function kbdInit() {
     if (!kbdPressPending) return;
     kbdPressPending = false;
     kbdSyncAfterRender();
+    // The press did NOT change the screen — the field is still there and the
+    // keyboard is still up, but focus is now sitting on the button that was
+    // pressed. Hand it back, or the caret is gone from a field the tester is
+    // still looking at a keyboard for.
+    if (state.kbd.open && kbdTarget && document.body.contains(kbdTarget)) {
+      try { kbdTarget.focus(); } catch (e) {}
+    }
   }, true);
 
   // A press that never became a click — finger dragged off the button. Without
