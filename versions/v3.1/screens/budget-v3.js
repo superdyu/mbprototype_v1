@@ -156,15 +156,19 @@ function renderBudgetEmpty() {
     <h1 class="title" style="margin:0 0 4px;font-size:20px;">Monthly budget</h1>
     <p class="helper" style="margin:0 0 16px;">You haven't built one yet.</p>
 
+    <!-- v3.1's pitch is the opposite of v3's. v3 says "answer six questions and
+         we will work out the numbers"; here the tester sets the numbers and the
+         questions are an optional second opinion. The copy has to say which one
+         this is, or the flow surprises them one screen in. -->
     <div class="card">
       <p class="task-title" style="margin:0 0 6px;">Let's build your budget</p>
       <p class="task-desc" style="margin:0 0 12px;">
-        Six questions about how you live. We turn them into the numbers, so you
-        never have to guess at a figure.
+        Start from what a household like yours spends around here, then move
+        anything that is not you. Six quick questions afterwards are optional.
       </p>
       <button class="button full" type="button" onclick="lwStart()">Start</button>
       <p class="helper" style="font-size:10px;margin:10px 0 0;">
-        About two minutes · no figures needed
+        About a minute · nothing is saved until you say so
       </p>
     </div>
   `;

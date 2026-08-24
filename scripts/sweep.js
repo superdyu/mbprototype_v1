@@ -18,12 +18,18 @@ function section(t) { print(""); print("── " + t + " " + Array(Math.max(2, 6
 
 // Every routable screen. Kept here rather than derived, so a screen that loses
 // its route is a visible diff rather than silently dropping out of the sweep.
-var SCREENS = ["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home",
- "journalEntry","journalConfirm","journalDone","aboutMe","lifestyleWizard","lifestyleWizardReview",
- "budgetDone","budgetUpdateConfirm","comparison","myProgress","accountBalances","debtBalances",
- "postResult","nextAction","commitment","finish","goals","learn","topic","reward-preview",
- "lessonFraming","lesson","lessonQuiz","lessonSimulation","lessonReward","quiz","simulation",
- "marketplace","marketplaceDetail","reward","settings","chat","myDebts","debtAnalyzer"];
+// Injected by sweep.sh from the swept version's own js/render.js — every id the
+// router knows about. Hardcoding this list meant it was wrong for whichever
+// version it was not written for; v3 and v3.1 do not have the same screens.
+// The literal below is only a fallback for running sweep.js by hand.
+var SCREENS = (typeof ROUTED_SCREENS !== "undefined" && ROUTED_SCREENS.length)
+  ? ROUTED_SCREENS
+  : ["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home",
+     "journalEntry","journalConfirm","journalDone","aboutMe","lifestyleWizard",
+     "budgetDone","budgetUpdateConfirm","comparison","myProgress","accountBalances","debtBalances",
+     "postResult","nextAction","commitment","finish","goals","learn","topic","reward-preview",
+     "lessonFraming","lesson","lessonQuiz","lessonSimulation","lessonReward","quiz","simulation",
+     "marketplace","marketplaceDetail","reward","settings","chat","myDebts","debtAnalyzer"];
 
 function textOf(html) {
   return String(html)
@@ -186,6 +192,21 @@ var STATES = {
   "no observations":   function () { state.observations = []; }
 };
 var MIN_CHARS = 40;
+
+// KNOWN, ACCEPTED thin renders — screen id to its EXACT text.
+//
+// Not a way to silence D19. The text has to match character for character, so
+// any other thin render still fails and this one starts failing again the
+// moment it changes. It downgrades to a warning so the exception stays visible
+// rather than disappearing.
+//
+// spendEstimator with no session: a real D19 violation, found when the sweep
+// started deriving its screen list from the router instead of a hardcoded array
+// that had omitted this screen entirely. FIXED IN v3.1. Left in v3 by owner
+// decision — v3 is the A/B control and stays frozen — so this only fires there.
+var D19_ACCEPTED = { spendEstimator: "Nothing to estimate." };
+
+var acceptedThin = [];
 Object.keys(STATES).forEach(function (name) {
   bootV3();                       // fresh seed
   STATES[name]();
@@ -193,10 +214,20 @@ Object.keys(STATES).forEach(function (name) {
   SCREENS.forEach(function (sc) {
     var html = renderSafe(sc);
     if (html && html.__error) { thin.push(sc + " THREW: " + html.__error); return; }
-    if (textOf(html).length < MIN_CHARS) thin.push(sc + " (" + textOf(html).length + " chars)");
+    var text = textOf(html).trim().replace(/\s+/g, " ");
+    if (text.length >= MIN_CHARS) return;
+    if (D19_ACCEPTED[sc] === text) {
+      if (acceptedThin.indexOf(sc) === -1) acceptedThin.push(sc);
+      return;
+    }
+    thin.push(sc + " (" + text.length + " chars)");
   });
   chk(thin.length === 0, "state: " + name, thin.slice(0, 5).join("\n          "));
 });
+if (acceptedThin.length) {
+  warn(acceptedThin.length + " known thin render(s), accepted",
+       acceptedThin.join(", ") + " — see D19_ACCEPTED in scripts/sweep.js");
+}
 bootV3();
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -468,6 +499,11 @@ var DEAD_BASELINE = [
   // "is this area modeled?".
   "benchZipSupported",
   "buddyDescription",           // buddy plumbing, used once art lands (L22)
+  // v3.1 inverted the budget flow, so these two lost their callers THERE.
+  // Both are still live in v3, which is why they are not deleted: the two
+  // versions are an A/B pair and the files stay readable side by side.
+  "lwBuildPreview",             // v3: lazily rebuilt the review preview
+  "lwSubmit",                   // v3: the single save path, now split in v3.1
   "budgetDelta",
   "catRows",                    // taxonomy helper, pairs with catTotal/catValue
   "completeAndReward",

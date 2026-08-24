@@ -95,7 +95,7 @@ function navGoHome() {
 // a tab tap (resume where you left off) and wrong for ending a flow, because the
 // screen you just finished is still on top. Enter the budget wizard from the
 // Budget tab and the aboutMe stack ends as
-// ["aboutMe","lifestyleWizard","lifestyleWizardReview","budgetDone"] — so
+// ["aboutMe","spendingProfile","lifestyleWizard","budgetCompare","budgetDone"] — so
 // "See my budget" called navGoTab('aboutMe') and committed budgetDone, the
 // screen it was already on. The button did nothing.
 function navGoTabRoot(key) {

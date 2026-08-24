@@ -17,6 +17,22 @@ and decision below was inherited rather than written for it. Two consequences:
 As the two diverge, record what differs — a reader who knows only that "it
 started as a copy" cannot tell an intentional variation from a bug.
 
+### What differs from v3 so far
+
+1. **The budget flow is inverted.** v3 asks six lifestyle questions and derives
+   a budget; v3.1 opens on twelve sliders the tester sets themselves, and the
+   questions afterwards are optional. Screens: `spendingProfile` (was v3's
+   `lifestyleWizardReview`, moved from last to first) and `budgetCompare` (new).
+   `lifestyleWizardReview` no longer exists here.
+2. **The question screens have no sliders.** Their answers produce a figure to
+   compare against, not one to drag.
+3. **`renderSpendEstimator` has a real no-session fallback.** A D19 fix, owner
+   decision to leave v3's dead end alone — it is recorded in `D19_ACCEPTED` in
+   `scripts/sweep.js` so the control's sweep stays green and the exception stays
+   visible.
+
+Everything else is still the copy.
+
 ## Read first
 
 | File | Why |

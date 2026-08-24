@@ -282,7 +282,28 @@ function estimatorDiscard() {
 
 function renderSpendEstimator() {
   const e = state.estimator;
-  if (!e) return `<p class="helper">Nothing to estimate.</p>`;
+  // D19 — reached with no session: an admin jump, or a reset mid-flow. This
+  // used to return one twenty-character line with no heading and no way back,
+  // which is a dead end rather than a screen. Every comparable surface has a
+  // real fallback (lessonOutcomeNoSession); this one was missed because the
+  // sweep's screen list did not include it.
+  if (!e) {
+    return `
+      <div class="card">
+        <h1 class="title" style="font-size:20px;margin:0 0 6px;">Nothing to estimate yet</h1>
+        <p class="helper" style="margin:0 0 4px;">
+          This turns up when a category needs a closer look — it asks how often
+          you do something rather than what it costs, and works the figure out
+          from there.
+        </p>
+        <p class="helper" style="margin:0;">
+          Open it from a category on your budget when you want one.
+        </p>
+      </div>
+      <div class="flow-footer">
+        <button class="button secondary" type="button" onclick="navGoTabRoot('aboutMe')">Back to Budget</button>
+      </div>`;
+  }
   const cat = e.category;
   const qs = e.questions;
 

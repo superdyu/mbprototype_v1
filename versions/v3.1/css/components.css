@@ -2066,6 +2066,34 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .onb-video { display: flex; flex-direction: column; gap: 12px; flex: 1; }
 .onb-video-controls-foot { margin-top: auto; }
 
+/* --- v3.1: "which is closer" rows ---
+   Three tap targets across a 390px frame, so each gets about a third minus the
+   gaps. Ordered low-to-high by the renderer, which is why nothing here encodes
+   which column is "theirs" — the selected one is the only distinguished state,
+   because marking the model's column would be telling them which to pick. */
+.compare-row { padding: 12px 12px 14px; margin-bottom: 10px; }
+.compare-cat { margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--text); }
+.compare-opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.compare-opt {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-height: 56px; padding: 8px 4px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--card); color: var(--text);
+  font: inherit; cursor: pointer; text-align: center;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.compare-opt.picked { border-color: var(--accent); background: var(--accent-soft); }
+.compare-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.compare-opt-label {
+  font-size: 9px; font-weight: 800; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--muted); line-height: 1.2;
+  min-height: 2.2em; display: flex; align-items: center;
+}
+.compare-opt-figure {
+  font-family: var(--font-display); font-size: 15px; font-weight: 850;
+  line-height: 1.1; color: var(--text);
+}
+
 /* Intro "video" — captioned narration synced to live Web Speech.
    The flex rule for .onb-video lives with the other onboarding rules above. */
 

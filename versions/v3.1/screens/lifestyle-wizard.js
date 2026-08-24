@@ -227,6 +227,23 @@ function lwApplyDimension(dim, value) {
   w.applied[dim] = value;
 }
 
+// ─── v3.1: the flow is inverted ──────────────────────────────────────────────
+// v3 asks six lifestyle questions and derives a budget from the answers; the
+// tester never types a figure. v3.1 does the opposite: THEY SET THE NUMBERS
+// FIRST, on one screen of twelve sliders, and the questions afterwards are a
+// second opinion rather than the source.
+//
+//   1  spending profile   twelve sliders, opening on ZIP-adjusted national
+//                         averages. Save here, or carry on.
+//   2  lifestyle questions the same six, meaning text kept, NO sliders under
+//                         them — the answers only produce a figure to compare
+//   3  which is closer     per category where the two differ: their figure,
+//                         the midpoint, or the model's
+//
+// This is the A/B difference against v3. Keep the two readable side by side:
+// the shared machinery (lwImpliedNow, submitBudgetBaseline, the peer model) is
+// deliberately untouched so a diff shows the FLOW changing and nothing else.
+
 function lwStart() {
   // Blank by default. state.lifestyle is fully populated from the persona at
   // boot (js/boot.js), so seeding from it pre-selected all six questions with
@@ -246,13 +263,94 @@ function lwStart() {
     drift: {},                   // per category, the tester's drag as a ratio
     neutral: lwNeutralPreview(), // the peer figures with every modifier at 1.0
     travel: null,                // trips a year x cost a trip (see lwTravelBlock)
+    // What the TESTER sets on the sliders in step 1. Held apart from `preview`
+    // so the compare screen can put the two figures side by side — the whole
+    // point of this flow is that they stay distinguishable.
+    profile: lwNeutralPreview(),
+    choices: {},                 // per category: "profile" | "mid" | "model"
     preview: lwNeutralPreview()
   };
-  // Fold in whatever carried over, so the first question's figures start from
-  // the same place the rest of the flow will.
+  // Fold in whatever carried over, so the questions start from the same place
+  // the rest of the flow will.
   Object.keys(answers).forEach(dim => lwApplyDimension(dim, answers[dim]));
   lwApplyStated();
+  // Step 1 is the sliders. The questions are opt-in from there.
+  go("spendingProfile");
+}
+
+/** Leave the profile screen for the questions. */
+function lwToQuestions() {
+  const w = state.lifestyleWizard;
+  if (!w) { lwStart(); return; }
+  w.step = 0;
   go("lifestyleWizard");
+}
+
+/**
+ * Categories where the tester's figure and the model's disagree.
+ *
+ * Only these get a row on the compare screen. Lifestyle reaches 7 of the 12, so
+ * the other five would be a row that asks nothing — and of those 7, any the
+ * tester happened to leave on the model's own figure agree anyway.
+ */
+function lwDisagreements() {
+  const w = state.lifestyleWizard;
+  if (!w) return [];
+
+  // Only categories an ANSWERED question actually moves. Two exclusions, both
+  // deliberate:
+  //
+  //   - the five lifestyle never reaches (Utilities, Subscriptions, Health,
+  //     Personal care, Debt payments). The model has no opinion about them
+  //     beyond the default the tester already saw and chose to move.
+  //   - dimensions left unanswered, which contribute a 1.0 multiplier. Asking
+  //     about those would be asking the tester to defend an edit against the
+  //     default they edited, which is not a question.
+  const reached = {};
+  LW_QUESTIONS.forEach(q => {
+    if (w.applied[q.dim] == null) return;
+    lwTouchedCategories(q.dim).forEach(c => { reached[c] = true; });
+  });
+
+  return CATEGORIES.filter(c => reached[c] && lwProfileValue(c) !== lwModelValue(c));
+}
+
+/** What the tester set on the sliders. */
+function lwProfileValue(category) {
+  const w = state.lifestyleWizard;
+  return Math.round((Number((w.profile || {})[category]) || 0) / 5) * 5;
+}
+
+/** What the lifestyle answers imply — neutral x every applied modifier. */
+function lwModelValue(category) {
+  return lwImpliedNow(category);
+}
+
+/** Halfway, on the same 5s every other figure in the budget lands on. */
+function lwMidValue(category) {
+  return Math.round(((lwProfileValue(category) + lwModelValue(category)) / 2) / 5) * 5;
+}
+
+/** The figure a category resolves to, given the row's current selection. */
+function lwResolved(category) {
+  const w = state.lifestyleWizard;
+  const pick = (w && w.choices && w.choices[category]) || "profile";
+  if (pick === "model") return lwModelValue(category);
+  if (pick === "mid")   return lwMidValue(category);
+  return lwProfileValue(category);
+}
+
+function lwChoose(category, pick) {
+  const w = state.lifestyleWizard;
+  if (!w.choices) w.choices = {};
+  w.choices[category] = pick;
+  render();
+}
+
+/** After the last question. Skips the compare screen when nothing disagrees. */
+function lwToCompare() {
+  if (!lwDisagreements().length) { lwSubmitProfile(); return; }
+  go("budgetCompare");
 }
 
 /**
@@ -296,7 +394,7 @@ function lwAnswer(dim, value) {
 function lwNext() {
   const w = state.lifestyleWizard;
   if (w.step < LW_QUESTIONS.length - 1) { w.step++; render(); return; }
-  go("lifestyleWizardReview");
+  lwToCompare();
 }
 
 function lwBack() {
@@ -328,6 +426,21 @@ function lwBuildPreview() {
 // readout is painted directly so the figure still tracks during the gesture.
 function lwAdjust(category, amount) {
   const w = state.lifestyleWizard;
+
+  // On the profile screen the tester is setting THEIR figure, which is a
+  // different thing from the running preview the questions build. Writing both
+  // to one map is what would make the compare screen show a category against
+  // itself.
+  if (state.screen === "spendingProfile") {
+    const cap = budgetSliderMax(category);
+    if (!w.profile) w.profile = lwNeutralPreview();
+    w.profile[category] = Math.max(0, Math.min(cap, Math.round(Number(amount) || 0)));
+    const pel = document.getElementById("lwAmt" + CATEGORIES.indexOf(category));
+    if (pel) pel.textContent = budgetFmt(w.profile[category]) + " a month";
+    debouncedRender();
+    return;
+  }
+
   const bounds = lwBoundsForCategory(category);
   let v = Math.max(0, Math.round(Number(amount) || 0));
   // Clamp in the handler too, not just on the element. A later answer can move
@@ -351,18 +464,42 @@ function lwAdjust(category, amount) {
 }
 
 // Save goes through the seam — never straight into state.plan (L6).
-function lwSubmit() {
+// Both exits go through the one seam (L6). Only the figures differ, and the
+// `source` records which route produced them — that is A/B data, not bookkeeping.
+
+function lwSubmitBaseline(source, monthly) {
   const w = state.lifestyleWizard;
   submitBudgetBaseline({
-    source: "lifestyleWizard",
+    source: source,
     profile: {
       zip: state.profile.zip,
       householdSize: state.profile.householdSize,
       incomeAnnual: state.profile.incomeAnnual
     },
     lifestyle: Object.assign({}, w.answers),
-    monthly: Object.assign({}, w.preview)
+    monthly: monthly
   });
+}
+
+/** Saved straight off the sliders, without answering anything. */
+function lwSubmitProfile() {
+  const w = state.lifestyleWizard;
+  const monthly = {};
+  CATEGORIES.forEach(c => { monthly[c] = lwProfileValue(c); });
+  lwSubmitBaseline(Object.keys(w.answers).length ? "profile+lifestyle" : "profile", monthly);
+}
+
+/** Saved after the questions, with each disagreement resolved on the compare screen. */
+function lwSubmitCompared() {
+  const monthly = {};
+  CATEGORIES.forEach(c => { monthly[c] = lwResolved(c); });
+  lwSubmitBaseline("profile+lifestyle", monthly);
+}
+
+// Kept: v3's own path still calls it, and the two files stay diffable.
+function lwSubmit() {
+  const w = state.lifestyleWizard;
+  lwSubmitBaseline("lifestyleWizard", Object.assign({}, w.preview));
 }
 
 function renderLifestyleWizard() {
@@ -556,17 +693,15 @@ function lwMeaningBlock(q, opt) {
       <p class="task-desc" style="margin:0;">${h(opt.meaning || "")}</p>
       ${cats.length ? `
         <p class="helper" style="margin:10px 0 0;font-size:11px;">
-          For ${h(zip)}, that puts ${cats.length === 1 ? "this" : "these"} here.
-          Drag if it looks wrong — the questions after this one adjust from
-          wherever you leave it.
+          That moves ${cats.length === 1 ? "one category" : cats.length + " categories"}.
+          Nothing changes yet — at the end you pick whichever figure is closer
+          to true, yours or mine.
         </p>` : `
         <p class="helper" style="margin:10px 0 0;font-size:11px;">
           This one shapes how I read the rest rather than moving a category on
           its own.
         </p>`}
     </div>
-    ${cats.map(c => renderBudgetSliderRow(c, state.lifestyleWizard.preview[c], null,
-        lwOptionBounds(q, opt, c))).join("")}
   `;
 }
 
@@ -636,20 +771,33 @@ function lwBoundsForCategory(category) {
 
 // ─── Review: the starting budget, with sliders ───────────────────────────────
 
-function renderLifestyleWizardReview() {
-  const w = state.lifestyleWizard;
-  if (!w || !w.preview) { lwBuildPreview(); }
-  const total = catTotal(w.preview);
+// ─── Step 1: the spending profile ────────────────────────────────────────────
+// Was the LAST screen in v3 — the review of a budget the questions had already
+// built. Here it is the first thing the tester sees, and the figures on it are
+// theirs rather than a result.
+//
+// Opening values are ZIP-adjusted national averages: lwNeutralPreview() is
+// benchAllPeerValues with `lifestyle: {}`, so it carries the peer table's own
+// non-linearity (housing barely moves with household size, groceries move a
+// lot) and the BEA multiplier for their area, with nothing about how they live
+// folded in yet. That is exactly what "start them at the average" should mean.
+//
+// Full slider range here. The +/-25% option bands belong to the question
+// screens and no option has been chosen yet.
+function renderSpendingProfile() {
+  const w = state.lifestyleWizard || (lwStart(), state.lifestyleWizard);
+  if (!w.profile) w.profile = lwNeutralPreview();
+  const total = catTotal(w.profile);
   const income = state.monthlyIncome;
   const left = income - total;
 
   return `
     <div class="journal-shell">
       <div class="journal-head">
-        <h1 class="title" style="font-size:21px;margin:0;">Your starting budget</h1>
+        <h1 class="title" style="font-size:21px;margin:0;">What do you spend?</h1>
         <p class="helper" style="margin:6px 0 0;">
-          Built from your answers and what things cost in ${h(state.profile.zip)}.
-          Drag anything that looks wrong.
+          Starting from the national average for a household your size, adjusted
+          for ${h(state.profile.zip)}. Move anything that is not you.
         </p>
       </div>
 
@@ -673,12 +821,18 @@ function renderLifestyleWizardReview() {
           </p>
         </div>
 
-        ${CATEGORIES.map(c => renderBudgetSliderRow(c, w.preview[c], v => v)).join("")}
+        ${CATEGORIES.map(c => renderBudgetSliderRow(c, w.profile[c], v => v)).join("")}
+
+        <p class="helper" style="margin:14px 0 0;font-size:11px;">
+          Happy with these? Save and you are done. Or answer six quick questions
+          about how you live and I will tell you where I would have guessed
+          differently.
+        </p>
       </div>
 
       <div class="journal-foot">
-        <button class="button secondary" type="button" onclick="state.lifestyleWizard.step=${LW_QUESTIONS.length - 1};go('lifestyleWizard')">Back</button>
-        <button class="button" type="button" onclick="lwSubmit()">Save budget</button>
+        <button class="button secondary" type="button" onclick="lwToQuestions()">Fine-tune</button>
+        <button class="button" type="button" onclick="lwSubmitProfile()">Save budget</button>
       </div>
     </div>
   `;
