@@ -19,6 +19,18 @@ the thing being tested, so **v3 is the control and does not get feature work** â
 changing it changes what v3.1 is being compared against. The gate labels them
 `v3 (A)` and `v3.1 (B)` rather than implying one supersedes the other.
 
+**Every bug fix gets a question first.** Feature work goes to v3.1 only â€” that
+is what makes it the B side. A *fix* is the ambiguous case: backporting keeps
+the comparison honest on a shared defect, not backporting keeps the control
+frozen. That is the owner's call, per defect, and it is not inferable from the
+code. So before applying any fix, **ask with a multiple-choice question**:
+
+> Does this fix apply to **both v3 and v3.1**, or **v3.1 only**?
+
+Never assume one and mention it afterwards. A control that quietly drifted is
+worse than no control, and a defect fixed on one side only can look like the
+variation being tested.
+
 **The tooling is version-aware, and its default is v3.1.** `sweep.sh`,
 `wrap-data.sh`, `gen-audio.sh` and `build-cost-of-living.py` all read
 `MB_VERSION` and default to `v3.1`; `check-syntax.sh` covers every live version
