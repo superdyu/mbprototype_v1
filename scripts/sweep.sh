@@ -26,7 +26,14 @@ fi
 [ -n "$ENGINE" ] || ENGINE="$JSC"
 [ -x "$ENGINE" ] || { echo "error: no JS engine found — need node or macOS jsc" >&2; exit 2; }
 
-APP="versions/v3"
+# Which version to sweep. There are now TWO live versions -- v3 and v3.1 are an
+# A/B pair -- so a hardcoded path would silently check the other one and report
+# 60 green while the folder you edited went unexamined.
+#
+#   bash scripts/sweep.sh                  # the default below
+#   MB_VERSION=v3 bash scripts/sweep.sh    # the other side of the test
+APP="versions/${MB_VERSION:-v3.1}"
+[ -d "$APP" ] || { echo "error: $APP not found (MB_VERSION=${MB_VERSION:-v3.1})" >&2; exit 1; }
 # Explicit template — `mktemp -t <prefix>` is BSD-only; GNU mktemp needs the
 # XXXXXX and otherwise fails, leaving OUT as a bare ".js" written to the repo.
 OUT="$(mktemp "${TMPDIR:-/tmp}/mb-sweep.XXXXXX").js"

@@ -39,11 +39,12 @@
 set -euo pipefail
 
 VOICE="${VOICE:-Samantha}"
-SRC="versions/v3/data/daily-scripts.json"
-OUTDIR="versions/v3/assets/audio/daily"
-TIMINGS="versions/v3/data/daily-timings.js"
-ONB_SRC="versions/v3/data/onboarding-script.json"
-ONB_OUTDIR="versions/v3/assets/audio/onboarding"
+V="${MB_VERSION:-v3.1}"          # same switch as sweep.sh / wrap-data.sh
+SRC="versions/$V/data/daily-scripts.json"
+OUTDIR="versions/$V/assets/audio/daily"
+TIMINGS="versions/$V/data/daily-timings.js"
+ONB_SRC="versions/$V/data/onboarding-script.json"
+ONB_OUTDIR="versions/$V/assets/audio/onboarding"
 
 [ -f "$SRC" ] || { echo "error: $SRC not found (run from repo root)" >&2; exit 1; }
 command -v say >/dev/null || { echo "error: 'say' not found — macOS only" >&2; exit 2; }

@@ -9,23 +9,45 @@ over abstraction, but keep the file structure clean (see Architecture).
 The repo root is a **passcode + version-selector gate** (`index.html`, `gate/`),
 not the app itself. Each major iteration is a fully self-contained, independently
 runnable copy of the app under `versions/<name>/` (currently `versions/v1/`,
-`versions/v2/`, and `versions/v3/`). New work happens in the newest version
-folder (currently `versions/v3/`) unless told otherwise.
+`versions/v2/`, `versions/v3/`, and `versions/v3.1/`). **New work happens in
+`versions/v3.1/`** unless told otherwise.
+
+### v3 and v3.1 are an A/B PAIR
+
+v3.1 started as a byte-for-byte copy of v3. The differences between them are
+the thing being tested, so **v3 is the control and does not get feature work** —
+changing it changes what v3.1 is being compared against. The gate labels them
+`v3 (A)` and `v3.1 (B)` rather than implying one supersedes the other.
+
+**The tooling is version-aware, and its default is v3.1.** `sweep.sh`,
+`wrap-data.sh`, `gen-audio.sh` and `build-cost-of-living.py` all read
+`MB_VERSION` and default to `v3.1`; `check-syntax.sh` covers every live version
+at once. Without this a hardcoded path reports 60 checks green having examined
+the folder you did not edit.
+
+    bash scripts/sweep.sh                   # v3.1, the default
+    MB_VERSION=v3 bash scripts/sweep.sh     # the control side
 
 **Versions are test variants, not a migration path.** Each is a separate thing a
-tester can pick at the gate; none supersedes another. So `versions/v1/` and
-`versions/v2/` are both **frozen — don't edit them.** Nothing in v3 needs to stay
-backward-compatible with either.
+tester can pick at the gate; none supersedes another. `versions/v1/` and
+`versions/v2/` are **frozen — don't edit them**, and `versions/v3/` is now the
+A/B control (see above). Nothing in v3.1 needs to stay backward-compatible with
+any of them.
 
-### ⚠ v3 is being built and differs from v1/v2 in ways that matter
+### ⚠ v3 and v3.1 differ from v1/v2 in ways that matter
 
-If you are working in `versions/v3/`, **read these three before touching code**:
+Everything in this section applies to **both** — v3.1 is a copy of v3, so its
+contracts, traps and decisions are identical until you deliberately change one.
+Paths below say `versions/v3/`; read them as "whichever of the two you are in".
+
+**Read these three before touching code:**
 
 | File | What it is |
 |---|---|
-| `plan.md` (repo root) | **Locked decisions L1–L21** in §0 — do not re-litigate them. Plus the rationale, spec contradictions, and review logs |
-| `versions/v3/docs/architecture.md` | Cross-cutting contracts: data loading, the 12-category taxonomy, nav/back-stack, top bar, audio pipeline, standing rules |
-| `versions/v3/PROGRESS.md` | The build checklist. Start at `Current state:`, work the first unchecked item |
+| `plan.md` (repo root) | **Locked decisions L1–L22** in §0 — do not re-litigate them. Plus the rationale, spec contradictions, and review logs |
+| `versions/<ver>/docs/architecture.md` | Cross-cutting contracts: data loading, the 12-category taxonomy, nav/back-stack, top bar, audio pipeline, standing rules |
+| `versions/<ver>/PROGRESS.md` | The build checklist. Start at `Current state:`, work the first unchecked item |
+| `versions/<ver>/CLAUDE.md` | Auto-loads in that folder. Carries the silent-failure trap list |
 
 The v3 spec is at `v3 Files/spec/` (unpacked, read-only). Its
 `docs/DECISIONS.md` beats every other spec doc; `plan.md` §0 beats *that* where

@@ -13,10 +13,14 @@ var GATE_PASSCODE = "1337";
 var GATE_SESSION_KEY = "mb_gate_unlocked";
 
 // Add a version here (and only here) to make it selectable — no markup changes.
+// v3 and v3.1 are an A/B PAIR, not a progression. v3.1 started as a byte copy
+// of v3 and the differences between them are the thing being tested, so the
+// labels say which is which rather than implying one supersedes the other.
 var VERSIONS = [
   { id: "v1", label: "v1", path: "versions/v1/index.html" },
   { id: "v2", label: "v2 (beta)", path: "versions/v2/index.html" },
-  { id: "v3", label: "v3 (alpha)", path: "versions/v3/index.html" }
+  { id: "v3", label: "v3 (A)", path: "versions/v3/index.html" },
+  { id: "v3.1", label: "v3.1 (B)", path: "versions/v3.1/index.html" }
 ];
 
 function gateShowSelector() {
