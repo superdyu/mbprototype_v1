@@ -194,8 +194,17 @@ const state = {
   // budget prefers transportMonthly over its own guess when it is present.
   lifestyleDetail: {},
 
-  // Admin panel collapse — persists across screens
-  adminCollapsed: false,
+  // Admin panel collapse — persists across screens.
+  //
+  // Starts CLOSED. On a phone the panel is gone entirely (css/layout.css hides
+  // both it and its expand tab under 768px), so a desktop that opened with dev
+  // chrome beside the frame was the odd one out — and the demo link is opened
+  // by people who are not developing. The expand tab is still there at any
+  // width that has room for it, which is the difference from mobile: hidden,
+  // not removed.
+  //
+  // State is in-memory (D03), so every refresh returns here. That is the point.
+  adminCollapsed: true,
 
   // Lesson player stage style — toggled from admin panel.
   //
