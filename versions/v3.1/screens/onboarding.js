@@ -575,8 +575,18 @@ function renderOnboarding() {
   // Trial has its own two buttons — no generic Skip / Continue there.
   const showControls = key !== "trial";
 
+  // Steps 6 onwards pin Back/Continue and scroll the options between the header
+  // and the footer. Below that the content is short enough that the footer sits
+  // at the bottom anyway, so pinning them would change nothing visible — and a
+  // shell that is exactly viewport-height is a stronger constraint than one
+  // that can grow, so it is not applied where it buys nothing.
+  //
+  // Index 5 is UI step 6 (the goal picker), which is the one that overflows
+  // hardest now that it offers ten options rather than four.
+  const pinned = o.step >= 5 ? " onb-pinned" : "";
+
   return `
-    <div class="journal-shell">
+    <div class="journal-shell${pinned}">
       <div class="journal-head onb-head">
         <div class="onb-head-progress">
           <p class="helper" style="margin:0 0 4px;">Step ${o.step + 1} of ${total}</p>

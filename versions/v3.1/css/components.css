@@ -2022,6 +2022,18 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   margin: 10px 0 0; min-height: 16px; font-weight: 700;
 }
 
+/* --- Back and Continue stay put from step 6 ---
+   .journal-shell is min-height:100% by default, so tall content grows the shell
+   and .screen-scroll scrolls the whole thing — taking the footer out of view
+   exactly when there are enough options to need it. A shell that is EXACTLY the
+   scroller's height cannot grow, so the overflow has to go somewhere: the body
+   takes it and scrolls between a fixed header and a fixed footer.
+
+   Scoped to a class rather than applied to .journal-shell, because the journal,
+   the wizard and the lesson tail all use that shell and none of them asked. */
+.journal-shell.onb-pinned { height: 100%; min-height: 0; }
+.journal-shell.onb-pinned .journal-body { overflow-y: auto; }
+
 /* --- Onboarding headers ---
    ONE size for all ten, so "consistent throughout" is enforced by the
    stylesheet rather than by ten inline literals agreeing with each other.
@@ -2063,7 +2075,12 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    Mirrors the lesson player, which is a full-height flex column with
    .lp-controls last. Without this the transport lands wherever the caption
    happens to end, which is the middle of the screen. */
-.onb-video { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+/* min-height, not flex: 1. .journal-body is a plain block, so `flex: 1` here
+   had no flex parent to act in — it was inert, and margin-top:auto below it had
+   no free space to consume, so the transport never actually moved to the foot.
+   A definite height does the same job without needing the parent to be flex:
+   the body's height is definite under .onb-pinned, so 100% of it is real. */
+.onb-video { display: flex; flex-direction: column; gap: 12px; min-height: 100%; }
 .onb-video-controls-foot { margin-top: auto; }
 
 /* --- v3.1: "which is closer" rows ---
