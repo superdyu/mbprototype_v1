@@ -61,10 +61,12 @@ state.settings.colorMode = THEME_DEFAULT;
 chk(renderFails.length === 0, SCREENS.length + " screens x " + THEMES.length + " themes",
     renderFails.slice(0, 6).join("\n          "));
 
-// An unknown id must resolve to the default, not leave .screen unclassed —
-// that would silently render Natural Light and look deliberate.
+// An unknown id must resolve to the default rather than leaving .screen
+// unclassed. Both render Natural Light now that it is the default, so this
+// check is load-bearing in a way it was not before: it is what distinguishes a
+// resolved theme from no theme at all.
 chk(themeById("nonsense").id === THEME_DEFAULT, "unknown theme id falls back to " + THEME_DEFAULT);
-chk(state.settings.colorMode === "dark", "Dark is the default theme (L21)");
+chk(state.settings.colorMode === "naturalLight", "Natural Light is the default theme (L21, revised)");
 
 // render() is the real entry point and does things renderScreen() does not —
 // applying the theme class and filling the admin theme picker. Exercise it.

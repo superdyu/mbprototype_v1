@@ -417,7 +417,7 @@ The sweep prints these rather than passing them silently:
 Added after the build was complete and swept. Full rationale in `plan.md` §17;
 the contract is `docs/architecture.md` §14.
 
-- [x] Four themes — Light + Dark (v2's palette), Natural Light + Natural Dark (D36). **Dark is the default**
+- [x] Four themes — Light + Dark (v2's palette), Natural Light + Natural Dark (D36). **Natural Light is the default** (revised from Dark, 2026-08-28)
 - [x] `THEMES` in `js/theme.js` is the single source; `render()` calls `themeApply()`; the class lands on `.screen` only
 - [x] Admin panel gets a 2×2 theme picker, replacing the old two-way button
 - [x] Sweep extended: 41 screens × **4 themes**, the 40-token contract per theme, chrome isolation, and **12 contrast pairs × 4 themes at 4.5:1**

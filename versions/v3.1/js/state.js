@@ -249,8 +249,10 @@ const state = {
   },
 
   // Theme — picked from the admin panel, resets on page refresh (D03: no
-  // persistence). Valid ids live in THEMES (js/theme.js); default is Dark (L21).
-  settings: { colorMode: "dark" },
+  // persistence). Valid ids live in THEMES (js/theme.js). Default is Natural
+  // Light — L21 as revised; it originally shipped Dark so the D36 cream had to
+  // be chosen rather than defaulted into, and that call has been reversed.
+  settings: { colorMode: "naturalLight" },
 
   // UI interaction state
   selectedBadge: "Credit Cards",

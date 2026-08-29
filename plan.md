@@ -24,7 +24,9 @@ Pass log:
   produced buddy illustrations, so static owner-supplied art is allowed. Not a
   planning pass either — logged because L15 is referenced in eleven places and
   every one of them had to move with it.
-- **Post-build** — L21, four themes with Dark as the default (§17). Not a
+- **Post-build** — L21, four themes (§17). Shipped with Dark as the default;
+  revised 2026-08-28 to Natural Light, so the D36 repaint is what a tester
+  actually meets. Not a
   planning pass; the build was already complete and swept. Logged here because
   it changes the default a tester first sees, which L2/L19/D36 all speak to.
 
@@ -57,7 +59,7 @@ Settled across question rounds 1–8. Don't re-litigate.
 | L18 | **Character creation offers all five attributes** — breed, fur, eyes, nose, size — per 01-onboarding step 7. | **D40 is overridden.** It dropped eyes/nose and capped fur at four only because raster sheets can't recolour; there are no sheets, so the constraint is void and the cost is one line of description each. **Re-read this under L22:** the attributes stay, but a static image cannot vary along all five, so the image is selected by whichever subset the owner's plan names and the description continues to carry the rest. The pickers are not reduced to match the art. |
 | L20 | **The no-advice guardrail is code, not data.** `advice_deflect`'s 10 keywords are a floor; `ADVICE_PATTERNS` in `chat-router.js` catches the shapes they miss. Any question asking what to do gets the safeguard reply, checked **before** scoring. | D26 is absolute. The data alone missed 12 of 15 natural phrasings — "help me decide", "can I afford", "what would you do" — and each would have been answered by whichever topic shared a noun. Over-eager deflection is the safe failure: a retry costs a tester seconds, giving advice breaks the prototype's core rule. Verified both ways: 20/20 advice shapes deflect, 0 of 24 legitimate questions do. |
 | L19 | **The Finch-like repaint is Phase 2.5** — after the budget screens settle, before the daily loop is authored. | Closes the only spec decision with no phase (D36). L2 deferred it; this schedules it. See §15. |
-| L21 | **Four themes, picked in the admin panel. Dark is the default.** `Light` + `Dark` reproduce v2's palette; `Natural Light` + `Natural Dark` are the D36 repaint. `THEMES` (`js/theme.js`) is the single source of truth; the class lands on `.screen` only. | Owner call, post-Phase-6. The v2 pair exists so the repaint can be **judged against what it replaced** rather than from memory — that only works if switching is instant and side-by-side. **Dark as default deliberately means a tester's first screen is not the D36 cream**, which is a knowing trade: L21 governs the default *view*, D36 still governs the *design*. One line in `state.js` reverses it. See §17. |
+| L21 | **Four themes, picked in the admin panel. ~~Dark~~ NATURAL LIGHT is the default** (revised 2026-08-28). `Light` + `Dark` reproduce v2's palette; `Natural Light` + `Natural Dark` are the D36 repaint. `THEMES` (`js/theme.js`) is the single source of truth; the class lands on `.screen` only. | Owner call, post-Phase-6. The v2 pair exists so the repaint can be **judged against what it replaced** rather than from memory — that only works if switching is instant and side-by-side. Dark as default originally meant a tester's first screen was not the D36 cream — a knowing trade, on the grounds that L21 governs the default *view* while D36 governs the *design*. **That call has been reversed by the owner:** the cream IS the design, and defaulting to a v2 palette meant most testers never met it. Applies to v3 and v3.1 both, because a theme difference between the two sides would confound the A/B. The note that "one line in `state.js` reverses it" was correct — it took two, `state.js` and `THEME_DEFAULT` in `theme.js`. See §17. |
 
 <!-- L1 voids two PROGRESS.md Phase 0 items outright ("Vite + React + Tailwind
      initialized", "Design tokens in Tailwind config"). Phase 0 shrinks to:
@@ -1002,6 +1004,11 @@ open item.
 
 Requested after the build was complete and swept. The ask: offer Light, Dark,
 Natural Light and Natural Dark in the admin panel, with Dark as the default.
+
+**The default was later reversed to Natural Light** (2026-08-28). Everything
+below about *why the v2 pair is worth carrying* still holds — the comparison
+is the point, and it works in either direction. Only which one a tester lands
+on first has changed.
 
 ### 17.1 Why the v2 pair is worth carrying
 

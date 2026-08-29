@@ -1388,13 +1388,21 @@ test. A flat colour swatch would test nothing.
 
 Four themes ship, switched from the Admin Tools panel. Two reproduce v2's
 palette so the D36 repaint can be compared against what it replaced; two are the
-repaint itself. **Dark is the default** (`state.settings.colorMode`).
+repaint itself. **Natural Light is the default** (`state.settings.colorMode`,
+and `THEME_DEFAULT` in `js/theme.js` — both carry it). L21 originally shipped
+Dark so the cream had to be chosen; that was reversed once it became clear
+most testers never chose it.
+
+**Natural Light's class is the empty string** — it *is* `:root`. Now that it
+is also the default, an unclassed `.screen` and a correct one look the same,
+so a `themeApply()` that never ran is invisible. The sweep's theme checks are
+what catch that.
 
 | Theme | Class on `.screen` | What it is |
 |---|---|---|
 | Light | `.theme-light` | v2's crisp blue-on-white |
-| Dark | `.theme-dark` | v2's cool dark — **default** |
-| Natural Light | *(none — `:root`)* | D36 cream + sage |
+| Dark | `.theme-dark` | v2's cool dark |
+| Natural Light | *(none — `:root`)* | D36 cream + sage — **default** |
 | Natural Dark | `.theme-natural-dark` | D36 dimmed, warm |
 
 `THEMES` in `js/theme.js` is the single source of truth. `render()` calls

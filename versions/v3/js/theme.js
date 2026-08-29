@@ -22,12 +22,27 @@ const THEMES = [
 // Natural Light is the empty string: it IS :root, so it applies no class.
 const THEME_CLASSES = THEMES.map(t => t.cls).filter(Boolean);
 
-const THEME_DEFAULT = "dark";
+// Natural Light. L21 originally made this Dark, deliberately — so a tester's
+// first screen was not the D36 cream and the repaint had to be chosen rather
+// than defaulted into. That trade has been called the other way now: the cream
+// IS the design (D36), and defaulting to a v2 palette meant most testers never
+// saw it.
+//
+// ONE THING THIS COSTS, worth knowing before debugging a theme problem:
+// Natural Light's class is the EMPTY STRING — it is :root, so it applies no
+// class at all. Now that it is also the default, "themeApply never ran" and
+// "the theme is correct" look identical on screen. The comment below used to
+// warn that an unclassed .screen would silently render as Natural Light and
+// look deliberate; that failure is now genuinely invisible, so the sweep's
+// theme checks are the only thing standing between it and a silent regression.
+const THEME_DEFAULT = "naturalLight";
 
 /**
  * Resolve an id to a theme. An unknown id (stale state, a hand-edited value)
- * falls back to the default rather than leaving .screen unclassed, which would
- * silently render as Natural Light — a wrong theme that looks intentional.
+ * falls back to the default rather than leaving .screen unclassed. Both now
+ * render Natural Light, but they are not the same thing: one is a resolved
+ * theme, the other is no theme at all, and only the first survives a switch
+ * away and back.
  */
 function themeById(id) {
   const hit = THEMES.filter(t => t.id === id)[0];
