@@ -418,7 +418,25 @@ function hyperframesMarkup(storyboard, data, totalSec, opts) {
  * written straight after. And currentTime is only rewritten when it has
  * actually drifted, because assigning it every tick would fight the compositor
  * and undo the smoothness this design exists for.
+ *
+ * ── SMALL CORRECTIONS GLIDE, LARGE ONES SNAP ─────────────────────────────────
+ * Writing currentTime is a jump cut, and there is one correction at every
+ * segment boundary: the cue map is a 165 wpm word-count estimate, the narrator
+ * is not, and the player snaps `elapsed` to the next cue when a voice ends. Land
+ * that as a jump and the outgoing beat's fade-out is skipped while the incoming
+ * one starts part-way through its fade-in — the hiccup at each new sentence.
+ *
+ * So drift is eased in by nudging the RATE, the way a video player pulls audio
+ * back into sync, and the picture converges over about a second without a
+ * visible seam. A scrub or a +/-10s skip is far past HF_SNAP_MS and still lands
+ * instantly, which is what those controls are for.
  */
+// Under this, it is drift and gets eased. Over it, someone seeked.
+const HF_SNAP_MS  = 1200;
+// Roughly how long a correction takes to disappear. Smaller = more aggressive.
+const HF_GLIDE_MS = 700;
+// Ceiling on the nudge, so the film never visibly speeds up or crawls.
+const HF_GLIDE_MAX = 0.4;
 function hyperframesSync(root, opts) {
   if (!root || typeof root.getAnimations !== "function") return;
   opts = opts || {};
@@ -443,9 +461,20 @@ function hyperframesSync(root, opts) {
       } else if (a.playState !== "paused") {
         a.pause();
       }
-      if (a.playbackRate !== rate) a.playbackRate = rate;
       const cur = Number(a.currentTime) || 0;
-      if (Math.abs(cur - ms) > tol) a.currentTime = ms;
+      const drift = ms - cur;               // positive → the picture is behind
+      if (!opts.playing || Math.abs(drift) > HF_SNAP_MS) {
+        // Paused means pinned: onbVideoHeld/lpHeld rely on the held frame being
+        // exactly where the clock says, not converging towards it.
+        if (Math.abs(drift) > tol) a.currentTime = ms;
+        if (a.playbackRate !== rate) a.playbackRate = rate;
+      } else if (Math.abs(drift) > tol) {
+        const want = rate * (1 + Math.max(-HF_GLIDE_MAX,
+                                 Math.min(HF_GLIDE_MAX, drift / HF_GLIDE_MS)));
+        if (Math.abs(a.playbackRate - want) > 0.01) a.playbackRate = want;
+      } else if (a.playbackRate !== rate) {
+        a.playbackRate = rate;
+      }
     } catch (e) { /* an animation can be cancelled mid-walk; skip it */ }
   });
 }

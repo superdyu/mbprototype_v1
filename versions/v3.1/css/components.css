@@ -2032,7 +2032,30 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    Scoped to a class rather than applied to .journal-shell, because the journal,
    the wizard and the lesson tail all use that shell and none of them asked. */
 .journal-shell.onb-pinned { height: 100%; min-height: 0; }
-.journal-shell.onb-pinned .journal-body { overflow-y: auto; }
+
+/* `overflow-y: auto` is not a one-axis declaration. When one axis is not
+   `visible` the other's `visible` COMPUTES to `auto`, so this body is a scroll
+   container horizontally too — and it clipped the focus ring, which reaches 4px
+   outside an input's border box (.screen :focus-visible, 2px ring + 2px offset)
+   on a field that is width:100% of the content box. The green ends of the ZIP
+   field were being sliced off. An outline is ink overflow rather than scrollable
+   overflow, which is why it clipped without ever showing a horizontal scrollbar.
+
+   So: borrow the shell's side padding back and re-spend it inside the scroll
+   container. The content box lands in the same place — still aligned with the
+   head and the foot — the ring gets 18px of room, and a scrollbar that is
+   genuinely needed sits at the screen edge instead of narrowing the content. */
+.journal-shell.onb-pinned .journal-body {
+  overflow-y: auto;
+  margin: 0 -18px;
+  padding: 0 18px;
+}
+
+/* The film step has nothing to scroll to, and its body differed from its content
+   by a sub-pixel amount — enough for `auto` to show a scrollbar, which then took
+   5px off the right of the content and left the stage no longer lining up with
+   Continue below it. BOTH axes, or the computed-value rule above reappears. */
+.journal-shell.onb-pinned .journal-body.onb-body-video { overflow: hidden; }
 
 /* --- Onboarding headers ---
    ONE size for all ten, so "consistent throughout" is enforced by the
@@ -2089,7 +2112,10 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 /* Caption and transport keep their size; the stage is the one thing that gives
    way, so a short laptop viewport loses picture rather than losing controls. */
 .onb-video > * { flex-shrink: 0; }
-.onb-video-controls-foot { margin-top: auto; }
+/* This used to be `margin-top: auto`, which pushed the transport onto the bottom
+   edge and left a dead band under the caption. The spare height goes to the
+   picture instead (see .onb-video-stage), so there is nothing left to push. */
+.onb-video-controls-foot { flex-shrink: 0; }
 
 /* --- v3.1: "which is closer" rows ---
    Three tap targets across a 390px frame, so each gets about a third minus the
@@ -2127,9 +2153,15 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    onboarding card it has to state its own height instead, or it collapses to
    its content. Rounded to match the buddy card it replaced. */
 .onb-video-stage {
-  flex: 0 1 210px;        /* never grows past 210; shrinks when the screen is short */
+  /* The one child that flexes: it takes whatever the caption and transport do
+     not need. Capped because past ~255px the SVG stops growing — it is
+     xMidYMid meet on a 100x72 viewBox — and the extra height would be accent
+     colour rather than more picture. 340px also keeps it no taller than it is
+     wide (354px inside a 390px frame). */
+  flex: 1 1 210px;
   height: 210px;
-  min-height: 110px;      /* below this it stops reading as a picture */
+  min-height: 110px;      /* the floor on a short viewport */
+  max-height: 340px;
   border-radius: var(--radius-card);
   overflow: hidden;
 }

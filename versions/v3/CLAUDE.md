@@ -91,6 +91,25 @@ All verified against the raw JSON on 2026-08-07.
   pauses are not in the word-count estimate. Both players now pass
   `playing: false` while held (`onbVideoHeld`, `lpHeld`), which pins the
   animation instead of fighting it.
+- **`overflow-y: auto` is not a one-axis declaration.** When one axis is not
+  `visible`, the other's `visible` **computes to `auto`** — so a rule meant to
+  let a column scroll silently makes the element a scroll container
+  *horizontally* too. Two things then break with no error and no scrollbar to
+  hint at it: the `:focus-visible` ring (2px outline + 2px offset = 4px outside
+  an input that is `width: 100%` of the content box) is clipped at both ends,
+  and when a vertical scrollbar does appear it narrows the content so it stops
+  lining up with anything outside the scroller. An outline is *ink* overflow,
+  not scrollable overflow, which is why it clips without ever producing a
+  horizontal scrollbar to explain itself. Fix: negative side margin plus equal
+  padding, so the ring has room inside the scroller and the content box stays
+  put. See `.journal-shell.onb-pinned .journal-body`.
+- **A correction to a playing animation must GLIDE, not cut.** There is one at
+  every segment boundary — the cue map is a word-count estimate and the narrator
+  is not — and writing `currentTime` skips the outgoing beat's fade-out and
+  starts the incoming one part-way through its fade-in. `hyperframesSync` nudges
+  `playbackRate` for anything under `HF_SNAP_MS` and only snaps past it, so a
+  scrub or a ±10s skip still lands instantly. Paused animations are always
+  pinned exactly, because the hold depends on it.
 - **`play()` on a FINISHED animation rewinds it to zero.** `hyperframesSync`
   knew this and still guarded on `playState !== "running"` — and a finished
   animation is not running either. Every element is one animation spanning the
