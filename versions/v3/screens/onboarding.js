@@ -585,6 +585,11 @@ function renderOnboarding() {
   // hardest now that it offers ten options rather than four.
   const pinned = o.step >= 5 ? " onb-pinned" : "";
 
+  // The film step is the one body that has to be a flex COLUMN: .onb-video
+  // sizes itself against it, and a plain block gave it nothing to size against.
+  // Scoped to this step, because the other eight want a normal block flow.
+  const bodyCls = key === "video" ? " onb-body-video" : "";
+
   return `
     <div class="journal-shell${pinned}">
       <div class="journal-head onb-head">
@@ -598,7 +603,7 @@ function renderOnboarding() {
           ? `<button class="onb-skip" type="button" onclick="onbSkip()">Skip</button>`
           : ""}
       </div>
-      <div class="journal-body">${onbStepBody(key, o)}</div>
+      <div class="journal-body${bodyCls}">${onbStepBody(key, o)}</div>
       <div class="journal-foot">
         ${o.step > 0 || o.lwIndex > 0 || o.buddyIndex > 0
           ? `<button class="button secondary" type="button" onclick="onbBack()">Back</button>`
@@ -1078,13 +1083,37 @@ function onbVideoStage(v) {
     </div>`;
 }
 
+/**
+ * Is the clock pinned at the speech cap, waiting for a line that is running
+ * longer than its word-count estimate?
+ *
+ * This has to be asked of the PICTURE too, not just the bar. onbVideoTick
+ * freezes `elapsed` at the cap, but the hyperframes are native CSS animations
+ * on wall clock -- they kept going. So every 100ms tick found them further on
+ * than the frozen clock, and hyperframesSync's drift check yanked currentTime
+ * backwards: roughly eight 120ms rewinds a second, for as long as the overrun
+ * lasted. That is the flicker, and it fires on any segment the narrator takes
+ * longer over than 165 wpm predicts -- a two- or three-sentence line, because
+ * sentence-final pauses are not in the estimate.
+ */
+function onbVideoHeld(v) {
+  return !!(v && v.speechDriven && v.elapsed >= onbSpeechCap(v) - 0.001);
+}
+
 /** Drive the animation clock from the player's clock. */
 function onbVideoSyncFrames() {
   if (typeof hyperframesSync !== "function") return;
   const root = document.getElementById("onb-video-frames");
   if (!root) return;
   const v = onbVideo();
-  hyperframesSync(root, { elapsedSec: v.elapsed, playing: v.playing, rate: v.speed || 1 });
+  // Held → hand hyperframesSync `playing: false`, which pauses each animation
+  // and pins it to the cap. The picture holds its last frame while the narrator
+  // finishes, which is what capping the clock always meant.
+  hyperframesSync(root, {
+    elapsedSec: v.elapsed,
+    playing: v.playing && !onbVideoHeld(v),
+    rate: v.speed || 1
+  });
 }
 
 function onbVideoBody(o) {

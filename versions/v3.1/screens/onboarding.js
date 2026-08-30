@@ -1,20 +1,36 @@
 // ─── Onboarding (01-onboarding, D06) ─────────────────────────────────────────
 // TAB: None | NAV BAR: Hidden — full-bleed flow
 //
-// Eight steps. A single config constant bypasses the whole thing (D07) — see
+// Seven steps. A single config constant bypasses the whole thing (D07) — see
 // js/config.js. Flipping it must not require unwinding anything here.
 //
-//   1 name   2 ZIP   3 household   4 income band
-//   5 lifestyle (a 2-question SUBSET of the budget builder — housing, commute;
-//     food/hobby/travel questions belong to the wizard, not install)
-//   6 improvement areas (multi-select)   7 buddy creation
-//   8 intro video (how it works)   9 trial popup
+//   1 name   2 improvement areas (multi-select)
+//   3 ZIP   4 household   5 income band
+//   6 buddy creation (five sub-steps)   7 intro video (how it works)
 //
-// PERSONA OVERRIDE (D09): steps 2, 3 and 4 override the hardcoded persona.
+// PERSONA OVERRIDE (D09): steps 3, 4 and 5 override the hardcoded persona.
 // Everything else falls back to persona.json. If a tester skips a field, the
 // persona value stands — NEVER block progress to collect data.
-
-const ONB_STEPS = ["name", "zip", "household", "income", "lifestyle", "goal", "buddy", "video", "trial"];
+//
+// ── v3.1: WHY THE GOAL QUESTION IS SECOND ────────────────────────────────────
+// It used to be sixth, which asked for a ZIP, a household size and an income
+// band before the tester had any stake in the app. Asking what they want to
+// improve first gives them a reason to answer the other three. It also means
+// onbPrimaryGoal() — which picks one of five intro-film scripts — is settled
+// five steps before the film plays, rather than one.
+//
+// ── v3.1: HOW TWO STEPS WERE REMOVED ─────────────────────────────────────────
+// By taking their keys OUT OF THIS ARRAY, and nothing else. The housing/commute
+// pair ("lifestyle") and the trial pitch ("trial") still have their renderers,
+// their handlers and their copy exactly where they were, a few hundred lines
+// down — unreachable, because no step is keyed to them.
+//
+// That is deliberate, and it is not laziness: this is a prototype under
+// iteration, deleting them would orphan a dozen helpers into DEAD_BASELINE
+// (onbCommuteDetail, onbSetLifestyle, onbTransportMonthly, ONB_CAR_CLASSES and
+// the rest), and putting a step back is a one-word edit this way. Do not
+// "clean up" the branches below on the grounds that nothing reaches them.
+const ONB_STEPS = ["name", "goal", "zip", "household", "income", "buddy", "video"];
 
 // Onboarding asks only the install-relevant lifestyle dimensions. The full six
 // live in the standalone lifestyle wizard (LW_QUESTIONS); the dims not asked
@@ -549,6 +565,14 @@ function onbFinish() {
     setDuringOnboarding: true
   };
 
+  // The trial pitch is out of the flow (see ONB_STEPS), so nobody answers it —
+  // and state.trialAccepted gates diamonds (lrDiamondsForLesson) and the
+  // subscriber section of the reward screen. Left null those would be
+  // unreachable. D31 says nothing is gated either way, so everyone gets the
+  // subscriber tier. Guarded rather than assigned, so onbTrial's answer still
+  // wins if that step is ever put back into ONB_STEPS.
+  if (state.trialAccepted == null) state.trialAccepted = true;
+
   // The budget is NOT built here — the setup wizard is the first thing the
   // Budget tab shows (spec 04: "the wizard, before the budget exists"). We only
   // carry the lifestyle answers forward (written above), which pre-fill the
@@ -575,15 +599,21 @@ function renderOnboarding() {
   // Trial has its own two buttons — no generic Skip / Continue there.
   const showControls = key !== "trial";
 
-  // Steps 6 onwards pin Back/Continue and scroll the options between the header
-  // and the footer. Below that the content is short enough that the footer sits
-  // at the bottom anyway, so pinning them would change nothing visible — and a
-  // shell that is exactly viewport-height is a stronger constraint than one
-  // that can grow, so it is not applied where it buys nothing.
+  // EVERY step pins Back/Continue and scrolls its content between the header
+  // and the footer. This used to be `o.step >= 5`, an index picked when the
+  // goal question sat sixth — it is second now, and it is still the step that
+  // overflows hardest at ten options, so the old test selected exactly the
+  // wrong ones. An index into a list that gets reordered is a trap; there is no
+  // version of it that stays correct.
   //
-  // Index 5 is UI step 6 (the goal picker), which is the one that overflows
-  // hardest now that it offers ten options rather than four.
-  const pinned = o.step >= 5 ? " onb-pinned" : "";
+  // Applying it everywhere costs nothing: a short step simply does not scroll,
+  // and its footer sits at the bottom of the screen either way.
+  const pinned = " onb-pinned";
+
+  // The film step is the one body that has to be a flex COLUMN: .onb-video
+  // sizes itself against it, and a plain block gave it nothing to size against.
+  // Scoped to this step, because the other eight want a normal block flow.
+  const bodyCls = key === "video" ? " onb-body-video" : "";
 
   return `
     <div class="journal-shell${pinned}">
@@ -598,7 +628,7 @@ function renderOnboarding() {
           ? `<button class="onb-skip" type="button" onclick="onbSkip()">Skip</button>`
           : ""}
       </div>
-      <div class="journal-body">${onbStepBody(key, o)}</div>
+      <div class="journal-body${bodyCls}">${onbStepBody(key, o)}</div>
       <div class="journal-foot">
         ${o.step > 0 || o.lwIndex > 0 || o.buddyIndex > 0
           ? `<button class="button secondary" type="button" onclick="onbBack()">Back</button>`
@@ -825,7 +855,13 @@ function onbStepBody(key, o) {
 
   if (key === "goal") {
     const atMax = o.improveAreas.length >= ONB_GOALS_MAX;
+    // Second step now, so it opens with the name they just typed. Deliberately
+    // NOT "nice to meet you" — step 1 says that, and hearing it twice in a row
+    // reads as the app having lost its place.
     return `
+    <p class="helper" style="margin:0 0 4px;">
+      ${o.name ? `Good to meet you, ${h(o.name)}.` : "Good to meet you."}
+    </p>
     <h1 class="title onb-title" style="margin:0 0 6px;">What would you most like to improve?</h1>
     <p class="helper" style="margin:0 0 14px;">Pick up to ${ONB_GOALS_MAX} — we can always change these later.</p>
     <div class="journal-options">
@@ -1078,13 +1114,37 @@ function onbVideoStage(v) {
     </div>`;
 }
 
+/**
+ * Is the clock pinned at the speech cap, waiting for a line that is running
+ * longer than its word-count estimate?
+ *
+ * This has to be asked of the PICTURE too, not just the bar. onbVideoTick
+ * freezes `elapsed` at the cap, but the hyperframes are native CSS animations
+ * on wall clock -- they kept going. So every 100ms tick found them further on
+ * than the frozen clock, and hyperframesSync's drift check yanked currentTime
+ * backwards: roughly eight 120ms rewinds a second, for as long as the overrun
+ * lasted. That is the flicker, and it fires on any segment the narrator takes
+ * longer over than 165 wpm predicts -- a two- or three-sentence line, because
+ * sentence-final pauses are not in the estimate.
+ */
+function onbVideoHeld(v) {
+  return !!(v && v.speechDriven && v.elapsed >= onbSpeechCap(v) - 0.001);
+}
+
 /** Drive the animation clock from the player's clock. */
 function onbVideoSyncFrames() {
   if (typeof hyperframesSync !== "function") return;
   const root = document.getElementById("onb-video-frames");
   if (!root) return;
   const v = onbVideo();
-  hyperframesSync(root, { elapsedSec: v.elapsed, playing: v.playing, rate: v.speed || 1 });
+  // Held → hand hyperframesSync `playing: false`, which pauses each animation
+  // and pins it to the cap. The picture holds its last frame while the narrator
+  // finishes, which is what capping the clock always meant.
+  hyperframesSync(root, {
+    elapsedSec: v.elapsed,
+    playing: v.playing && !onbVideoHeld(v),
+    rate: v.speed || 1
+  });
 }
 
 function onbVideoBody(o) {
@@ -1519,7 +1579,7 @@ function renderOnboardingAdmin() {
           </div>
         </div>
         <div class="input-group">
-          <label>Commute detail (stated, beats the peer guess for Transport)</label>
+          <label>Commute detail — collected by the budget wizard now, not here</label>
           <div class="helper" style="line-height:1.7;">
             ${(o.lifestyleAnswered || {}).commute
               ? `${h(o.lifestyle.commute)} → ${h(budgetFmt(onbTransportMonthly(o) || 0))} a month
@@ -1527,7 +1587,7 @@ function renderOnboardingAdmin() {
                    ? `<br>${h(onbCarClass(onbDetail(o, ONB_COMMUTE_DETAIL.car)))}
                       · ${h(onbCarAgeLabelText(o))}`
                    : ""}`
-              : "not answered — peer value stands"}
+              : "not asked during onboarding — the wizard collects it, and the peer value stands until it does"}
           </div>
         </div>
         <p class="helper" style="font-size:10px;">

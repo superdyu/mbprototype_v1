@@ -528,8 +528,15 @@ would be a claim the app cannot back.
 **`state.lifestyleAnswered`** is the companion to this. `state.lifestyle` is
 fully populated from the persona at boot, so it cannot tell "you told me this"
 from "a stranger's default" — and the wizard needs to, or every question opens
-pre-selected. Onboarding step 5 marks the two dimensions it asks
-(`ONB_LIFESTYLE_DIMS`); the wizard pre-selects only those.
+pre-selected. The wizard pre-selects only dimensions marked here.
+
+**In v3.1 nothing marks them, and that is the current state.** Onboarding used
+to ask two (`ONB_LIFESTYLE_DIMS` — housing and commute) at its step 5; that step
+is no longer in `ONB_STEPS`, so `state.lifestyleAnswered` is empty when
+onboarding finishes and all six wizard questions open blank. `ONB_LIFESTYLE_DIMS`
+and its renderer are still in `screens/onboarding.js`, unreachable, so restoring
+the step is a one-word edit. **v3 still asks them** — it is the A/B control and
+its step order is unchanged.
 
 ### Deriving `incomeBand`
 

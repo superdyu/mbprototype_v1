@@ -2075,12 +2075,20 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    Mirrors the lesson player, which is a full-height flex column with
    .lp-controls last. Without this the transport lands wherever the caption
    happens to end, which is the middle of the screen. */
-/* min-height, not flex: 1. .journal-body is a plain block, so `flex: 1` here
-   had no flex parent to act in — it was inert, and margin-top:auto below it had
-   no free space to consume, so the transport never actually moved to the foot.
-   A definite height does the same job without needing the parent to be flex:
-   the body's height is definite under .onb-pinned, so 100% of it is real. */
-.onb-video { display: flex; flex-direction: column; gap: 12px; min-height: 100%; }
+/* THE PARENT HAS TO BE THE FLEX CONTAINER — that was the missing half both
+   earlier attempts assumed was already there. `flex: 1` alone was inert (no
+   flex parent); `min-height: 100%` then gave this element the body's FULL
+   height while the eyebrow and the <h1> still sat above it inside that same
+   body. Content came to header + 100%, so the body overflowed by exactly the
+   header's height on every screen size, and what fell below the fold was the
+   bottom of this box: the transport row and the scrubber.
+   .onb-body-video (renderOnboarding, film step only) supplies the container. */
+.journal-body.onb-body-video { display: flex; flex-direction: column; }
+
+.onb-video { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+/* Caption and transport keep their size; the stage is the one thing that gives
+   way, so a short laptop viewport loses picture rather than losing controls. */
+.onb-video > * { flex-shrink: 0; }
 .onb-video-controls-foot { margin-top: auto; }
 
 /* Intro "video" — captioned narration synced to live Web Speech.
@@ -2091,8 +2099,9 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    onboarding card it has to state its own height instead, or it collapses to
    its content. Rounded to match the buddy card it replaced. */
 .onb-video-stage {
-  flex: 0 0 auto;
+  flex: 0 1 210px;        /* never grows past 210; shrinks when the screen is short */
   height: 210px;
+  min-height: 110px;      /* below this it stops reading as a picture */
   border-radius: var(--radius-card);
   overflow: hidden;
 }

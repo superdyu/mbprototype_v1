@@ -6,11 +6,28 @@ traps stay readable, not because it was done again here. Anything genuinely
 v3.1-only goes under a new heading as it lands.
 
 **Current state:** **v3 IS BUILT — phases 0 → 6 complete**, plus four themes
-(L21) and **five rounds of manual-test fixes**. Round 5 is complete: the
-simulated keyboard no longer swallows Continue, onboarding's type and the
-character creator fit, the intro film's flicker is gone, and the APR calculator
-is sliders-then-three-outcomes. `bash scripts/sweep.sh` → **60 checks, 0 failed,
-0 warnings**; `check-syntax` 79/79; all 43 screens render.
+(L21), **five rounds of manual-test fixes**, and a **v3.1-only tutorial
+revamp**. `bash scripts/sweep.sh` → **60 checks, 0 failed, 0 warnings**;
+`check-syntax` 158/158 across every live version; all 43 screens render.
+
+**The tutorial revamp (v3.1 only).** Onboarding is seven steps, with the goal
+question moved from sixth to second and the housing/commute pair and trial pitch
+taken out of `ONB_STEPS` (renderers left in place). See `CLAUDE.md` →
+"What differs from v3", item 4.
+
+**The intro film's flicker, properly this time.** Round 5 claimed it fixed —
+that fix was real but it was one of three mechanisms, and the other two were the
+ones a tester actually sees. A capped clock froze `elapsed` while the CSS
+animations kept running on wall clock, so the drift check yanked them backwards
+eight times a second; and `hyperframesSync` called `play()` on finished
+animations, which rewinds them to zero, flashing the whole scene back to beat
+one. Both are fixed **in v3 and v3.1**, and both are recorded as traps in
+`CLAUDE.md`. The lesson player had the first defect identically and is fixed too.
+
+**The film step also overflowed its screen**, hiding its own transport controls,
+because `.onb-video` claimed `min-height: 100%` of a parent that also held the
+header above it. Two earlier attempts at this rule failed for the same reason —
+neither made the parent a flex container. Fixed in both versions.
 
 **Still never opened in a browser.** Every round has been harness-verified and
 eye-unverified. The two that most need a human:

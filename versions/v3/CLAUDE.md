@@ -80,6 +80,24 @@ All verified against the raw JSON on 2026-08-07.
   faithfully rewind with it, which reads as a flicker at every line boundary.
   There are THREE snap sites: live speech in the lesson player, live speech in
   the onboarding player, and the onboarding `.wav` `onplay`.
+- **A capped clock has to hold the PICTURE too.** When speech drives playback,
+  the tick freezes `elapsed` at the speech cap and waits for `onEnd` — but the
+  hyperframes are native CSS animations running on wall clock, so they carried
+  on. Every 100ms tick then found them ahead of the frozen clock and
+  `hyperframesSync`'s 120ms drift check yanked `currentTime` backwards, roughly
+  eight times a second for the length of the overrun. That is a visible,
+  erratic stutter and it fires on any line the narrator takes longer over than
+  165 wpm predicts — two- and three-sentence lines, because sentence-final
+  pauses are not in the word-count estimate. Both players now pass
+  `playing: false` while held (`onbVideoHeld`, `lpHeld`), which pins the
+  animation instead of fighting it.
+- **`play()` on a FINISHED animation rewinds it to zero.** `hyperframesSync`
+  knew this and still guarded on `playState !== "running"` — and a finished
+  animation is not running either. Every element is one animation spanning the
+  whole runtime, so they all finish while the narrator is still on the last
+  line, and the tick flashed the entire scene back to its first beat ten times
+  a second. Only `paused` and `idle` get `play()`; setting `currentTime` is
+  enough to un-finish one.
 - **The wizard composes answers from the BASELINE, never from the preview.**
   `preview = implied x drift`, where implied is the neutral peer figure times
   every applied modifier and drift is the tester's drag as a *ratio*. Scaling

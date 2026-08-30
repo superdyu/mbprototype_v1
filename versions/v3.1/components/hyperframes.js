@@ -414,8 +414,8 @@ function hyperframesMarkup(storyboard, data, totalSec, opts) {
  * Point every animation in the subtree at the host's clock.
  *
  * Two details that matter. `play()` on a finished animation rewinds it to zero,
- * so it is only called when the animation is not already running, and the time
- * is written straight after. And currentTime is only rewritten when it has
+ * so only a genuinely paused or idle one is ever played, and the time is
+ * written straight after. And currentTime is only rewritten when it has
  * actually drifted, because assigning it every tick would fight the compositor
  * and undo the smoothness this design exists for.
  */
@@ -432,7 +432,14 @@ function hyperframesSync(root, opts) {
   anims.forEach(a => {
     try {
       if (opts.playing) {
-        if (a.playState !== "running") { a.play(); a.currentTime = ms; }
+        // NOT `playState !== "running"`. A FINISHED animation is not running
+        // either, so that test played it -- and play() on a finished animation
+        // rewinds it to zero. Every element here is one animation spanning the
+        // whole runtime, so they all finish while the narrator is still on the
+        // last line, and the 100ms tick then flashed the entire scene back to
+        // its first beat ten times a second. Setting currentTime below is
+        // enough to un-finish one; it never needs play().
+        if (a.playState === "paused" || a.playState === "idle") { a.play(); a.currentTime = ms; }
       } else if (a.playState !== "paused") {
         a.pause();
       }

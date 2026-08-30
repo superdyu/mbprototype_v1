@@ -271,6 +271,19 @@ function lpSpeechCap(lp) {
   return Math.max(lp.cues[lp.index] || 0, next - 0.05);
 }
 
+/**
+ * Is the clock pinned at that cap, waiting for the voice?
+ *
+ * The hyperframes have to be held too. lpTick freezes `elapsed` at the cap, but
+ * the animations are native CSS on wall clock and kept running -- so every tick
+ * found them ahead of the frozen clock and hyperframesSync's drift check yanked
+ * them backwards, over and over, for the length of the overrun. Same defect as
+ * the onboarding film's (onbVideoHeld), same fix.
+ */
+function lpHeld(lp) {
+  return !!(lp && lp.speechDriven && lp.elapsed >= lpSpeechCap(lp) - 0.001);
+}
+
 function lpStopSpeaking() {
   const lp = state.lessonPlayback;
   if (lp) lp.speechDriven = false;
@@ -369,7 +382,7 @@ function lpSyncHyperframes() {
   const lp = state.lessonPlayback;
   hyperframesSync(el, {
     elapsedSec: lp.elapsed,
-    playing: lp.playing && !lp.ended,
+    playing: lp.playing && !lp.ended && !lpHeld(lp),
     rate: lp.speed
   });
 }
