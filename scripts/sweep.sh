@@ -182,6 +182,17 @@ json.dump(out, sys.stdout)
 PY
 printf ';\n' >> "$OUT"
 
+# ── the rendered films' manifest ────────────────────────────────────────────
+# tools/film writes it next to the .mp4s. It carries every film's per-segment
+# durations, which the sweep compares against the app's own onbVideoSegMs — the
+# app narrates LIVE over a silent film, so those two numbers are computed twice
+# and nothing but this check notices when they stop agreeing. `null` when the
+# films have not been rendered (v3 never has any).
+printf '\nvar __FILM_MANIFEST = ' >> "$OUT"
+MANIFEST="$APP/assets/video/onboarding/manifest.json"
+if [ -f "$MANIFEST" ]; then cat "$MANIFEST" >> "$OUT"; else printf 'null' >> "$OUT"; fi
+printf ';\n' >> "$OUT"
+
 printf '\n// ══ sweep ══\n' >> "$OUT"
 cat scripts/sweep.js >> "$OUT"
 

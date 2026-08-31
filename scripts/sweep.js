@@ -549,6 +549,56 @@ if (resolved.length) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+section("7c. The rendered films agree with the app's clock");
+// The onboarding film is rendered SILENT and narrated live, so the film's
+// timeline and the app's caption clock are two independent computations of the
+// same per-segment durations. When they disagree the picture and the words come
+// apart and NOTHING else reports it — no error, no failed load, just a film that
+// feels wrong. This is the only guard.
+if (!__FILM_MANIFEST) {
+  ok("no rendered films in this version — nothing to compare");
+} else {
+  var mf = __FILM_MANIFEST;
+  chk(mf.wpm === (typeof DU_WPM !== "undefined" ? DU_WPM : 165),
+      "the film build and the app narrate at the same wpm",
+      "manifest " + mf.wpm + " vs app " + (typeof DU_WPM !== "undefined" ? DU_WPM : "?"));
+
+  var drift = [], missingScript = [];
+  Object.keys(mf.films).forEach(function (id) {
+    var film = mf.films[id];
+    var script = null;
+    try {
+      script = ONBOARDING_SCRIPT.scripts.filter(function (x) { return x.id === film.script; })[0];
+    } catch (e) {}
+    if (!script) { missingScript.push(film.script); return; }
+    script.segments.forEach(function (seg, i) {
+      var appMs = onbVideoSegMs(seg.text);
+      if (appMs !== film.segmentMs[i]) {
+        drift.push(id + "/" + seg.id + ": film " + film.segmentMs[i] + "ms vs app " + appMs + "ms");
+      }
+    });
+  });
+  chk(missingScript.length === 0, "every rendered film still has its script",
+      "gone from onboarding-script.json: " + missingScript.join(", "));
+  chk(drift.length === 0, "every film's beats match onbVideoSegMs",
+      drift.slice(0, 4).join("\n          ") +
+      (drift.length ? "\n          → re-run tools/film/build-films.mjs --render" : ""));
+
+  // Every theme x script the app can ASK for must have been rendered, or that
+  // combination silently drops to the SVG fallback and reads as "broken video".
+  var want = [];
+  (mf.themes || []).forEach(function (t) {
+    Object.keys(mf.films).forEach(function (id) {
+      var s = mf.films[id].script;
+      if (want.indexOf(t + "__" + s) === -1) want.push(t + "__" + s);
+    });
+  });
+  var absent = want.filter(function (k) { return !mf.films[k]; });
+  chk(absent.length === 0, "every theme has a render of every script",
+      "not rendered: " + absent.slice(0, 6).join(", "));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 section("8. Cannot be checked here — needs the owner");
 print("  These are real Phase 6 items that no headless check can settle:");
 print("");

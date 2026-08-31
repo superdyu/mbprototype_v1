@@ -37,6 +37,7 @@ function bootV3() {
   // not in `state`, so a reset has to clear it explicitly or a missing file from
   // a previous session keeps suppressing art that is now there.
   if (typeof buddyResetArt === "function") buddyResetArt();
+  if (typeof onbFilmResetArt === "function") onbFilmResetArt();
 
   // ── Engagement counters (display-only, L16) ────────────────────────────────
   // Charity Points accrue and show; nothing spends them. Two non-converting
