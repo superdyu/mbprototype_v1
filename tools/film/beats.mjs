@@ -1,91 +1,97 @@
 // The storyboard: what each of the six beats SHOWS.
 //
+// ── The register ─────────────────────────────────────────────────────────────
+// CNBC crossed with TikTok. Charts that draw live rather than diagrams that sit
+// there; type that punches in word by word; a ticker rail running under the
+// whole film. Broadcast furniture, at the pace of a feed.
+//
+// ── NO DOLLAR AMOUNTS. EVER. ─────────────────────────────────────────────────
+// This film is pre-rendered and plays BEFORE the tester has entered anything, so
+// every figure in it would be invented. A dollar amount on screen at that moment
+// reads as "the app already knows something about me", which is worse than
+// unhelpful. Percentages, proportions, directional badges and motion carry the
+// energy instead. Owner decision; do not add a currency figure here later.
+//
 // ── Why there is a headline at all ───────────────────────────────────────────
 // "Subtitles stay out of the video" means the narration script is never burned
-// in — and it isn't: the caption line is DOM text under the stage
-// (.onb-video-caption) and stays there. What each beat carries here is a
-// three-word Keynote headline, which is the opposite of a subtitle: the script
-// is a sentence being spoken, this is the one idea being shown.
-//
-// NEVER paste script text into a headline. If a headline needs a comma it is
-// already too long.
+// in — and it isn't: the caption is DOM text under the stage. What a beat
+// carries here is a three-word broadcast headline, which is the opposite of a
+// subtitle. NEVER paste script text into one.
 //
 // ── Shared spine, goal-specific middle ───────────────────────────────────────
-// s1, s2, s5 and s6 are the same for everyone; s3 and s4 swap on the tester's
-// primary goal. That mirrors data/onboarding-script.json exactly — the two files
-// are keyed the same way and must be edited together.
+// s1, s2, s5 and s6 are the same for everyone; s3 and s4 swap on the primary
+// goal, mirroring data/onboarding-script.json. The two files are keyed the same
+// way and must be edited together.
 //
 // ── Scenes ───────────────────────────────────────────────────────────────────
-// Eight parametric scenes cover all five scripts. Adding a script should mean
-// picking scenes, not writing a ninth.
-//
-//   mark     one accent bloom, the opening title
-//   cards    N cards arriving in sequence — questions being asked
-//   grid     tiles lighting up — a picture filling in
-//   bars     a row of bars, one of which refuses to sit still
-//   compare  a peer band with your marker sliding onto it
-//   split    one bar divided — committed against free
-//   dials    two rings — the two numbers that decide a thing
-//   settle   everything resolves to one calm mark, and holds
+//   pulse   the open — mark, pulse rings, wordmark
+//   chips   category chips arriving fast, one after another
+//   mosaic  a tile grid filling in, cell by cell
+//   line    a chart drawing under a live plot head, with a direction badge
+//   donut   a ring sweeping to a share, with a counting percentage
+//   dials   two rings, the two numbers that decide a thing
+//   race    bars growing and re-sorting
+//   band    a peer distribution with a marker slamming onto it
+//   close   everything condenses back to the mark
 
-export const SCENES = ["mark", "cards", "grid", "bars", "compare", "split", "dials", "settle"];
+export const SCENES = ["pulse", "chips", "mosaic", "line", "donut", "dials", "race", "band", "close"];
 
-// The four beats every script shares.
 const SPINE = {
-  s1: { scene: "mark",    headline: "Money Buddy",         sub: "a minute on how this works" },
-  s2: { scene: "cards",   headline: "A few questions",     sub: "most days", params: { count: 3 } },
-  s5: { scene: "compare", headline: "How you compare",     sub: "peers near you in size, income and area" },
-  s6: { scene: "settle",  headline: "That's the whole thing", sub: "a little most days" }
+  s1: { scene: "pulse", headline: "Money Buddy",           sub: "sixty seconds on how this works" },
+  s2: { scene: "chips", headline: "A few questions",       sub: "most days, and that's it" },
+  s5: { scene: "band",  headline: "How you compare",       sub: "peers near you in size, income and area",
+        params: { pct: 12, dir: "up" } },
+  s6: { scene: "close", headline: "That's the whole thing", sub: "a little most days" }
 };
 
-// s3 and s4 per script id. Keyed to onboarding-script.json's `id`.
 const MIDDLES = {
   onboarding_intro: {
-    s3: { scene: "grid", headline: "The picture fills in", sub: "where it actually goes",
-          params: { cols: 6, rows: 4 } },
-    s4: { scene: "bars", headline: "Steady, or drifting",  sub: "and what you hadn't clocked",
-          params: { heights: [58, 44, 71, 52, 63], restless: 2 } }
+    s3: { scene: "mosaic", headline: "The picture fills in", sub: "where it actually goes",
+          params: { cols: 8, rows: 5 } },
+    s4: { scene: "line",   headline: "Steady, or drifting",  sub: "and what you hadn't clocked",
+          params: { series: [38, 42, 40, 44, 41, 58, 52, 71], pct: 24, dir: "up" } }
   },
   onboarding_paycheck: {
-    s3: { scene: "split", headline: "Already spoken for", sub: "before the month starts",
-          params: { committed: 0.62 } },
-    s4: { scene: "grid",  headline: "Committed on day one", sub: "what's fixed, what's yours",
-          params: { cols: 7, rows: 4, fillTo: 0.62 } }
+    s3: { scene: "donut", headline: "Already spoken for", sub: "before the month starts",
+          params: { pct: 62 } },
+    s4: { scene: "race",  headline: "Committed on day one", sub: "what's fixed, what's yours",
+          params: { bars: [92, 74, 58, 41, 33, 21], hot: 0 } }
   },
   onboarding_savings: {
-    s3: { scene: "split", headline: "What survives", sub: "not what you meant to put aside",
-          params: { committed: 0.78 } },
-    s4: { scene: "bars",  headline: "Plan against actual", sub: "week to week",
-          params: { heights: [40, 55, 47, 68], restless: 3, paired: true } }
+    s3: { scene: "donut", headline: "What survives", sub: "not what you meant to put aside",
+          params: { pct: 22 } },
+    s4: { scene: "line",  headline: "Plan against actual", sub: "week to week",
+          params: { series: [50, 47, 52, 44, 55, 41, 48, 36], pct: 14, dir: "down" } }
   },
   onboarding_debt: {
-    s3: { scene: "dials", headline: "Two numbers decide it", sub: "the rate, and what you pay above the minimum" },
-    s4: { scene: "split", headline: "Move either one", sub: "and the finish line moves",
-          params: { committed: 0.45, shiftTo: 0.28 } }
+    s3: { scene: "dials", headline: "Two numbers decide it", sub: "the rate, and what you pay above the minimum",
+          params: { a: 68, b: 34, aLabel: "the rate", bLabel: "what you pay" } },
+    s4: { scene: "race",  headline: "Move either one", sub: "and the finish line moves",
+          params: { bars: [88, 70, 55, 38, 26], hot: 4, shift: true } }
   },
   onboarding_understand: {
-    s3: { scene: "grid", headline: "A few days of answers", sub: "that's all it takes",
-          params: { cols: 6, rows: 4 } },
-    s4: { scene: "bars", headline: "The shape of a month", sub: "in your own numbers",
-          params: { heights: [72, 51, 44, 38, 29, 22], restless: -1 } }
+    s3: { scene: "mosaic", headline: "A few days of answers", sub: "that's all it takes",
+          params: { cols: 8, rows: 5 } },
+    s4: { scene: "race",   headline: "The shape of a month", sub: "in your own numbers",
+          params: { bars: [96, 68, 54, 44, 33, 25, 18], hot: 0 } }
   }
 };
 
 export const SCRIPT_IDS = Object.keys(MIDDLES);
 
-/**
- * The six beats for one script, in order, each carrying its own start and
- * duration in seconds.
- *
- * `segments` is the parsed onboarding-script.json entry, and `durationsSec` are
- * the per-segment lengths computed by the caller — NOT recomputed here, so
- * there is exactly one place that owns the timing formula.
- */
+// The ticker rail runs the app's REAL taxonomy — the twelve categories the
+// budget is built from (js/taxonomy.js). Inventing plausible-looking category
+// names would have been the easy thing and would have put words on screen that
+// the product never uses.
+export const TICKER = [
+  "Housing", "Groceries", "Dining out", "Transport",
+  "Utilities", "Subscriptions", "Health", "Personal care",
+  "Entertainment", "Shopping", "Debt payments", "Other"
+];
+
 export function beatsFor(scriptId, segments, durationsSec) {
   const middle = MIDDLES[scriptId];
-  if (!middle) {
-    throw new Error(`no storyboard for "${scriptId}" — add it to MIDDLES in beats.mjs`);
-  }
+  if (!middle) throw new Error(`no storyboard for "${scriptId}" — add it to MIDDLES in beats.mjs`);
   let t = 0;
   return segments.map((seg, i) => {
     const spec = SPINE[seg.id] || middle[seg.id];
@@ -95,8 +101,7 @@ export function beatsFor(scriptId, segments, durationsSec) {
     }
     const duration = durationsSec[i];
     const beat = {
-      id: seg.id,
-      index: i,
+      id: seg.id, index: i,
       start: Math.round(t * 1000) / 1000,
       duration: Math.round(duration * 1000) / 1000,
       last: i === segments.length - 1,

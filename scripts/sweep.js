@@ -584,18 +584,29 @@ if (!__FILM_MANIFEST) {
       drift.slice(0, 4).join("\n          ") +
       (drift.length ? "\n          → re-run tools/film/build-films.mjs --render" : ""));
 
-  // Every theme x script the app can ASK for must have been rendered, or that
+  // Every look x script the app can ASK for must have been rendered, or that
   // combination silently drops to the SVG fallback and reads as "broken video".
-  var want = [];
-  (mf.themes || []).forEach(function (t) {
-    Object.keys(mf.films).forEach(function (id) {
-      var s = mf.films[id].script;
-      if (want.indexOf(t + "__" + s) === -1) want.push(t + "__" + s);
+  var scripts = [];
+  Object.keys(mf.films).forEach(function (id) {
+    var s = mf.films[id].script;
+    if (scripts.indexOf(s) === -1) scripts.push(s);
+  });
+  var absent = [];
+  (mf.looks || []).forEach(function (l) {
+    scripts.forEach(function (s) {
+      if (!mf.films[l + "__" + s]) absent.push(l + "__" + s);
     });
   });
-  var absent = want.filter(function (k) { return !mf.films[k]; });
-  chk(absent.length === 0, "every theme has a render of every script",
+  chk(absent.length === 0, "every look has a render of every script",
       "not rendered: " + absent.slice(0, 6).join(", "));
+
+  // The app looks a film up by THEME, so every theme must map to a look that
+  // actually has renders — otherwise those testers silently get the fallback.
+  var unmapped = Object.keys(mf.lookForTheme || {}).filter(function (th) {
+    return (mf.looks || []).indexOf(mf.lookForTheme[th]) === -1;
+  });
+  chk(unmapped.length === 0, "every theme maps to a rendered look",
+      "unmapped: " + unmapped.join(", "));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
