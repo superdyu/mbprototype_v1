@@ -38,27 +38,6 @@
         10182,
         7273
       ]
-    },
-    "dark__onboarding_intro": {
-      "look": "dark",
-      "script": "onboarding_intro",
-      "totalSec": 41.091,
-      "segmentIds": [
-        "s1",
-        "s2",
-        "s3",
-        "s4",
-        "s5",
-        "s6"
-      ],
-      "segmentMs": [
-        3273,
-        5818,
-        7636,
-        6909,
-        10182,
-        7273
-      ]
     }
   }
 }

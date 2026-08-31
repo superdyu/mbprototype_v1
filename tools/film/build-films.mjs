@@ -20,7 +20,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { look, LOOKS, LOOK_FOR_THEME } from "./themes.mjs";
-import { beatsFor, SCRIPT_IDS, TICKER } from "./beats.mjs";
+import { beatsFor, SCRIPT_IDS } from "./beats.mjs";
 import { composition, CANVAS } from "./composition.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -97,14 +97,14 @@ function buildOne(lookId, scriptId) {
   const compositionId = `${lookId}__${scriptId}`;
 
   const file = path.join(BUILD, "compositions", `${compositionId}.html`);
-  fs.writeFileSync(file, composition({ compositionId, beats, theme, totalSec, ticker: TICKER }));
+  fs.writeFileSync(file, composition({ compositionId, beats, theme, totalSec }));
 
   // The CLI needs an index.html at the project root before it will look at the
   // directory at all. The first film doubles as it, with the asset paths its
   // shallower location needs.
   if (!fs.existsSync(path.join(BUILD, "index.html"))) {
     fs.writeFileSync(path.join(BUILD, "index.html"),
-                     composition({ compositionId, beats, theme, totalSec, ticker: TICKER }));
+                     composition({ compositionId, beats, theme, totalSec }));
   }
 
   return {

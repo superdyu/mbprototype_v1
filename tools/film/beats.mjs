@@ -1,9 +1,10 @@
 // The storyboard: what each of the six beats SHOWS.
 //
 // ── The register ─────────────────────────────────────────────────────────────
-// CNBC crossed with TikTok. Charts that draw live rather than diagrams that sit
-// there; type that punches in word by word; a ticker rail running under the
-// whole film. Broadcast furniture, at the pace of a feed.
+// CNBC crossed with TikTok, cut as promo material. Charts that draw live rather
+// than diagrams that sit there; type that punches in word by word; an opener
+// that bursts. The stock-ticker crawl was tried and cut — it read as furniture
+// from a channel nobody watches, and it stole the space the visuals needed.
 //
 // ── NO DOLLAR AMOUNTS. EVER. ─────────────────────────────────────────────────
 // This film is pre-rendered and plays BEFORE the tester has entered anything, so
@@ -24,23 +25,31 @@
 // way and must be edited together.
 //
 // ── Scenes ───────────────────────────────────────────────────────────────────
-//   pulse   the open — mark, pulse rings, wordmark
+//   open    the title card — burst rings, radiating dots, the mark landing
 //   chips   category chips arriving fast, one after another
 //   mosaic  a tile grid filling in, cell by cell
 //   line    a chart drawing under a live plot head, with a direction badge
 //   donut   a ring sweeping to a share, with a counting percentage
 //   dials   two rings, the two numbers that decide a thing
 //   race    bars growing and re-sorting
-//   band    a peer distribution with a marker slamming onto it
+//   peers   horizontal category bars: the peer range, and where you sit on it
 //   close   everything condenses back to the mark
 
-export const SCENES = ["pulse", "chips", "mosaic", "line", "donut", "dials", "race", "band", "close"];
+export const SCENES = ["open", "chips", "mosaic", "line", "donut", "dials", "race", "peers", "close"];
 
 const SPINE = {
-  s1: { scene: "pulse", headline: "Money Buddy",           sub: "sixty seconds on how this works" },
+  s1: { scene: "open",  headline: "Money Buddy",           sub: "sixty seconds on how this works" },
   s2: { scene: "chips", headline: "A few questions",       sub: "most days, and that's it" },
-  s5: { scene: "band",  headline: "How you compare",       sub: "peers near you in size, income and area",
-        params: { pct: 12, dir: "up" } },
+  // Horizontal bars, one per category: the shaded span is where peers like you
+  // land, the marker is where you sit on it. `you` and the peer bounds are
+  // POSITIONS on a 0-100 track, never amounts — see the no-figures rule above.
+  s5: { scene: "peers", headline: "How you compare",       sub: "peers near you in size, income and area",
+        params: { rows: [
+          { label: "Groceries",     lo: 38, hi: 62, you: 71, pct: 14, dir: "up" },
+          { label: "Dining out",    lo: 30, hi: 55, you: 78, pct: 26, dir: "up" },
+          { label: "Transport",     lo: 44, hi: 68, you: 52, pct: 6,  dir: "down" },
+          { label: "Subscriptions", lo: 22, hi: 46, you: 61, pct: 18, dir: "up" }
+        ] } },
   s6: { scene: "close", headline: "That's the whole thing", sub: "a little most days" }
 };
 
@@ -79,11 +88,10 @@ const MIDDLES = {
 
 export const SCRIPT_IDS = Object.keys(MIDDLES);
 
-// The ticker rail runs the app's REAL taxonomy — the twelve categories the
-// budget is built from (js/taxonomy.js). Inventing plausible-looking category
-// names would have been the easy thing and would have put words on screen that
-// the product never uses.
-export const TICKER = [
+// The app's REAL taxonomy (js/taxonomy.js). Scenes that name categories draw
+// from here rather than inventing plausible-looking ones, so nothing on screen
+// is a word the product never uses.
+export const CATEGORIES = [
   "Housing", "Groceries", "Dining out", "Transport",
   "Utilities", "Subscriptions", "Health", "Personal care",
   "Entertainment", "Shopping", "Debt payments", "Other"

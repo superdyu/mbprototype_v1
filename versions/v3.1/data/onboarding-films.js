@@ -9,18 +9,6 @@
 // onbFilmSrc() knows whether to ask for an .mp4 at all. A theme or script
 // missing here simply falls back to the live SVG engine.
 const ONBOARDING_FILMS = {
-  "dark": {
-    "look": "dark",
-    "scripts": [
-      "onboarding_intro"
-    ]
-  },
-  "naturalDark": {
-    "look": "dark",
-    "scripts": [
-      "onboarding_intro"
-    ]
-  },
   "light": {
     "look": "light",
     "scripts": [

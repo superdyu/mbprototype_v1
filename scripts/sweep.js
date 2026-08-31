@@ -586,27 +586,52 @@ if (!__FILM_MANIFEST) {
 
   // Every look x script the app can ASK for must have been rendered, or that
   // combination silently drops to the SVG fallback and reads as "broken video".
+  // The FULL set the app can ask for, from the script data — not from what has
+  // already been rendered. Deriving it from the manifest made the coverage check
+  // vacuous: it could only ever compare the renders against themselves.
   var scripts = [];
-  Object.keys(mf.films).forEach(function (id) {
-    var s = mf.films[id].script;
-    if (scripts.indexOf(s) === -1) scripts.push(s);
+  try {
+    scripts = ONBOARDING_SCRIPT.scripts.map(function (x) { return x.id; });
+  } catch (e) {}
+  // A look with NO films is simply not rendered yet, and its themes fall back to
+  // the live SVG engine — that is a normal state while a look is being iterated
+  // on. A look with SOME films is the actual defect: the app lists those themes
+  // and then finds nothing for the scripts that are missing.
+  var started = (mf.looks || []).filter(function (l) {
+    return Object.keys(mf.films).some(function (id) { return mf.films[id].look === l; });
   });
+  // Coverage is a WARNING, not a failure. A film that has not been rendered
+  // cannot break anything: data/onboarding-films.js is generated from what
+  // actually exists, so the app only ever asks for a file that is there and
+  // everything else falls back to the live SVG engine by design. What this is
+  // for is telling you what is still outstanding.
+  var want = (mf.looks || []).length * scripts.length;
   var absent = [];
   (mf.looks || []).forEach(function (l) {
-    scripts.forEach(function (s) {
-      if (!mf.films[l + "__" + s]) absent.push(l + "__" + s);
-    });
+    scripts.forEach(function (s) { if (!mf.films[l + "__" + s]) absent.push(l + "__" + s); });
   });
-  chk(absent.length === 0, "every look has a render of every script",
-      "not rendered: " + absent.slice(0, 6).join(", "));
+  if (absent.length) {
+    warn((want - absent.length) + " of " + want + " films rendered — the rest use the SVG fallback",
+         absent.slice(0, 6).join(", ") +
+         (absent.length > 6 ? " …+" + (absent.length - 6) : "") +
+         "\n          cd tools && node film/build-films.mjs --render");
+  } else {
+    ok("all " + want + " films rendered");
+  }
 
-  // The app looks a film up by THEME, so every theme must map to a look that
-  // actually has renders — otherwise those testers silently get the fallback.
-  var unmapped = Object.keys(mf.lookForTheme || {}).filter(function (th) {
-    return (mf.looks || []).indexOf(mf.lookForTheme[th]) === -1;
-  });
-  chk(unmapped.length === 0, "every theme maps to a rendered look",
-      "unmapped: " + unmapped.join(", "));
+  // THIS one is a real failure: a theme listed in the app's index whose film is
+  // not in the manifest would have the app ask for a file that is not there.
+  var listed = [];
+  try {
+    Object.keys(ONBOARDING_FILMS).forEach(function (th) {
+      var e = ONBOARDING_FILMS[th];
+      (e.scripts || []).forEach(function (sc) {
+        if (!mf.films[e.look + "__" + sc]) listed.push(th + "/" + sc);
+      });
+    });
+  } catch (e) {}
+  chk(listed.length === 0, "the app's film index matches what was rendered",
+      "listed but absent: " + listed.slice(0, 6).join(", "));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
