@@ -40,16 +40,21 @@
 // If you add motion to an SVG shape, animate its attributes, and look at a
 // snapshot: nothing in lint, check or the render reports this class of bug.
 
-const W = 1000;
-const H = 720;
+// Everything below is authored against a 1000x720 frame and rendered at SCALE.
+// The SVG viewBoxes are unitless and fit their box, so only the CSS pixel
+// values multiply — which is why every one of them goes through px().
+const SCALE = 1.5;
+const W = 1000 * SCALE;
+const H = 720 * SCALE;
 const CROSSFADE = 0.4;
+const px = (n) => Math.round(n * SCALE);
 
-// THE VERTICAL BUDGET. 720 total. The beat runs from the 62px live strip to a
+// THE VERTICAL BUDGET, in AUTHORED units (before SCALE). 720 total. The beat runs from the 62px live strip to a
 // 26px foot, leaving 632. The chyron's worst case is a two-line headline plus a
 // two-line sub — 8 rule + 14 + 2x71 + 12 + 2x34 = 244 — so the stage takes 370
 // and there is still slack. Grow the type or the stage past this and `check`
 // fails with text_occluded, which is how these numbers were arrived at.
-const STAGE_H = 370;
+const STAGE_H = 370;   // authored units; multiplied by SCALE at use
 
 const s3 = (n) => Math.round(n * 1000) / 1000;
 
@@ -142,7 +147,11 @@ function sceneMosaic(k, p, t) {
 
 function sceneLine(k, p, t) {
   const pts = p.series || [38, 42, 40, 44, 41, 58, 52, 71];
-  const x0 = 150, x1 = 850, base = 300, top = 46;
+  // `top` is not the top of the box: the delta badge sits ~92 units ABOVE the
+  // final plot point, and with top=46 that put it off-canvas — the badge was
+  // visibly guillotined. The plot ceiling now leaves room for its own label.
+  const BADGE_LIFT = 92;
+  const x0 = 150, x1 = 850, base = 302, top = BADGE_LIFT + 34;
   const step = (x1 - x0) / (pts.length - 1);
   const max = Math.max(...pts) * 1.14;
   const xy = pts.map((v, i) => [x0 + i * step, base - (v / max) * (base - top)]);
@@ -163,8 +172,8 @@ function sceneLine(k, p, t) {
       <circle class="${k}-halo" cx="${s3(head[0])}" cy="${s3(head[1])}" r="0" fill="none" stroke="${t.accent}" stroke-width="4" opacity="0"/>
       <circle class="${k}-head" cx="${s3(head[0])}" cy="${s3(head[1])}" r="0" fill="${t.accent}"/>
       <g class="${k}-badge" opacity="0">
-        <rect x="${s3(head[0]) - 68}" y="${s3(head[1]) - 96}" width="136" height="52" rx="26" fill="${badge}"/>
-        <text x="${s3(head[0])}" y="${s3(head[1]) - 60}" text-anchor="middle" font-size="27" font-weight="800"
+        <rect x="${s3(head[0]) - 68}" y="${s3(head[1] - BADGE_LIFT)}" width="136" height="52" rx="26" fill="${badge}"/>
+        <text x="${s3(head[0])}" y="${s3(head[1] - BADGE_LIFT + 36)}" text-anchor="middle" font-size="27" font-weight="800"
               font-family="Inter, sans-serif" fill="${t.onAccent}">${up ? "▲" : "▼"} ${p.pct || 0}%</text>
       </g>
     </svg>`,
@@ -263,7 +272,7 @@ function sceneRace(k, p, t) {
 function scenePeers(k, p, t) {
   const rows = p.rows || [];
   const labX = 250, x0 = 286, wTrack = 560, bh = 22, gap = 40;
-  const y0 = MID - ((rows.length * bh + (rows.length - 1) * gap) / 2);
+  const y0 = MID - ((rows.length * bh + (rows.length - 1) * gap) / 2) + 16;
   const at = (v) => s3(x0 + (v / 100) * wTrack);
 
   const svg = rows.map((r, i) => {
@@ -276,6 +285,9 @@ function scenePeers(k, p, t) {
       <rect x="${x0}" y="${y + 4}" width="${wTrack}" height="${bh - 8}" rx="7" fill="${t.rule}" opacity=".6"/>
       <rect class="${k}-b${i}" x="${at((r.lo + r.hi) / 2)}" y="${y}" width="0" height="${bh}" rx="11"
             fill="${t.accent}" opacity=".3"/>
+      ${i === 0 ? `<text class="${k}-cap" x="${at((r.lo + r.hi) / 2)}" y="${y - 14}" text-anchor="middle"
+            font-size="20" font-weight="700" font-family="Inter, sans-serif"
+            fill="${t.accent}" opacity="0">Peers like you</text>` : ""}
       <circle class="${k}-y${i}" cx="${at(r.you)}" cy="${y + bh / 2}" r="13" fill="${t.accent}" opacity="0"/>
       <g class="${k}-p${i}" opacity="0">
         <rect x="${x0 + wTrack + 22}" y="${y - 6}" width="92" height="34" rx="17" fill="${badge}"/>
@@ -291,14 +303,14 @@ function scenePeers(k, p, t) {
         .fromTo(".${k}-y${i}", { opacity: 0, x: -170 }, { opacity: 1, x: 0, duration: .5, ease: "back.out(2)" }, B + .28 + ${s3(i * 0.13)})
         .fromTo(".${k}-p${i}", { opacity: 0, x: 22 }, { opacity: 1, x: 0, duration: .3, ease: "back.out(2)" }, B + .5 + ${s3(i * 0.13)});`).join("");
 
+  // The legend used to be a caption under the whole chart — "shaded band =
+  // peers like you" — which reads like a footnote apologising for the chart.
+  // It labels the FIRST band directly instead, so the thing and its name are in
+  // the same place and the other three rows inherit the reading.
   return {
-    svg: `<svg viewBox="0 0 1000 370" class="art">
-            ${svg}
-            <text x="${x0 + wTrack / 2}" y="${y0 + rows.length * (bh + gap) - 2}" text-anchor="middle"
-                  font-size="20" font-weight="600" font-family="Inter, sans-serif"
-                  fill="${t.inkSoft}">shaded band = peers like you</text>
-          </svg>`,
-    tweens
+    svg: `<svg viewBox="0 0 1000 370" class="art">${svg}</svg>`,
+    tweens: tweens + `
+      tl.fromTo(".${k}-cap", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: .34, ease: "power2.out" }, B + .5);`
   };
 }
 
@@ -409,16 +421,16 @@ export function composition({ compositionId, beats, theme: t, totalSec }) {
           radial-gradient(48% 42% at 80% 76%, ${t.wash}${t.isDark ? "2E" : "22"} 0%, transparent 66%);
       }
 
-      #toprail { position: absolute; top: 0; left: 0; right: 0; height: 58px; display: flex;
-                 align-items: center; gap: 12px; padding: 0 78px; box-sizing: border-box; }
-      #live { display: block; width: 12px; height: 12px; border-radius: 50%; background: ${t.hot}; flex: 0 0 auto; }
+      #toprail { position: absolute; top: 0; left: 0; right: 0; height: ${px(58)}px; display: flex;
+                 align-items: center; gap: ${px(12)}px; padding: 0 ${px(78)}px; box-sizing: border-box; }
+      #live { display: block; width: ${px(12)}px; height: ${px(12)}px; border-radius: 50%; background: ${t.hot}; flex: 0 0 auto; }
       /* Full ink, not inkSoft: it is the wordmark, and inkSoft failed AA here —
          it clears 4.5:1 against the flat ground, but the glow drifts underneath
          it and takes the effective contrast down to 3.7. Caught by hyperframes check. */
-      #livetext { font-size: 15px; font-weight: 700; letter-spacing: .22em; color: ${t.ink}; }
+      #livetext { font-size: ${px(15)}px; font-weight: 700; letter-spacing: .22em; color: ${t.ink}; }
 
       .clip { position: absolute; inset: 0; }
-      .beat { position: absolute; left: 0; right: 0; top: 62px; bottom: 26px;
+      .beat { position: absolute; left: 0; right: 0; top: ${px(62)}px; bottom: ${px(26)}px;
               display: flex; flex-direction: column; overflow: hidden; }
 
       /* A light wipe across the frame on every beat change. Cheap, and it does
@@ -428,20 +440,20 @@ export function composition({ compositionId, beats, theme: t, totalSec }) {
         background: linear-gradient(100deg, transparent 38%, ${t.wash}${t.isDark ? "30" : "26"} 50%, transparent 62%);
       }
 
-      .stage { display: block; width: 100%; height: ${STAGE_H}px; flex: 0 0 auto; position: relative; }
+      .stage { display: block; width: 100%; height: ${px(STAGE_H)}px; flex: 0 0 auto; position: relative; }
       .art { display: block; width: 100%; height: 100%; overflow: visible; }
 
-      .chyron { display: block; padding: 0 78px; box-sizing: border-box; position: relative; }
-      .rule { display: block; width: 96px; height: 8px; border-radius: 4px; background: ${t.accent};
-              transform-origin: 0 50%; margin-bottom: 14px; }
-      .headline { display: block; margin: 0; font-size: 68px; font-weight: 700; letter-spacing: -.035em;
+      .chyron { display: block; padding: 0 ${px(78)}px; box-sizing: border-box; position: relative; }
+      .rule { display: block; width: ${px(96)}px; height: ${px(8)}px; border-radius: ${px(4)}px; background: ${t.accent};
+              transform-origin: 0 50%; margin-bottom: ${px(14)}px; }
+      .headline { display: block; margin: 0; font-size: ${px(68)}px; font-weight: 700; letter-spacing: -.035em;
                   line-height: 1.04; color: ${t.ink}; }
       .kw { display: inline-block; overflow: hidden; vertical-align: bottom; }
       .headline .kw > span { display: inline-block; }
-      .sub { display: block; margin: 12px 0 0; font-size: 26px; font-weight: 400; line-height: 1.28; color: ${t.inkSoft}; }
+      .sub { display: block; margin: ${px(12)}px 0 0; font-size: ${px(26)}px; font-weight: 400; line-height: 1.28; color: ${t.inkSoft}; }
 
       /* The only furniture left at the foot: how far through we are. */
-      #foot { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: ${t.rule}; }
+      #foot { position: absolute; left: 0; right: 0; bottom: 0; height: ${px(6)}px; background: ${t.rule}; }
       #elapsed { display: block; height: 100%; width: 100%; background: ${t.accent}; transform-origin: 0 50%; }
     </style>
   </head>
