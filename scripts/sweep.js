@@ -456,6 +456,27 @@ chk(maxBefore === maxAfter, "slider ceiling is stable as the value changes",
 // ─────────────────────────────────────────────────────────────────────────────
 section("7. Data integrity");
 chk(CATEGORIES.length === 12, "12-category taxonomy");
+
+// The builder's three steps must PARTITION the taxonomy. A category in no step
+// is never put to the tester and saves at whatever the peer model opened it on;
+// a category in two steps is asked twice and the second answer silently wins.
+// Neither raises anything at runtime.
+if (typeof BB_STEPS !== "undefined") {
+  var bbCovered = bbAllStepCategories();
+  var bbMissing = CATEGORIES.filter(function (c) { return bbCovered.indexOf(c) === -1; });
+  var bbTwice   = bbCovered.filter(function (c, i) { return bbCovered.indexOf(c) !== i; });
+  chk(bbMissing.length === 0 && bbTwice.length === 0 && bbCovered.length === CATEGORIES.length,
+      "the builder's " + BB_STEPS.length + " steps cover all 12 exactly once",
+      (bbMissing.length ? "never asked: " + bbMissing.join(", ") + ". " : "") +
+      (bbTwice.length ? "asked twice: " + bbTwice.join(", ") : ""));
+  chk(BB_STEPS.every(function (s) { return s.input === "exact" || s.input === "range"; }),
+      "every step declares exact or range input");
+  chk(CATEGORIES.every(function (c) { return typeof catLabel(c) === "string" && catLabel(c).length; }),
+      "every category has a display label");
+  chk(Object.keys(CATEGORY_LABELS).every(isCategory),
+      "every renamed label points at a real taxonomy member",
+      Object.keys(CATEGORY_LABELS).filter(function (k) { return !isCategory(k); }).join(", "));
+}
 // benchSelfTest checks three factors separately now — base lookup, lifestyle
 // product, cost of living — because the col factor moved when the tier table
 // was replaced by BEA. Report which one failed, not just that something did.

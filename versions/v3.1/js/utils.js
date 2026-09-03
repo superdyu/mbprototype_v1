@@ -174,7 +174,7 @@ function activeTabFor(screen) {
   if (["journalEntry","journalConfirm","journalDone"].includes(screen)) return "home";   // splash → no nav, but keep mapping defined
   // Budget sub-screens
   if (screen === "goals")             return "goals";    // v3: Goals is its own tab (D34)
-  if (["spendingProfile", "budgetCompare", "lifestyleWizard","budgetDone"].includes(screen)) return "aboutMe";
+  if (["budgetBuild", "spendingProfile", "budgetCompare", "lifestyleWizard","budgetDone"].includes(screen)) return "aboutMe";
   if (screen === "myDebts")           return "aboutMe";
   if (screen === "debtAnalyzer")      return "aboutMe";
   if (screen === "comparison")        return "aboutMe";

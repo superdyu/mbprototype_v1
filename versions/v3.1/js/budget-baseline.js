@@ -20,7 +20,8 @@
  *   monthly    { <category>: amount } across all 12
  */
 const BUDGET_BUILDER_LABELS = {
-  lifestyleWizard: "Lifestyle wizard"
+  lifestyleWizard: "Lifestyle wizard",   // v3's builder; v3.1 keeps the id readable
+  budgetBuild: "Budget builder"
 };
 
 /** Build a baseline from the current plan — powers builder re-entry. */
@@ -66,7 +67,7 @@ function applyBudgetBaseline(baseline) {
 
   // Mark any daily task that pointed at building a budget.
   (state.tasks || []).forEach(t => {
-    if (t.destination === "lifestyleWizard") t.completed = true;
+    if (t.destination === "budgetBuild") t.completed = true;
   });
   // Route through homeCompleteTask rather than setting the flag directly —
   // doing it by hand marked the task done but skipped the Charity Points it

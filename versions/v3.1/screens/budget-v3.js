@@ -19,7 +19,7 @@ function renderBudgetV3() {
     <div class="row" style="align-items:baseline;margin-bottom:2px;">
       <h1 class="title" style="margin:0;font-size:20px;">Budget</h1>
       <button class="button secondary" style="font-size:11px;padding:6px 12px;"
-              type="button" onclick="lwStart()">Rebuild</button>
+              type="button" onclick="bbStart()">Rebuild</button>
     </div>
     <p class="helper" style="margin:0 0 14px;font-size:11px;">
       ${h(state.profile.zip)} · ${h(state.profile.householdSize)} person${state.profile.householdSize > 1 ? "s" : ""}${builtBy ? " · Built with " + h(builtBy) : ""}
@@ -166,7 +166,7 @@ function renderBudgetEmpty() {
         Start from what a household like yours spends around here, then move
         anything that is not you. Six quick questions afterwards are optional.
       </p>
-      <button class="button full" type="button" onclick="lwStart()">Start</button>
+      <button class="button full" type="button" onclick="bbStart()">Start</button>
       <p class="helper" style="font-size:10px;margin:10px 0 0;">
         About a minute · nothing is saved until you say so
       </p>

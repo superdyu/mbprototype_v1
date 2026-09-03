@@ -27,6 +27,7 @@ const destinations = [
   ["journalConfirm", "Journal: Confirm"],
   ["journalDone",    "Journal: Done"],
   ["aboutMe",        "Budget"],
+  ["budgetBuild",    "Budget: Build (3 steps)"],
   ["spendingProfile","Budget: Spending Profile"],
   ["budgetCompare",  "Budget: Which is closer"],
   ["lifestyleWizard","Lifestyle Wizard"],
@@ -181,6 +182,9 @@ const state = {
   planBuiltWith: null,
   planBuiltDate: null,
   lifestyleWizard: null,
+  // v3.1 budget builder — three steps, per-line "Help me out". Holds the
+  // figures until bbSubmit() puts them through the baseline seam (L6).
+  budgetBuild: null,
 
   // Which of the six lifestyle dimensions the USER actually answered, as
   // opposed to inheriting from the persona. state.lifestyle is fully populated
@@ -268,7 +272,7 @@ const state = {
       description: "Create a rough first budget without connecting accounts.",
       cta: "Start",
       tab: "aboutMe",
-      destination: "lifestyleWizard",
+      destination: "budgetBuild",
       completed: false
     },
     {

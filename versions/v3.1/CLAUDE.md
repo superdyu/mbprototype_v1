@@ -19,18 +19,76 @@ started as a copy" cannot tell an intentional variation from a bug.
 
 ### What differs from v3 so far
 
-1. **The budget flow is inverted.** v3 asks six lifestyle questions and derives
-   a budget; v3.1 opens on twelve sliders the tester sets themselves, and the
-   questions afterwards are optional. Screens: `spendingProfile` (was v3's
-   `lifestyleWizardReview`, moved from last to first) and `budgetCompare` (new).
-   `lifestyleWizardReview` no longer exists here.
-2. **The question screens have no sliders.** Their answers produce a figure to
-   compare against, not one to drag.
-3. **`renderSpendEstimator` has a real no-session fallback.** A D19 fix, owner
+1. **The budget builder is three steps with a per-line "Help me out" toggle.**
+   `screens/budget-build.js`, screen id `budgetBuild`. v3 asks six lifestyle
+   questions and derives a budget from the answers; v3.1 opens on figures the
+   tester adjusts, grouped into three steps, and asks questions **only about
+   the lines they say they cannot estimate**.
+   - Step 1 Housing · Subscriptions, **exact** (a number field — these are
+     figures a tester can actually state). Steps 2 and 3 are **range** (the
+     band slider). Either way the budget is ONE figure; range describes how it
+     is entered, not a low–high pair being stored.
+   - `BB_STEPS` must **partition the taxonomy exactly**. A category in no step
+     saves at whatever the peer model opened it on and is never put to the
+     tester; one in two steps is asked twice and the second answer silently
+     wins. Neither raises anything. `scripts/sweep.js` §7 asserts it and the
+     builder's admin card shows the coverage.
+   - **This supersedes the earlier inverted flow.** `spendingProfile`,
+     `lifestyleWizard` and `budgetCompare` are no longer reachable from the
+     product — every door (Budget tab Start and Rebuild, the update-confirm
+     Rebuild, the daily task) now opens `budgetBuild`. The screens, their
+     renderers and `lwStart()` are **not deleted**: they stay routed and
+     admin-reachable, and v3 still runs them.
+2. **There are no lifestyle questions.** The six-dimension wizard is gone as a
+   concept in v3.1, and with it the "Which is closer?" reconciliation.
+   - **Consequence for the peer model:** `state.lifestyle` is still seeded from
+     the persona at boot, so peer figures are not generic — but nothing in the
+     v3.1 flow *changes* it any more. Until the Help-me-out trees write those
+     dimensions back (planned), two testers with the same income, household and
+     ZIP get the same band however differently they live. Do not write copy
+     that implies otherwise.
+3. **Budget figures render as a band, not three bars.**
+   `components/budget-band.js` — one track carrying the peer band (the peer
+   figure ±10%), a budget mark, and a dot. It replaced `renderComparisonRow`'s
+   three stacked bars, so the Budget tab, "Where it's going", the category
+   detail and My Progress all changed together from one file.
+   - **The track's right edge is `1.1 × max(budget, actual)`, and peers are
+     deliberately EXCLUDED from that max.** That exclusion is the feature: fold
+     peers in and the band always fits, the gray overflow rule never draws, and
+     the chart can no longer say "peers spend far more than you have planned".
+     With the seeded persona it says exactly that on five of twelve categories.
+   - **Build mode supplies its own edge** (`budgetSliderMax()`), because there
+     the budget IS the dragged value and an edge derived from it would move
+     under the thumb.
+   - The track doubles as the slider — a real `<input type="range">` over the
+     marks with a transparent track. **The 9px inset on `.band-build
+     .band-track` is load-bearing:** a native thumb's centre travels from
+     `thumbWidth/2` to `width - thumbWidth/2` while `left: %` marks travel the
+     full width, so without it the thumb and the band disagree by ~3% at the
+     ends.
+   - Colour could not reuse the old legend. `--accent` and `--good` are near
+     identical in the Natural themes (#557B58 / #4B7650) — fine as separated
+     bars, unreadable as marks on one track. Peers are the pale `--good-bg`
+     wash, the budget a neutral `--muted` rule, `--accent` is the dot.
+4. **`Health` displays as "Medical & Dental" — via a label, not a rename.**
+   `CATEGORY_LABELS` + `catLabel()` in `js/taxonomy.js`. The data key is
+   untouched everywhere, because `"Health"` is a join key across
+   peer-benchmarks, seed-state, monthToDateActuals, estimator-questions and
+   zip-cost-of-living, and any file missed is a lookup that silently returns
+   undefined. **`catLabel()` on every display site; the bare string for every
+   lookup, object key, comparison and `onclick` argument.**
+5. **The spend estimator takes a target.** `estimatorStart(cat, {target})` —
+   `"mtd"` (default) writes what you spent, `"budget"` writes a builder line
+   through `bbApplyHelp()`. Same questions, two destinations. In budget mode
+   the day-clock cooldown does **not** apply (it exists to stop the journal
+   re-asking about today; letting it latch here would block the actuals path
+   for the rest of the session) and cancelling turns the row's Help-me-out
+   toggle back off, or Continue walks straight back into the flow just declined.
+6. **`renderSpendEstimator` has a real no-session fallback.** A D19 fix, owner
    decision to leave v3's dead end alone — it is recorded in `D19_ACCEPTED` in
    `scripts/sweep.js` so the control's sweep stays green and the exception stays
    visible.
-4. **Onboarding is seven steps, reordered.** v3 asks nine:
+7. **Onboarding is seven steps, reordered.** v3 asks nine:
    name · ZIP · household · income · lifestyle · goal · buddy · film · trial.
    v3.1 asks **name · goal · ZIP · household · income · buddy · film**. The goal
    question moves from sixth to second so the tester has a stake before being

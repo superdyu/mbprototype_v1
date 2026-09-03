@@ -33,7 +33,7 @@ function renderBudgetUpdateConfirm() {
           </div>
         </div>
         <div class="journal-foot">
-          <button class="button secondary" type="button" onclick="lwStart()">Rebuild it</button>
+          <button class="button secondary" type="button" onclick="bbStart()">Rebuild it</button>
           <button class="button" type="button" onclick="navGoTab('aboutMe')">Back to budget</button>
         </div>
       </div>`;

@@ -2626,3 +2626,86 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   border-color: var(--accent-border);
   margin-bottom: 14px;
 }
+
+/* ─── Budget builder rows (screens/budget-build.js) ───────────────────────────
+   The line's input and the toggle that hands the line over, side by side. */
+
+.bb-row-body { display: flex; align-items: center; gap: 10px; }
+.bb-row-input { flex: 1; min-width: 0; }
+.bb-row-input.is-disabled { opacity: .45; pointer-events: none; }
+
+/* A line the tester has handed over. Softened rather than hidden — it is still
+   part of the step and its figure still counts toward the total. */
+.bb-row-helping { background: var(--accent-soft); border-color: var(--accent-border); }
+
+.bb-exact {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-button);
+}
+.bb-exact:focus { outline: none; border-color: var(--accent); }
+.bb-exact:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bb-exact:disabled { color: var(--muted); background: var(--soft); }
+.bb-exact::-webkit-outer-spin-button,
+.bb-exact::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.bb-help { display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; }
+.bb-help-label {
+  font-size: 9px;
+  font-weight: 850;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--muted);
+  max-width: 52px;
+}
+
+/* The switch. 44px of tap target around a 40x22 pill — the button IS the
+   target, and the pill is drawn inside it, so the visual size and the
+   touchable size are not the same number. */
+.bb-toggle {
+  position: relative;
+  width: 46px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.bb-toggle::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 22px;
+  margin: -11px 0 0 -20px;
+  background: var(--bar);
+  border-radius: 99px;
+  transition: background var(--dur) var(--ease);
+}
+.bb-toggle.on::before { background: var(--accent); }
+.bb-toggle-knob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -18px;
+  background: var(--card);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+  transition: transform var(--dur) var(--ease);
+}
+.bb-toggle.on .bb-toggle-knob { transform: translateX(16px); }
+.bb-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-toggle::before, .bb-toggle-knob { transition: none; }
+}
