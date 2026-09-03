@@ -244,7 +244,7 @@ function duCueBarCompare() {
   // figures are stated alongside the bar rather than left implicit.
   return `
     <div class="du-cue">
-      <p class="du-cue-label">${h(cat)} this month</p>
+      <p class="du-cue-label">${h(catLabel(cat))} this month</p>
       <div class="du-compare">
         <div class="du-compare-side">
           <p class="du-figure du-figure-sm">${budgetFmt(user)}</p>
@@ -280,10 +280,10 @@ function duCueCategoryGrid() {
       <div class="du-grid">
         ${CATEGORIES.map(c => `
           <div class="du-tile ${worst && c === worst.category ? "on" : ""}">
-            <span>${h(c)}</span>
+            <span>${h(catLabel(c))}</span>
           </div>`).join("")}
       </div>
-      ${worst ? `<p class="du-cue-label">${h(worst.category)} · ${worst.vsPlan > 0 ? "+" : ""}${worst.vsPlan}% vs plan</p>` : ""}
+      ${worst ? `<p class="du-cue-label">${h(catLabel(worst.category))} · ${worst.vsPlan > 0 ? "+" : ""}${worst.vsPlan}% vs plan</p>` : ""}
     </div>`;
 }
 

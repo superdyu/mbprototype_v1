@@ -312,7 +312,7 @@ function renderSpendEstimator() {
     return `
       <div class="journal-shell">
         <div class="journal-head">
-          <h1 class="title" style="font-size:20px;margin:0 0 6px;">All caught up on ${h(cat)}</h1>
+          <h1 class="title" style="font-size:20px;margin:0 0 6px;">All caught up on ${h(catLabel(cat))}</h1>
           <p class="helper" style="margin:0;">You already told me about this today — I'll ask again tomorrow.</p>
         </div>
         <div class="journal-body"></div>
@@ -342,7 +342,7 @@ function renderSpendEstimator() {
         </div>
         <div class="journal-body">
           <div class="card">
-            <p class="helper" style="margin:0 0 2px;">${h(cat)} so far this month</p>
+            <p class="helper" style="margin:0 0 2px;">${h(catLabel(cat))} so far this month</p>
             <p class="journal-total">${budgetFmt(est)}</p>
             ${e.usedKnown ? `
               <p class="helper" style="margin:6px 0 0;">
@@ -360,7 +360,7 @@ function renderSpendEstimator() {
               <label for="estAmt">Adjust it if that's not right</label>
               <input id="estAmt" type="number" min="0" step="5" value="${est}"
                      onchange="estimatorSetAdjusted(this.value)"
-                     aria-label="${h(cat)} month-to-date estimate">
+                     aria-label="${h(catLabel(cat))} month-to-date estimate">
             </div>
           </div>
 
@@ -372,7 +372,7 @@ function renderSpendEstimator() {
                    onchange="estimatorToggleConfirm()">
             <span>${replacing
               ? `Yes — replace ${budgetFmt(current)} with ${budgetFmt(est)}`
-              : `Yes — record ${budgetFmt(est)} for ${h(cat)}`}</span>
+              : `Yes — record ${budgetFmt(est)} for ${h(catLabel(cat))}`}</span>
           </label>
         </div>
         <div class="journal-foot">
@@ -389,7 +389,7 @@ function renderSpendEstimator() {
   return `
     <div class="journal-shell">
       <div class="journal-head">
-        <p class="helper" style="margin:0 0 4px;">${h(cat)} · ${e.qIndex + 1} of ${total}</p>
+        <p class="helper" style="margin:0 0 4px;">${h(catLabel(cat))} · ${e.qIndex + 1} of ${total}</p>
         <div class="journal-progress" aria-hidden="true">
           ${qs.map((_, i) => `<span class="journal-pip ${i <= e.qIndex ? "on" : ""}"></span>`).join("")}
         </div>
@@ -430,7 +430,7 @@ function renderEstimatorKnown(e) {
   return `
     <div class="journal-shell">
       <div class="journal-head">
-        <p class="helper" style="margin:0 0 4px;">${h(cat)}</p>
+        <p class="helper" style="margin:0 0 4px;">${h(catLabel(cat))}</p>
         <h1 class="title" style="font-size:20px;margin:0 0 6px;">I already know this one</h1>
         <p class="helper" style="margin:0;">
           No need to guess — here's what ${k.basis === "you told me" ? "you've told me" : "I have on file"}.
@@ -479,7 +479,7 @@ function renderSpendEstimatorAdmin() {
       <p class="admin-card-title">Spend estimator</p>
       ${e
         ? `<p class="helper" style="line-height:1.7;">
-             Estimating <strong>${h(e.category)}</strong> — ${e.questions.length} question(s),
+             Estimating <strong>${h(catLabel(e.category))}</strong> — ${e.questions.length} question(s),
              on ${Math.min(e.qIndex + 1, e.questions.length)}.<br>
              Month elapsed: ${Math.round(estimatorMonthFraction() * 100)}% ·
              running estimate ${budgetFmt(estimatorCompute())}<br>

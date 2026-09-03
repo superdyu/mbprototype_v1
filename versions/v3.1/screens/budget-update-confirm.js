@@ -81,7 +81,7 @@ function renderBudgetUpdateConfirm() {
           ${rows.map(r => `
             <div class="card budget-row">
               <div class="row" style="align-items:baseline;">
-                <span class="budget-row-name">${h(r.category)}</span>
+                <span class="budget-row-name">${h(catLabel(r.category))}</span>
                 <span class="helper">
                   ${budgetFmt(r.before)} →
                   <strong style="color:var(--text);">${budgetFmt(r.after)}</strong>

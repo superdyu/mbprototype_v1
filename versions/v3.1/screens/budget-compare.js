@@ -94,7 +94,7 @@ function renderCompareRow(category) {
 
   return `
     <div class="card compare-row">
-      <p class="compare-cat">${h(category)}</p>
+      <p class="compare-cat">${h(catLabel(category))}</p>
       <div class="compare-opts">
         ${opts.map(o => `
           <button class="compare-opt ${pick === o.key ? "picked" : ""}" type="button"
@@ -124,7 +124,7 @@ function renderBudgetCompareAdmin() {
         <label>Row by row — slider · mid · model → resolved</label>
         <div class="helper" style="line-height:1.8;">
           ${rows.length ? rows.map(c => `
-            ${h(c)}: ${budgetFmt(lwProfileValue(c))} ·
+            ${h(catLabel(c))}: ${budgetFmt(lwProfileValue(c))} ·
             ${budgetFmt(lwMidValue(c))} ·
             ${budgetFmt(lwModelValue(c))}
             → <strong>${budgetFmt(lwResolved(c))}</strong>

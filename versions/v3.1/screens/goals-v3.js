@@ -123,7 +123,7 @@ function renderGoalSuggestions(context, title) {
       <div class="journal-options">
         ${noData ? `
           <button class="journal-opt" type="button" onclick="estimatorStart('${h(cat).replace(/'/g, "\\'")}')">
-            <span class="journal-opt-label">First, estimate your ${h(cat.toLowerCase())} spend</span>
+            <span class="journal-opt-label">First, estimate your ${h(catLabel(cat).toLowerCase())} spend</span>
           </button>` : ""}
         ${sugs.map((s, i) => `
           <button class="journal-opt" type="button" onclick="goalsAddSuggestedAt(${i})">

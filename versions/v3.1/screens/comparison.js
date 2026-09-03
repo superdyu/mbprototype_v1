@@ -97,15 +97,8 @@ function renderComparisonBody() {
     .slice(0, 3);
 
   return `
-    <div class="card cmp-legend">
-      ${cmpHasPlan() ? `<div><span class="cmp-key cmp-key-plan"></span>Your budget</div>` : ""}
-      <div><span class="cmp-key cmp-key-peer"></span>Peers</div>
-      <div><span class="cmp-key cmp-key-user"></span>What you told me</div>
-      <p class="helper" style="margin:10px 0 0;font-size:10px;">
-        Peers are a calculated comparison, not real people — public spending
-        data for households your size and income, adjusted for where you live.
-      </p>
-    </div>
+    ${renderComparisonSpendBanner()}
+    ${renderBudgetBandLegend({ hasPlan: cmpHasPlan() })}
 
     ${flagged.length ? `
       <div class="section-title" style="margin:18px 0 4px;">Worth a look</div>
@@ -121,28 +114,54 @@ function renderComparisonBody() {
   `;
 }
 
-// One category, three layers, both gaps — labelled distinctly.
-function renderComparisonRow(r) {
-  const max = Math.max(r.plan, r.user, r.peer || 0, 1);
-  const bar = (v, cls) =>
-    `<div class="cmp-bar"><span class="${cls}" style="width:${Math.max(2, (v / max) * 100)}%"></span></div>`;
+/**
+ * "You have not told me anything yet" — the banner above the whole list.
+ *
+ * Every band on the screen below can draw a budget and a peer range without
+ * the tester having logged a thing, and every dot sits on zero. That is a
+ * chart full of shapes saying nothing, and it looks like the app has decided
+ * they spent nothing rather than that it has not been told.
+ *
+ * Owner's requirement: when no spend is registered, say so at the top and give
+ * one route into the Money Journal. Gated on the WHOLE month being empty — a
+ * per-category version of this would put a banner over eleven categories the
+ * moment somebody logs one.
+ */
+function renderComparisonSpendBanner() {
+  if (catTotal(state.mtd) > 0) return "";
+  return `
+    <div class="card cmp-nospend cmp-nospend-banner">
+      <p class="task-title" style="margin:0 0 4px;">Track what you actually spend</p>
+      <p class="task-desc" style="margin:0 0 12px;">
+        Your budget is set and I know roughly where peers like you land. The
+        missing piece is what is really happening — that comes from your Money
+        Journal, a few quick questions at a time.
+      </p>
+      <button class="button full" type="button" onclick="mpStartUpdate()">
+        Start my Money Journal ›
+      </button>
+    </div>`;
+}
 
+// ─── One category, on one track ──────────────────────────────────────────────
+// Was three stacked bars. Three bars state three numbers and leave the reader
+// to work out the relationship; the band puts them in one, which is the
+// comparison the screen exists for.
+//
+// What does NOT change: both gaps still appear, still labelled distinctly.
+// L11 is explicit that "34% over your plan" and "16% over peers" are different
+// claims about the same category and neither may stand in for the other — the
+// picture makes the relationship obvious, the pills keep it precise.
+function renderComparisonRow(r) {
   return `
     <div class="card cmp-row">
-      <div class="row" style="align-items:baseline;margin-bottom:8px;">
-        <span class="budget-row-name">${h(r.category)}</span>
+      <div class="row" style="align-items:baseline;margin-bottom:12px;">
+        <span class="budget-row-name">${h(catLabel(r.category))}</span>
         <span class="helper" style="font-size:11px;">${budgetFmt(r.user)} so far</span>
       </div>
 
-      <!-- Order is budget → peers → you: the two references first, then what
-           actually happened, so the eye lands on the user's own bar last. -->
-      <div class="cmp-bars">
-        ${r.hasPlan
-          ? `<span class="cmp-label">Budget</span>${bar(r.plan, "cmp-key-plan")}<span class="cmp-val">${budgetFmt(r.plan)}</span>`
-          : ""}
-        <span class="cmp-label">Peers</span>${bar(r.peer || 0, "cmp-key-peer")}<span class="cmp-val">${r.peer == null ? "—" : budgetFmt(r.peer)}</span>
-        <span class="cmp-label">You</span>${bar(r.user, "cmp-key-user")}<span class="cmp-val">${budgetFmt(r.user)}</span>
-      </div>
+      ${renderBudgetBand({ category: r.category, budget: r.plan, actual: r.user, peer: r.peer })}
+      ${cmpBandCaption(r)}
 
       <div class="cmp-gaps">
         ${cmpGapPill(r.vsPlan, "vs your budget")}
@@ -150,6 +169,26 @@ function renderComparisonRow(r) {
       </div>
     </div>
   `;
+}
+
+/**
+ * The figures the track cannot state itself.
+ *
+ * A band is a position, not a number, so the caption carries the two the
+ * tester would otherwise have to guess at. It also has to say when the peer
+ * band ran off the right edge — the gray rule shows that the track was cut,
+ * but only words can say what was cut off, and "peers are above this chart"
+ * is one of the more interesting things the comparison can report.
+ */
+function cmpBandCaption(r) {
+  const g = budgetBandGeometry({ budget: r.plan, actual: r.user, peer: r.peer });
+  const peers = !g.hasPeer ? "—"
+    : `${budgetFmt(g.peerLo)}–${budgetFmt(g.peerHi)}`;
+  return `
+    <div class="band-caption">
+      ${r.hasPlan ? `<span>Budget <strong>${budgetFmt(r.plan)}</strong></span>` : `<span>No budget yet</span>`}
+      <span>${g.clipped ? "Peers sit above this chart — " : "Peers "}<strong>${h(peers)}</strong></span>
+    </div>`;
 }
 
 // The label is half the point — an unlabelled percentage is the trap.
@@ -170,18 +209,13 @@ function renderComparisonFlag(r) {
   const gap = cmpImpact(r);
   return `
     <div class="card cmp-row cmp-flag">
-      <div class="row" style="align-items:baseline;margin-bottom:8px;">
-        <span class="budget-row-name">${h(r.category)}</span>
+      <div class="row" style="align-items:baseline;margin-bottom:12px;">
+        <span class="budget-row-name">${h(catLabel(r.category))}</span>
         <span class="obs-figure">${overPeer ? "+" : ""}${budgetFmt(gap)}</span>
       </div>
 
-      <div class="cmp-bars">
-        ${r.hasPlan
-          ? `<span class="cmp-label">Budget</span>${cmpFlagBar(r, r.plan, "cmp-key-plan")}<span class="cmp-val">${budgetFmt(r.plan)}</span>`
-          : ""}
-        <span class="cmp-label">Peers</span>${cmpFlagBar(r, r.peer || 0, "cmp-key-peer")}<span class="cmp-val">${r.peer == null ? "—" : budgetFmt(r.peer)}</span>
-        <span class="cmp-label">You</span>${cmpFlagBar(r, r.user, "cmp-key-user")}<span class="cmp-val">${budgetFmt(r.user)}</span>
-      </div>
+      ${renderBudgetBand({ category: r.category, budget: r.plan, actual: r.user, peer: r.peer })}
+      ${cmpBandCaption(r)}
 
       <div class="cmp-gaps">
         ${cmpGapPill(r.vsPlan, "vs your budget")}
@@ -190,7 +224,7 @@ function renderComparisonFlag(r) {
 
       <button class="button secondary full" style="font-size:12px;padding:8px 14px;margin-top:10px;"
               type="button" onclick="goToCategory('${h(r.category).replace(/'/g, "\\'")}')">
-        Look into ${h(r.category)} ›
+        Look into ${h(catLabel(r.category))} ›
       </button>
     </div>
   `;
@@ -209,19 +243,54 @@ function renderComparisonCompact(limit) {
     .sort((a, b) => Math.abs(b.vsPlan || 0) - Math.abs(a.vsPlan || 0))
     .slice(0, limit || 5);
 
+  // Every category is silent. Nothing has been logged, so there is no strip to
+  // draw — and D19 forbids rendering the empty one. The prompt IS the content
+  // here, and it is the only route from "I can see the gap" to closing it.
+  if (!rows.length) return renderComparisonNoSpend();
+
   return `
     ${rows.map(r => `
-      <div class="row cmp-compact">
-        <span class="cmp-compact-name">${h(r.category)}</span>
-        <span class="helper" style="font-size:11px;">
-          ${budgetFmt(r.user)} / ${budgetFmt(r.plan)}
-        </span>
-        ${cmpGapPill(r.vsPlan, "vs budget")}
+      <div class="cmp-compact-band">
+        <div class="row" style="align-items:baseline;margin-bottom:8px;">
+          <span class="cmp-compact-name">${h(catLabel(r.category))}</span>
+          <span class="helper" style="font-size:11px;">${budgetFmt(r.user)} so far</span>
+          ${cmpGapPill(r.vsPlan, "vs budget")}
+        </div>
+        ${renderBudgetBand({ category: r.category, budget: r.plan, actual: r.user, peer: r.peer })}
+        ${cmpBandCaption(r)}
       </div>
     `).join("")}
-    <button class="button secondary full" style="margin-top:10px;" type="button"
+    <button class="button secondary full" style="margin-top:12px;" type="button"
             onclick="navGoTabRoot('aboutMe')">See all twelve</button>
   `;
+}
+
+/**
+ * Nothing logged yet.
+ *
+ * The band can draw a budget and a peer range with no spend at all, but the
+ * dot — the whole reason to look — would sit on zero, which reads as "you have
+ * spent nothing" rather than "you have not told me yet". So the prompt
+ * replaces the chart rather than sitting under it.
+ *
+ * mpStartUpdate() is the existing entry point (screens/my-progress.js). It
+ * clears state.activeTaskId before opening the journal, which matters: without
+ * that, an abandoned bookmark task gets completed and pays out its bones for a
+ * flow the tester never started. Reuse it rather than writing a second door.
+ */
+function renderComparisonNoSpend() {
+  return `
+    <div class="cmp-nospend">
+      <p class="task-title" style="margin:0 0 4px;">Nothing tracked yet</p>
+      <p class="task-desc" style="margin:0 0 12px;">
+        Your budget and where peers like you land are both here — what is
+        missing is you. A few quick questions in your Money Journal and these
+        fill in.
+      </p>
+      <button class="button full" type="button" onclick="mpStartUpdate()">
+        Start my Money Journal ›
+      </button>
+    </div>`;
 }
 
 function renderComparisonAdmin() {
@@ -236,7 +305,7 @@ function renderComparisonAdmin() {
       </p>
       <div class="helper" style="line-height:1.9;">
         ${rows.map(r => `
-          ${h(r.category)}: ${budgetFmt(r.plan)} / ${budgetFmt(r.user)} / ${r.peer == null ? "—" : budgetFmt(r.peer)}
+          ${h(catLabel(r.category))}: ${budgetFmt(r.plan)} / ${budgetFmt(r.user)} / ${r.peer == null ? "—" : budgetFmt(r.peer)}
           ${cmpWorthNoticing(r) ? "<strong>⚑</strong>" : ""}
         `).join("<br>")}
       </div>

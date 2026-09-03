@@ -8,6 +8,13 @@
 //   • the ACTUALS are updated through a clear CTA that opens the behavioral
 //     estimator (Money-Journal style) — you never type a dollar figure.
 
+// The plan slider is the SAME track as the comparison above it, made
+// draggable — so the peer band a tester is setting their plan against stays on
+// screen, in the same place, while they set it.
+//
+// Its ceiling is budgetSliderMax(), derived from the seeded plan and the peer
+// figure and never from the value being dragged. A ceiling that moved with the
+// value is what made the old thumb recoil on release.
 function renderBudgetCategory() {
   const category = isCategory(state.selectedCategory) ? state.selectedCategory : CATEGORIES[0];
   const r = cmpRow(category);
@@ -17,10 +24,12 @@ function renderBudgetCategory() {
   const catArg = h(category).replace(/'/g, "\\'");
 
   return `
-    <h1 class="title" style="margin:0 0 4px;font-size:20px;">${h(category)}</h1>
+    <h1 class="title" style="margin:0 0 4px;font-size:20px;">${h(catLabel(category))}</h1>
     <p class="helper" style="margin:0 0 14px;">
       Your plan, what you've told me, and peers — for this one category.
     </p>
+
+    ${hasData ? "" : renderCategoryNoSpend(category)}
 
     ${renderComparisonRow(r)}
 
@@ -31,10 +40,17 @@ function renderBudgetCategory() {
         <!-- id is budgetSetPlan's live-drag target (budget-v3.js) — keep in step -->
         <span class="budget-row-amt" id="planAmt${idx}">${budgetFmt(r.plan)}</span>
       </div>
-      <input class="journal-slider" type="range" min="0" max="${max}" step="5" value="${r.plan}"
-             oninput="budgetSetPlan('${catArg}', this.value, true)"
-             aria-label="${h(category)} planned amount">
-      <p class="helper" style="font-size:11px;margin:6px 0 0;">Drag to adjust your monthly plan.</p>
+      ${renderBudgetBandSlider({
+        category: category,
+        value: r.plan,
+        peer: r.peer,
+        max: max,
+        oninput: `budgetSetPlan('${catArg}', this.value, true)`
+      })}
+      <p class="helper" style="font-size:11px;margin:6px 0 0;">
+        Drag to adjust your monthly plan. The shaded stretch is where peers like
+        you land.
+      </p>
     </div>` : `
     <div class="card">
       <p class="helper" style="margin:0 0 10px;">
@@ -51,8 +67,34 @@ function renderBudgetCategory() {
       A few quick questions about your habits — I'll work out the number.
     </p>
 
-    ${renderGoalSuggestions({ source: "budget", category: category }, h(category) + " goals")}
+    ${renderGoalSuggestions({ source: "budget", category: category }, h(catLabel(category)) + " goals")}
   `;
+}
+
+/**
+ * This one category has nothing logged against it.
+ *
+ * The screen-wide banner in comparison.js is gated on the whole month being
+ * empty; this is the per-category case, and it is the one the owner described
+ * — you are looking at a category, its dot is on zero, and nothing on screen
+ * explains why. The estimator button below does a different job (it asks about
+ * habits and writes a figure); this offers the journal, which is where real
+ * spend comes from.
+ */
+function renderCategoryNoSpend(category) {
+  return `
+    <div class="card cmp-nospend cmp-nospend-banner">
+      <p class="task-title" style="margin:0 0 4px;">
+        Nothing tracked for ${h(catLabel(category))} yet
+      </p>
+      <p class="task-desc" style="margin:0 0 12px;">
+        The dot below sits at zero because I have not been told, not because
+        nothing was spent. Your Money Journal is where that comes from.
+      </p>
+      <button class="button full" type="button" onclick="mpStartUpdate()">
+        Start my Money Journal ›
+      </button>
+    </div>`;
 }
 
 function renderBudgetCategoryAdmin() {
@@ -60,7 +102,7 @@ function renderBudgetCategoryAdmin() {
   const r = cmpRow(category);
   return `
     <div class="admin-card">
-      <p class="admin-card-title">Category — ${h(category)}</p>
+      <p class="admin-card-title">Category — ${h(catLabel(category))}</p>
       <div class="helper" style="line-height:1.9;">
         plan <strong>${budgetFmt(r.plan)}</strong> ·
         you told me <strong>${budgetFmt(r.user)}</strong> ·
@@ -71,7 +113,7 @@ function renderBudgetCategoryAdmin() {
       <div class="input-group" style="margin-top:10px;">
         <label>Jump to a different category</label>
         <select onchange="state.selectedCategory=this.value;render()">
-          ${CATEGORIES.map(c => `<option value="${h(c)}" ${c === category ? "selected" : ""}>${h(c)}</option>`).join("")}
+          ${CATEGORIES.map(c => `<option value="${h(c)}" ${c === category ? "selected" : ""}>${h(catLabel(c))}</option>`).join("")}
         </select>
       </div>
     </div>

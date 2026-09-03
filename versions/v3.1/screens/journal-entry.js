@@ -132,7 +132,7 @@ function renderJournalInput(q, s) {
           <select onchange="journalSetNumber('${q.id}','category',this.value)">
             <option value="">Choose a category</option>
             ${CATEGORIES.map(c => `
-              <option value="${h(c)}" ${a.category === c ? "selected" : ""}>${h(c)}</option>
+              <option value="${h(c)}" ${a.category === c ? "selected" : ""}>${h(catLabel(c))}</option>
             `).join("")}
           </select>
         </div>` : ""}

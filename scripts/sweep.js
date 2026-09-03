@@ -518,6 +518,11 @@ var DEAD_BASELINE = [
   // replaced the observation cards. Kept because a future edit mode wants them.
   "renderBudgetCategoryRow",
   "renderBudgetObservationCards",
+  // Orphaned when the three stacked Budget/Peers/You bars became one band
+  // track (components/budget-band.js). Kept, not deleted: it is the only
+  // implementation of the old per-flag bar scaling, and v3 still renders that
+  // layout — the two versions stay diffable.
+  "cmpFlagBar",
   "themeIsDark"                 // L21, for a screen that wants to branch on theme
 ];
 

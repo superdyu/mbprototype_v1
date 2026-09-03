@@ -867,13 +867,13 @@ function renderBudgetSliderRow(category, amount, _fmt, bounds) {
   return `
     <div class="card budget-row">
       <div class="row" style="align-items:baseline;margin-bottom:6px;">
-        <span class="budget-row-name">${h(category)}</span>
+        <span class="budget-row-name">${h(catLabel(category))}</span>
         <span class="budget-row-amt" id="lwAmt${idx}">${budgetFmt(value)} a month</span>
       </div>
       <input class="journal-slider" type="range" min="${min}" max="${max}" step="5"
              value="${value}"
              oninput="lwAdjust('${h(category)}', this.value)"
-             aria-label="${h(category)} monthly amount">
+             aria-label="${h(catLabel(category))} monthly amount">
       ${bounds ? `
         <p class="helper" style="margin:6px 0 0;font-size:10px;">
           ${h(budgetFmt(bounds.min))} to ${bounds.openTop

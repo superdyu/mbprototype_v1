@@ -47,7 +47,7 @@ function renderPostResult() {
         <div class="section-title" style="margin-bottom:8px;">Your budget at a glance</div>
         ${CATEGORIES.slice(0,5).map(cat => `
           <div class="row" style="margin-bottom:4px;">
-            <span class="helper">${h(cat.icon || "")} ${h(cat)}</span>
+            <span class="helper">${h(catLabel(cat))}</span>
             <span class="stat-val">${budgetFmt(catValue(state.plan, cat))}</span>
           </div>
         `).join("")}

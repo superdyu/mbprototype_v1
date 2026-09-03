@@ -71,11 +71,11 @@ function renderBudgetCategoryRow(category) {
     <div class="card budget-row">
       <div class="row budget-row-head" style="align-items:baseline;margin-bottom:2px;">
         <button class="budget-row-open" type="button" onclick="goToCategory('${catArg}')">
-          <span class="budget-row-name">${h(category)}</span>
+          <span class="budget-row-name">${h(catLabel(category))}</span>
         </button>
         <span class="budget-row-amt" id="planAmt${idx}">${budgetFmt(plan)}</span>
         <button class="budget-row-chev" type="button" onclick="goToCategory('${catArg}')"
-                aria-label="Open ${h(category)}">›</button>
+                aria-label="Open ${h(catLabel(category))}">›</button>
       </div>
       <div class="row" style="align-items:baseline;margin-bottom:6px;">
         <span class="helper" style="font-size:11px;">
@@ -89,7 +89,7 @@ function renderBudgetCategoryRow(category) {
       <input class="journal-slider" type="range" min="0" max="${max}" step="5"
              value="${plan}"
              oninput="budgetSetPlan('${h(category)}', this.value, true)"
-             aria-label="${h(category)} planned amount">
+             aria-label="${h(catLabel(category))} planned amount">
     </div>
   `;
 }
@@ -249,7 +249,7 @@ function renderBudgetV3Admin() {
       </div>
       ${CATEGORIES.map(c => `
         <div class="input-group" style="margin-bottom:6px;">
-          <label>${h(c)} — peer ${budgetFmt(benchPeerValue(c, benchOptsForUser()))}</label>
+          <label>${h(catLabel(c))} — peer ${budgetFmt(benchPeerValue(c, benchOptsForUser()))}</label>
           <input type="number" min="0" value="${catValue(state.plan, c)}"
                  onchange="budgetSetPlan('${h(c)}', this.value)">
         </div>

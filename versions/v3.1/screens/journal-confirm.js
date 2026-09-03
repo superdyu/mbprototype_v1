@@ -65,7 +65,7 @@ function renderJournalConfirm() {
               <p class="journal-amount" id="jAmt${h(e.id)}">${budgetFmt(e.amount)}</p>
             </div>
             <p class="helper" style="margin:0 0 10px;">
-              ${h(e.category)}${e.estimated && !e.adjusted ? " · estimated" : ""}${e.adjusted ? " · adjusted" : ""}
+              ${h(catLabel(e.category))}${e.estimated && !e.adjusted ? " · estimated" : ""}${e.adjusted ? " · adjusted" : ""}
             </p>
             <!-- The ceiling is derived from baseAmount, the ORIGINAL estimate,
                  not from e.amount, which is what the drag changes. A

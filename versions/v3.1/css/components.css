@@ -2449,3 +2449,180 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   border-color: var(--accent);
   background: var(--accent-soft);
 }
+
+/* ─── Budget band — the box-and-whiskers track (components/budget-band.js) ────
+   Replaces the three stacked .cmp-bar rows. Built from absolutely-positioned
+   spans on a percentage scale rather than SVG, so it is correct at any width
+   and the dot stays a circle.
+
+   COLOUR, and why it is not the legend's old three:
+   `--accent` and `--good` are near-identical greens in the Natural themes
+   (#557B58 vs #4B7650). Three separated bars carried that fine; three marks on
+   ONE track would not. So peers become the pale --good-bg wash with a
+   --good-border edge, the budget becomes a neutral --muted rule, and --accent
+   is spent on the one mark that matters most — the tester's own dot. */
+
+.band { position: relative; width: 100%; }
+
+.band-track {
+  position: relative;
+  height: 10px;
+  background: var(--progress-bg);
+  border-radius: 99px;
+}
+
+/* Where peers like you land. A wash, not a fill — it is context behind the
+   figures, and a saturated band would out-shout the dot sitting on it. */
+.band-peer {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  background: var(--good-bg);
+  border: 1px solid var(--good-border);
+  border-radius: 99px;
+  box-sizing: border-box;
+}
+.band-peer-mid {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--good);
+  border-radius: 2px;
+}
+
+/* The budget: a reference line, taller than the track so it reads as an axis
+   mark rather than as another value sitting in it. */
+.band-budget {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--muted);
+  border-radius: 2px;
+}
+
+/* What you actually spent. The ring is --card, not white: it keeps the dot
+   legible when it lands on top of the peer wash, in every theme. */
+.band-dot {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  background: var(--accent);
+  border: 2px solid var(--card);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .18);
+}
+
+/* Peers run past the right edge. Without this a clipped band is
+   indistinguishable from one that merely reaches the end of the track. */
+.band-clip {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  right: 0;
+  width: 3px;
+  background: var(--line);
+  border-radius: 2px;
+}
+.band-clip::after {
+  content: "›";
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: 850;
+  color: var(--muted);
+}
+
+.band-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 7px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.band-caption strong { color: var(--text); font-weight: 850; }
+
+/* ── Build mode: the track IS the slider ─────────────────────────────────────
+   A real <input type="range"> laid over the marks with a transparent track, so
+   the browser keeps pointer capture, keyboard stepping and focus and we do not
+   re-implement any of it.
+
+   THE 9px INSET IS NOT COSMETIC. A native thumb's CENTRE travels from
+   thumbWidth/2 to width - thumbWidth/2, while `left: %` marks travel the full
+   0–100%. Left alone, the thumb and the peer band it is being compared against
+   are measured on two different scales and disagree by ~3% at the ends. Inset
+   the marks by half the thumb and both travel the same distance. */
+.band-build { height: 44px; }          /* tap target, not decoration */
+.band-build .band-track {
+  position: absolute;
+  top: 50%;
+  left: 9px;
+  right: 9px;
+  margin-top: -5px;
+}
+.band-range {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.band-range:focus { outline: none; }
+.band-range:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.band-range::-webkit-slider-runnable-track { height: 100%; background: transparent; border: 0; }
+.band-range::-moz-range-track          { height: 100%; background: transparent; border: 0; }
+.band-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--card);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
+  cursor: grab;
+}
+.band-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--card);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
+  cursor: grab;
+  box-sizing: border-box;
+}
+.band-range:disabled::-webkit-slider-thumb { background: var(--muted); cursor: not-allowed; }
+.band-range:disabled::-moz-range-thumb     { background: var(--muted); cursor: not-allowed; }
+.band-build.is-disabled .band-track { opacity: .45; }
+
+/* Legend keys — must match the marks above or the legend lies. */
+.band-key { width: 12px; height: 10px; border-radius: 3px; display: inline-block; }
+.band-key-budget { width: 3px; border-radius: 2px; background: var(--muted); }
+.band-key-peer   { background: var(--good-bg); border: 1px solid var(--good-border); box-sizing: border-box; }
+.band-key-you    { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+
+/* Band rows inside the My Progress strip — separated by a rule rather than
+   carded, because they already sit inside a card. */
+.cmp-compact-band { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.cmp-compact-band:last-of-type { border-bottom: 0; }
+
+/* Nothing logged yet. Replaces the chart rather than sitting under it — a
+   track whose dot is pinned to zero reads as "you spent nothing" (D19). */
+.cmp-nospend { }
+.cmp-nospend-banner {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  margin-bottom: 14px;
+}
