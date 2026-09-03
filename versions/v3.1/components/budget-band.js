@@ -62,20 +62,26 @@ function bandScale() {
  *   hi       the track's right edge. Supply it in BUILD mode; omit it and the
  *            owner's view rule applies.
  *
- * ── WHY THE RIGHT EDGE IS NOT DERIVED FROM PEERS ────────────────────────────
- * hi is 1.1 x max(budget, actual). Peers are deliberately EXCLUDED from that
- * max, and that exclusion is the whole point: it is what lets a peer band sit
- * above the visible track, which is a real and interesting state ("people like
- * you spend far more on this than you have planned"). Fold peers into the max
- * and the band always fits, the gray rule never draws, and the chart can no
- * longer say that thing.
+ * ── THE RIGHT EDGE FITS EVERYTHING ON THE TRACK ─────────────────────────────
+ * hi is 1.1 x the largest mark -- budget, spend, or the TOP OF THE PEER BAND.
+ * Peers are in that max, so every mark is always visible with a tenth of the
+ * track as breathing room past the highest one.
  *
- * ── AND WHY BUILD MODE SUPPLIES ITS OWN ─────────────────────────────────────
- * In build mode the budget IS the value being dragged, so an edge derived from
- * it would move under the thumb -- the recoil that budgetSliderMax() was
- * written to kill (screens/budget-v3.js). Build passes that same stable
- * ceiling, which is generous enough that the peer band is always on-chart
- * while the tester is choosing against it.
+ * This was briefly the other way round, with peers excluded so that a band
+ * sitting above everything else would run off the edge and be marked. Against
+ * the seeded persona that fired on five of twelve categories -- LA prices
+ * against a modest budget -- so the chart drew nothing at all on nearly half
+ * its rows. "Peers spend far more than you planned" is better said by a band
+ * sitting hard right of the budget mark than by an empty track and a rule.
+ *
+ * ── WHY BUILD MODE STILL SUPPLIES ITS OWN ───────────────────────────────────
+ * There the budget IS the value being dragged, so an edge computed from the
+ * marks would move under the thumb -- the recoil that budgetSliderMax() was
+ * written to kill (screens/budget-v3.js). Build passes that stable ceiling
+ * instead. It is always well clear of the peer band (budgetSliderMax is at
+ * least 2.2x the peer figure, against a band top of 1.1x), so peers stay on
+ * screen there too -- a slider also needs somewhere to drag TO, which an edge
+ * pinned to the current marks would not leave.
  */
 function budgetBandGeometry(o) {
   const opts  = o || {};
@@ -89,12 +95,7 @@ function budgetBandGeometry(o) {
   const peerHi = hasPeer ? peer * (1 + BAND_PEER_SPREAD) : null;
 
   let hi = Math.max(0, Number(opts.hi) || 0);
-  if (!hi) hi = BAND_HEADROOM * Math.max(budget, actual);
-  // Nothing to anchor on -- no budget, no spend. Falling through to 1 would
-  // put the peer band off-chart on a screen that has nothing else to show, so
-  // borrow the peer figure for the frame rather than render a track of marks
-  // all sitting on zero.
-  if (hi <= 0 && hasPeer) hi = BAND_HEADROOM * peerHi;
+  if (!hi) hi = BAND_HEADROOM * Math.max(budget, actual, peerHi || 0);
   hi = Math.max(hi, 1);
 
   const pct = v => (v == null ? null : Math.max(0, Math.min(100, (v / hi) * 100)));
@@ -104,7 +105,11 @@ function budgetBandGeometry(o) {
     budget: budget, actual: actual,
     peer: peer, peerLo: peerLo, peerHi: peerHi,
     hasPeer: hasPeer,
-    // Any of the band past the right edge, and how much of it is left visible.
+    // A GUARD, not a designed state. With hi computed above nothing can
+    // overflow -- but a caller supplying its own hi (build mode does) could
+    // hand over one tighter than the peer band, and a band silently drawn to
+    // the edge would read as "peers top out exactly here". So the overflow
+    // stays detectable and marked wherever it comes from.
     clipped:      hasPeer && peerHi > hi,
     bandOffChart: hasPeer && peerLo >= hi,
     pct: {

@@ -52,14 +52,26 @@ started as a copy" cannot tell an intentional variation from a bug.
    figure ±10%), a budget mark, and a dot. It replaced `renderComparisonRow`'s
    three stacked bars, so the Budget tab, "Where it's going", the category
    detail and My Progress all changed together from one file.
-   - **The track's right edge is `1.1 × max(budget, actual)`, and peers are
-     deliberately EXCLUDED from that max.** That exclusion is the feature: fold
-     peers in and the band always fits, the gray overflow rule never draws, and
-     the chart can no longer say "peers spend far more than you have planned".
-     With the seeded persona it says exactly that on five of twelve categories.
+   - **The track's right edge is `1.1 × max(budget, actual, peerHi)` — every
+     mark on the track is in that max**, so nothing ever falls off and there is
+     always a tenth of the track as headroom past the highest one.
+     *This was briefly the other way round*, with peers excluded so a band
+     above everything else would run off the edge and be marked. Against the
+     seeded persona that fired on **five of twelve** categories (LA prices, a
+     modest budget) and drew an empty track on nearly half the rows. Owner's
+     correction: the rail fits whatever is on it. "Peers spend far more than
+     you planned" is better said by a band sitting hard right of the budget
+     mark than by an empty track and a rule.
+   - **`clipped` / `bandOffChart` survive as a GUARD, not a designed state.**
+     Nothing can overflow the computed edge, but a caller supplying its own
+     `hi` could hand over one tighter than the band — and a band silently drawn
+     to the edge would read as "peers top out exactly here".
    - **Build mode supplies its own edge** (`budgetSliderMax()`), because there
-     the budget IS the dragged value and an edge derived from it would move
-     under the thumb.
+     the budget IS the dragged value and an edge computed from the marks would
+     move under the thumb. That ceiling is at least 2.2× the peer figure
+     against a band top of 1.1×, so peers stay on screen there too — and a
+     slider needs somewhere to drag *to*, which an edge pinned to the current
+     marks would not leave.
    - The track doubles as the slider — a real `<input type="range">` over the
      marks with a transparent track. **The 9px inset on `.band-build
      .band-track` is load-bearing:** a native thumb's centre travels from
