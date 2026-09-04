@@ -2579,7 +2579,16 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   right: 9px;
   margin-top: -5px;
 }
-.band-range {
+/* ── .screen-SCOPED, AND THAT IS THE WHOLE POINT ─────────────────────────────
+   `.screen input` (0,1,1) sets background: var(--card) and a card radius, and
+   it BEATS a bare `.band-range` (0,1,0). This is the only slider in the app
+   with -webkit-appearance: none — every other one keeps its native track, so
+   the element's own background is never seen and the override is harmless.
+   Strip the native track and that card background becomes visible: a 44px-tall,
+   full-width, rounded box painted straight over the rail, with the thumb
+   floating in the middle of it.
+   Scoping to `.screen .band-range` (0,2,0) wins. Do not un-scope it. */
+.screen .band-range {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -2587,14 +2596,16 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   margin: 0;
   padding: 0;
   background: transparent;
+  border: 0;
+  border-radius: 0;
   -webkit-appearance: none;
   appearance: none;
 }
-.band-range:focus { outline: none; }
-.band-range:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
-.band-range::-webkit-slider-runnable-track { height: 100%; background: transparent; border: 0; }
-.band-range::-moz-range-track          { height: 100%; background: transparent; border: 0; }
-.band-range::-webkit-slider-thumb {
+.screen .band-range:focus { outline: none; }
+.screen .band-range:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.screen .band-range::-webkit-slider-runnable-track { height: 100%; background: transparent; border: 0; }
+.screen .band-range::-moz-range-track  { height: 100%; background: transparent; border: 0; }
+.screen .band-range::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 18px;
   height: 18px;
@@ -2604,7 +2615,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
   cursor: grab;
 }
-.band-range::-moz-range-thumb {
+.screen .band-range::-moz-range-thumb {
   width: 18px;
   height: 18px;
   border-radius: 50%;
@@ -2614,8 +2625,8 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   cursor: grab;
   box-sizing: border-box;
 }
-.band-range:disabled::-webkit-slider-thumb { background: var(--muted); cursor: not-allowed; }
-.band-range:disabled::-moz-range-thumb     { background: var(--muted); cursor: not-allowed; }
+.screen .band-range:disabled::-webkit-slider-thumb { background: var(--muted); cursor: not-allowed; }
+.screen .band-range:disabled::-moz-range-thumb     { background: var(--muted); cursor: not-allowed; }
 .band-build.is-disabled .band-track { opacity: .45; }
 
 /* Legend keys — must match the marks above or the legend lies. */

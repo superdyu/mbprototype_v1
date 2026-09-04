@@ -270,6 +270,17 @@ All verified against the raw JSON on 2026-08-07.
   Utilities now applies the multiplier itself, to **power and water only** —
   broadband and a mobile plan are priced nationally, and a blanket multiplier
   overstated them by more than the double-count did.
+- **`.screen input` outranks a bare component class, and it sets a background.**
+  `.screen input, .screen select, .screen textarea` is (0,1,1) and applies
+  `background: var(--card)` plus a card radius. A component class like
+  `.band-range` is (0,1,0) and **loses**. This is invisible for every slider
+  that keeps its native track — the element's own background is never painted —
+  and lethal for the one with `-webkit-appearance: none`, which strips the
+  track and lets that card background through as a full-width, 44px, rounded
+  box drawn straight over the rail with the thumb floating in the middle of it.
+  Any input styling that must win has to carry `.screen` itself. `sweep.js` §1b
+  asserts every `.band-range` rule does, and `components.css` is injected into
+  the sweep for exactly this class of check.
 - **`--progress-bg` is a FILL, not an EDGE.** Against `--card` it is
   1.02–1.20:1 in all four themes — invisible. Anything whose *outline* carries
   meaning (a slider rail, where the thumb's position along it is the whole

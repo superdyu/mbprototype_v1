@@ -271,6 +271,34 @@ chk(railLow.length === 0, "the slider rail clears 2.0:1 against the card in all 
     railLow.join("\n          "));
 }
 
+// ── The one place CSS specificity is load-bearing ───────────────────────────
+// `.screen input` (0,1,1) sets background: var(--card) and a card radius, and
+// it beats a bare `.band-range` (0,1,0). Harmless for every other slider,
+// because they keep their native track and the element's own background is
+// never painted. .band-range is the only one with -webkit-appearance: none,
+// which strips that track — so the card background came through as a 44px
+// rounded box drawn straight over the rail, with the thumb floating in it.
+// Nothing else here could catch that: it renders, it validates, it just hides
+// the thing it is supposed to sit behind.
+if (typeof __COMPONENTS_CSS === "string") {
+  var unscoped = [];
+  __COMPONENTS_CSS.replace(/\/\*[\s\S]*?\*\//g, "")
+    .split("}")
+    .forEach(function (block) {
+      var sel = block.split("{")[0];
+      if (!sel || sel.indexOf(".band-range") === -1) return;
+      // Every .band-range rule must outrank `.screen input`, which means it has
+      // to carry the .screen class itself.
+      sel.split(",").forEach(function (one) {
+        if (one.indexOf(".band-range") === -1) return;
+        if (one.indexOf(".screen") === -1) unscoped.push(one.trim());
+      });
+    });
+  chk(unscoped.length === 0,
+      "every .band-range rule outranks `.screen input`",
+      unscoped.join(" · "));
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 section("2. D19 — no screen renders empty, in any state");
 // The states a tester can actually reach, not just the seeded one.

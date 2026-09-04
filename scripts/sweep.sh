@@ -119,6 +119,9 @@ done < <(grep -o 'src="[^"]*\.js"' "$APP/index.html" | sed 's/src="//;s/"//')
 # ── the stylesheet, as a string ─────────────────────────────────────────────
 # The theme checks need to read variables.css, and jsc has no file access from
 # the concatenated bundle. Inject it as a JSON-escaped literal instead.
+printf '\nvar __COMPONENTS_CSS = ' >> "$OUT"
+python3 -c "import json,sys;print(json.dumps(open(sys.argv[1],encoding='utf-8').read())+';')" "$APP/css/components.css" >> "$OUT"
+
 printf '\nvar __VARS_CSS = ' >> "$OUT"
 python3 -c 'import json,sys; sys.stdout.write(json.dumps(open("'"$APP"'/css/variables.css").read()))' >> "$OUT"
 printf ';\n' >> "$OUT"
