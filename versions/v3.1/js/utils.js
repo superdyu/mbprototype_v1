@@ -49,6 +49,42 @@ function uiPatchHTML(id, html) {
   if (el) el.innerHTML = html;
 }
 
+/**
+ * What "the same view" means for holding scroll position.
+ *
+ * render() keeps the scroll offset when this string is unchanged and resets to
+ * the top when it is not. A screen id alone is too coarse: several flows are
+ * ONE screen with an internal position — the budget builder is three steps of
+ * `budgetBuild`, the journal is four questions of `journalEntry` — and moving
+ * between those is a new page to a tester even though state.screen never moved.
+ * Scrolled to the bottom of step 2, Continue landed them at the bottom of step 3.
+ *
+ * The inverse case is why this is not simply "always reset": a slider drag, a
+ * toggle, and a question revealing below the one just answered are all repaints
+ * of the view you are already reading, and yanking those to the top loses the
+ * tester's place mid-gesture.
+ *
+ * Add a line here when a new screen carries its own steps. Deliberately NOT
+ * derived from the whole of `state` — answers change constantly within a step
+ * and must not count as a new view.
+ */
+function scrollKey() {
+  const s = state.screen;
+  if (s === "budgetBuild" && state.budgetBuild) return s + ":" + state.budgetBuild.step;
+  // Category AND stage, but never the answers: revealing the next question is
+  // the same view growing, and holding position is what keeps it readable.
+  if (s === "helpMeOut" && state.helpMeOut) {
+    return s + ":" + state.helpMeOut.category + ":" + state.helpMeOut.stage;
+  }
+  if (s === "lifestyleWizard" && state.lifestyleWizard) return s + ":" + state.lifestyleWizard.step;
+  if (s === "spendEstimator" && state.estimator) {
+    return s + ":" + state.estimator.stage + ":" + state.estimator.qIndex;
+  }
+  if (s === "journalEntry" && state.journalSession) return s + ":" + state.journalSession.qIndex;
+  if (s === "onboarding" && state.onboarding) return s + ":" + state.onboarding.step;
+  return s;
+}
+
 // Scroll the screen content area back to the top
 function scrollTop() {
   const root = document.getElementById("screenRoot");

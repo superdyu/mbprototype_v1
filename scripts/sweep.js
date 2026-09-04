@@ -649,6 +649,27 @@ if (typeof BB_STEPS !== "undefined") {
         return r.category + " +" + Math.round(r.user - r.peer);
       }).join(" · ") || "nothing flagged at all");
 
+  // ── Scroll identity ──────────────────────────────────────────────────────
+  // render() holds the scroll offset while scrollKey() is unchanged. Screens
+  // that are one id with several steps have to say so, or Continue lands the
+  // tester at the bottom of the next step — which is what happened when the
+  // key was just state.screen.
+  state.budgetBuild = null; bbStart();
+  var keys = BB_STEPS.map(function (_, i) { state.budgetBuild.step = i; return scrollKey(); });
+  chk(keys[0] !== keys[1] && keys[1] !== keys[2],
+      "each builder step is its own scroll view", keys.join(" / "));
+
+  // ...and the inverse: answering, dragging and toggling within a step must
+  // NOT count as a new view, or the page yanks to the top mid-gesture.
+  state.budgetBuild.step = 1;
+  var before = scrollKey();
+  bbSet("Groceries", 615);
+  bbToggleHelp("Utilities");
+  chk(scrollKey() === before,
+      "changing values within a step holds the tester's place", before + " -> " + scrollKey());
+  bbToggleHelp("Utilities");
+  state.budgetBuild = null;
+
   // ── The Help-me-out trees ────────────────────────────────────────────────
   if (typeof HELP_ME_OUT !== "undefined") {
     var noTree = CATEGORIES.filter(function (c) { return !hmoHasTree(c); });

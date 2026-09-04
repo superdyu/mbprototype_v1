@@ -199,7 +199,7 @@ function renderAdmin() {
 // Module-level, not on `state`: the admin state inspector would serialise a
 // scroll offset it can do nothing with, and this is view bookkeeping rather
 // than app state.
-let lastPaintedScreen = null;
+let lastPaintedScreen = null;   // the last scrollKey(), not the last screen id
 let scrollHeld = null;
 
 function render() {
@@ -341,17 +341,18 @@ function render() {
   //   · debouncedRender() also lands here, so DRAGGING any slider below the
   //     fold snapped the page to the top every 400ms, mid-gesture
   //
-  // Scrolling to the top is right when the screen actually changes — a new
-  // screen should start at its beginning. It is never right when the same
-  // screen simply repaints. So: remember which screen was last painted, and
-  // only reset when that changes.
-  if (state.screen === lastPaintedScreen) {
+  // Scrolling to the top is right when the VIEW actually changes — a new one
+  // should start at its beginning. It is never right when the same view simply
+  // repaints. The identity is scrollKey(), not state.screen: several flows are
+  // one screen with an internal position, and stepping through them is a new
+  // page to a tester even though the screen id never moves.
+  if (scrollKey() === lastPaintedScreen) {
     const sr = document.getElementById("screenRoot");
     if (sr && scrollHeld != null) sr.scrollTop = scrollHeld;
   } else {
     scrollTop();
   }
-  lastPaintedScreen = state.screen;
+  lastPaintedScreen = scrollKey();
 
   // Update admin footer — nav log and last error (skip when admin is collapsed)
   if (!state.adminCollapsed) {
