@@ -223,6 +223,54 @@ function renderBudgetBandSlider(opts) {
 }
 
 /**
+ * The running budget against income.
+ *
+ * Same grammar as the band — a rail, a fill, a reference mark — which is why it
+ * lives here rather than in the builder: two bars stacked on one screen that
+ * measure things differently would be read as measuring the same thing.
+ *
+ * The right edge follows the band's own rule, 1.1 x the larger of the two. That
+ * matters more here than it looks: pinning the rail to income would cap the
+ * fill at 100% the moment the budget crosses it, so every degree of overspend
+ * from one dollar to one thousand would draw an identical full bar. The mark
+ * moving left as the total grows is what makes the overrun legible.
+ *
+ * opts: { total, income, label }
+ */
+function renderBudgetTotalBar(opts) {
+  const o = opts || {};
+  const total  = Math.max(0, Number(o.total) || 0);
+  const income = Math.max(0, Number(o.income) || 0);
+  const hi = Math.max(1, BAND_HEADROOM * Math.max(total, income));
+  const pct = v => Math.max(0, Math.min(100, (v / hi) * 100));
+  const over = income > 0 && total > income;
+  const left = income - total;
+
+  return `
+    <div class="bb-total">
+      <div class="bb-total-head">
+        <span class="bb-total-label">${h(o.label || "Budgeted so far")}</span>
+        <p class="bb-total-value">${budgetFmt(total)}</p>
+      </div>
+      <div class="bb-total-bar" role="img"
+           aria-label="${h(budgetFmt(total) + " budgeted against " + budgetFmt(income) + " coming in.")}">
+        <span class="bb-total-fill ${over ? "over" : ""}" style="width:${pct(total)}%"></span>
+        ${income > 0 ? `<span class="bb-total-mark" style="left:${pct(income)}%"></span>` : ""}
+      </div>
+      <div class="bb-total-foot">
+        <span class="${over ? "over" : ""}">
+          ${income <= 0
+            ? "&nbsp;"
+            : (left >= 0
+                ? budgetFmt(left) + " left over each month"
+                : budgetFmt(Math.abs(left)) + " more than you bring in")}
+        </span>
+        <span>${budgetFmt(income)} coming in</span>
+      </div>
+    </div>`;
+}
+
+/**
  * The legend. Written once, because four surfaces render bands and each one
  * describing the colours in its own words is how they drift apart.
  *

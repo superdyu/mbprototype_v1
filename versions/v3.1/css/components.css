@@ -1526,7 +1526,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 
 .journal-entry-card { margin-bottom: 10px; }
 .journal-amount { margin: 0; font-size: 16px; font-weight: 850; }
-.journal-total  { margin: 0; font-size: 20px; font-weight: 850; }
+.journal-total  { margin: 0; font-size: 20px; font-weight: 500; }
 .journal-slider { width: 100%; accent-color: var(--accent); }
 
 /* ─── Budget (v3) ─────────────────────────────────────────────────────────────
@@ -1656,7 +1656,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   gap: 4px 8px;
 }
 .cmp-label { font-size: 10px; color: var(--muted); }
-.cmp-val   { font-size: 11px; font-weight: 700; text-align: right; }
+.cmp-val   { font-size: 11px; font-weight: 500; text-align: right; }
 .cmp-bar   { height: 7px; background: var(--progress-bg); border-radius: 99px; overflow: hidden; }
 .cmp-bar > span { display: block; height: 100%; border-radius: 99px; }
 
@@ -2464,11 +2464,18 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 
 .band { position: relative; width: 100%; }
 
+/* --progress-bg is a FILL, and against --card it measures 1.02-1.20:1 in every
+   theme — no perceptible edge, which is why these read as a thumb floating in
+   space with no rail under it. The hairline in --rail (~2.6:1) is what makes it
+   a channel; the fill stays soft so the pale peer wash still reads on top of
+   it. Swap the border for `background: var(--rail)` if it wants more weight. */
 .band-track {
   position: relative;
   height: 10px;
   background: var(--progress-bg);
+  border: 1px solid var(--rail);
   border-radius: 99px;
+  box-sizing: border-box;
 }
 
 /* Where peers like you land. A wash, not a fill — it is context behind the
@@ -2540,15 +2547,19 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   color: var(--muted);
 }
 
+/* Sits ABOVE the rail: the budget figure, then where peers land, then the
+   picture of both. Stacked rather than justified across a row, so "peers" reads
+   as the line under the budget rather than as its opposite number. */
 .band-caption {
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 7px;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0 0 9px;
   font-size: 10px;
+  line-height: 1.5;
   color: var(--muted);
 }
-.band-caption strong { color: var(--text); font-weight: 850; }
+.band-caption strong { color: var(--text); font-weight: 500; }
 
 /* ── Build mode: the track IS the slider ─────────────────────────────────────
    A real <input type="range"> laid over the marks with a transparent track, so
@@ -2630,13 +2641,27 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 /* ─── Budget builder rows (screens/budget-build.js) ───────────────────────────
    The line's input and the toggle that hands the line over, side by side. */
 
-.bb-row-body { display: flex; align-items: center; gap: 10px; }
-.bb-row-input { flex: 1; min-width: 0; }
-.bb-row-input.is-disabled { opacity: .45; pointer-events: none; }
+/* Rows are a LIST, not a stack of cards: the toggle belongs on the title line,
+   and twelve nested cards inside a card put three borders between the name and
+   the slider it labels. */
+.bb-row { padding: 15px 0; border-bottom: 1px solid var(--line); }
+.bb-row:last-of-type { border-bottom: 0; }
 
-/* A line the tester has handed over. Softened rather than hidden — it is still
-   part of the step and its figure still counts toward the total. */
-.bb-row-helping { background: var(--accent-soft); border-color: var(--accent-border); }
+.bb-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 3px;
+}
+.bb-row-name { font-size: 14px; font-weight: 700; }
+
+/* The figure sits UNDER the name, so it reads as that line's caption rather
+   than as a competing headline. Unbolded for the same reason. */
+.bb-row-amt { margin: 0 0 10px; font-size: 15px; font-weight: 500; color: var(--text); }
+
+.bb-row-input { min-width: 0; }
+.bb-row-input.is-disabled { opacity: .4; pointer-events: none; }
 
 .bb-exact {
   width: 100%;
@@ -2655,15 +2680,17 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .bb-exact::-webkit-outer-spin-button,
 .bb-exact::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-.bb-help { display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; }
+.bb-help { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+/* Lights up when the line is handed over — with the figure gone, this label is
+   the only thing left saying what is happening to the row. */
 .bb-help-label {
-  font-size: 9px;
-  font-weight: 850;
+  font-size: 10px;
+  font-weight: 700;
   line-height: 1.2;
-  text-align: center;
+  white-space: nowrap;
   color: var(--muted);
-  max-width: 52px;
 }
+.bb-row-helping .bb-help-label { color: var(--accent); font-weight: 850; }
 
 /* The switch. 44px of tap target around a 40x22 pill — the button IS the
    target, and the pill is drawn inside it, so the visual size and the
@@ -2709,3 +2736,61 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 @media (prefers-reduced-motion: reduce) {
   .bb-toggle::before, .bb-toggle-knob { transition: none; }
 }
+
+/* ─── Budget total bar (renderBudgetTotalBar, components/budget-band.js) ──────
+   The running budget against income, in the same grammar as the band below it:
+   a rail, a fill, and a reference mark. Right edge is 1.1x the larger of the
+   two, so the bar can genuinely overrun the income mark rather than pinning to
+   the end and hiding by how much. */
+
+.bb-total { margin-bottom: 20px; }
+.bb-total-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.bb-total-label { font-size: 11px; color: var(--muted); }
+.bb-total-value { margin: 0; font-size: 20px; font-weight: 500; }
+
+.bb-total-bar {
+  position: relative;
+  height: 12px;
+  background: var(--progress-bg);
+  border: 1px solid var(--rail);
+  border-radius: 99px;
+  box-sizing: border-box;
+}
+/* Green while it fits, warn once it does not. A green bar under the words
+   "$1,330 more than you bring in" reads as approval of the opposite — one
+   class to flip if the softer read is wanted. */
+.bb-total-fill {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  left: -1px;
+  min-width: 2px;
+  background: var(--good);
+  border-radius: 99px;
+}
+.bb-total-fill.over { background: var(--warn); }
+
+.bb-total-mark {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--muted);
+  border-radius: 2px;
+}
+.bb-total-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.bb-total-foot .over { color: var(--warn); }

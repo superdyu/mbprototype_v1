@@ -12,33 +12,31 @@
 // A screen here costs five wiring points (render.js x4, utils.js, state.js) and
 // each one is a place to forget; three steps of one screen cost them once.
 //
-// ── EXACT vs RANGE ───────────────────────────────────────────────────────────
-// Owner's split. Exact lines are ones a tester can actually state — rent is
-// rent, and subscriptions resolve to a real list of real prices — so they get a
-// number field. Range lines genuinely move month to month, so they get the
-// band slider and "roughly right" is the honest target.
+// ── EVERY LINE IS A SLIDER ───────────────────────────────────────────────────
+// The steps group categories by how well a tester knows them, NOT by how the
+// figure is entered. That distinction was misread once and built as a number
+// field on step 1; it is not one. Rent is a figure you can state, which is why
+// it opens on a good default and needs less dragging — not why it would need a
+// keyboard.
 //
-// Either way the budget is ONE figure. Range describes how it is entered, not
-// a low-high pair being stored.
+// The thumb opens on the PEER figure for this profile, so it starts dead centre
+// of the band drawn behind it and any move away from it is deliberate.
 
 const BB_STEPS = [
   {
     id: "exact",
-    input: "exact",
     title: "The ones you already know",
     help: "Rent or mortgage, and what you subscribe to. These barely move from month to month, so a real figure beats an estimate.",
     categories: ["Housing", "Subscriptions"]
   },
   {
     id: "regular",
-    input: "range",
     title: "The regular ones",
     help: "These move a little but not wildly. Roughly right is all this needs.",
     categories: ["Transport", "Utilities", "Groceries", "Personal care", "Debt payments"]
   },
   {
     id: "flexible",
-    input: "range",
     title: "The ones that move",
     help: "These vary the most, and they are the ones your Money Journal will sharpen over time.",
     categories: ["Health", "Dining out", "Entertainment", "Shopping", "Other"]
@@ -55,21 +53,21 @@ function bbAllStepCategories() {
 }
 
 /**
- * Opening figures — the national average for a household this size, adjusted
- * for their ZIP, with nothing about how they live folded in yet.
+ * Opening figures — the peer figure for THIS profile, category by category.
  *
- * `lifestyle: {}` is deliberate and is the owner's "the start of the slider is
- * unchanged logic": it is exactly what the previous builder opened on. The peer
- * BAND drawn behind the dot uses the user's real lifestyle options, so the two
- * can differ — that difference is information, not a mismatch.
+ * benchOptsForUser() is the same set of options the band behind the thumb is
+ * drawn with, and that identity is the point: the slider opens exactly on the
+ * peer median, so the tester starts where people like them sit and every drag
+ * away from it is a deliberate statement.
+ *
+ * It used to open on benchAllPeerValues({lifestyle: {}}) — the no-lifestyle
+ * national figure — which left the thumb a little off the band it was being
+ * compared against, for no reason a tester could see. Owner's call; it
+ * supersedes "the start of the slider is unchanged logic" from the original
+ * brief.
  */
 function bbOpeningValues() {
-  return benchAllPeerValues({
-    annualIncome:  state.profile.incomeAnnual,
-    householdSize: state.profile.householdSize,
-    zip:           state.profile.zip,
-    lifestyle:     {}
-  });
+  return benchAllPeerValues(benchOptsForUser());
 }
 
 function bbStart() {
@@ -183,6 +181,27 @@ function bbApplyHelp(category, amount) {
   b.helped[category] = true;
 }
 
+/** Every category asked about up to and including the current step. */
+function bbCategoriesSoFar() {
+  const b = bbSession();
+  return BB_STEPS.slice(0, b.step + 1)
+    .reduce((all, s) => all.concat(s.categories), []);
+}
+
+/**
+ * The running total the header bar shows — REVIEWED categories only.
+ *
+ * Not all twelve. "Budgeted so far" has to mean what it says, and a bar that
+ * opens near full because ten unseen categories are already counted has nothing
+ * left to show as the tester works. This one fills: roughly half after step 1,
+ * most of the way after step 2, and over the line at the end if that is where
+ * their answers land.
+ */
+function bbTotalSoFar() {
+  return bbCategoriesSoFar().reduce((t, c) => t + bbValue(c), 0);
+}
+
+/** All twelve — what actually gets saved. */
 function bbTotal() {
   const b = bbSession();
   return catTotal(b.values);
@@ -210,9 +229,6 @@ function bbSubmit() {
 function renderBudgetBuild() {
   const b = bbSession();
   const step = bbStep();
-  const total = bbTotal();
-  const income = state.monthlyIncome;
-  const left = income - total;
   const pending = bbPendingHelp();
 
   return `
@@ -227,21 +243,11 @@ function renderBudgetBuild() {
       </div>
 
       <div class="journal-body">
-        <div class="card">
-          <div class="row" style="align-items:baseline;">
-            <span class="helper">Monthly total so far</span>
-            <span class="journal-total">${budgetFmt(total)}</span>
-          </div>
-          <div class="row" style="align-items:baseline;margin-top:4px;">
-            <span class="helper">Coming in each month</span>
-            <span class="helper">${budgetFmt(income)}</span>
-          </div>
-          <p class="helper" style="margin:8px 0 0;color:${left < 0 ? "var(--warn)" : "var(--muted)"};">
-            ${left >= 0
-              ? budgetFmt(left) + " left over each month."
-              : budgetFmt(Math.abs(left)) + " more than you bring in."}
-          </p>
-        </div>
+        ${renderBudgetTotalBar({
+          total: bbTotalSoFar(),
+          income: state.monthlyIncome,
+          label: "Budgeted so far"
+        })}
 
         ${step.categories.map(c => bbRow(c, step)).join("")}
 
@@ -285,31 +291,10 @@ function bbRow(category, step) {
   const peer = benchPeerValue(category, benchOptsForUser());
   const catArg = h(category).replace(/'/g, "\\'");
 
-  const input = step.input === "exact"
-    ? `<input class="bb-exact" type="number" min="0" step="5" value="${value}"
-              ${helping ? "disabled" : ""}
-              onchange="bbSet('${catArg}', this.value)"
-              aria-label="${h(catLabel(category))} a month">`
-    : renderBudgetBandSlider({
-        category: category,
-        value: value,
-        peer: peer,
-        max: budgetSliderMax(category),
-        disabled: helping,
-        oninput: `bbSet('${catArg}', this.value, true)`
-      });
-
   return `
-    <div class="card budget-row bb-row ${helping ? "bb-row-helping" : ""}">
-      <div class="row" style="align-items:baseline;margin-bottom:8px;">
-        <span class="budget-row-name">${h(catLabel(category))}</span>
-        <span class="budget-row-amt" id="bbAmt${idx}">
-          ${helping && !done ? "I'll ask" : budgetFmt(value) + " a month"}
-        </span>
-      </div>
-
-      <div class="bb-row-body">
-        <div class="bb-row-input ${helping ? "is-disabled" : ""}">${input}</div>
+    <div class="bb-row ${helping ? "bb-row-helping" : ""}">
+      <div class="bb-row-head">
+        <span class="bb-row-name">${h(catLabel(category))}</span>
         <div class="bb-help">
           <span class="bb-help-label" id="bbHelpLabel${idx}">Help me out</span>
           <button class="bb-toggle ${helping ? "on" : ""}" type="button"
@@ -321,8 +306,23 @@ function bbRow(category, step) {
         </div>
       </div>
 
+      <p class="bb-row-amt" id="bbAmt${idx}">
+        ${helping && !done ? "&nbsp;" : budgetFmt(value) + " a month"}
+      </p>
+
+      <div class="bb-row-input ${helping ? "is-disabled" : ""}">
+        ${renderBudgetBandSlider({
+          category: category,
+          value: value,
+          peer: peer,
+          max: budgetSliderMax(category),
+          disabled: helping,
+          oninput: `bbSet('${catArg}', this.value, true)`
+        })}
+      </div>
+
       ${helping ? `
-        <p class="helper" style="margin:8px 0 0;font-size:10px;">
+        <p class="helper" style="margin:6px 0 0;font-size:10px;">
           ${done
             ? "Worked out from what you told me. Toggle off to set it yourself."
             : "I'll ask a couple of questions about this when you continue."}
@@ -343,8 +343,9 @@ function renderBudgetBuildAdmin() {
     <div class="admin-card">
       <p class="admin-card-title">Budget builder — step ${b.step + 1}/${BB_STEPS.length}</p>
       <p class="helper" style="margin-bottom:10px;">
-        <strong>${h(step.id)}</strong> · ${h(step.input)} input ·
-        ${step.categories.length} lines · total ${budgetFmt(bbTotal())}
+        <strong>${h(step.id)}</strong> · ${step.categories.length} lines ·
+        so far ${budgetFmt(bbTotalSoFar())} of ${budgetFmt(state.monthlyIncome)} ·
+        all twelve ${budgetFmt(bbTotal())}
       </p>
       <div class="input-group">
         <label>This step — value · help · asked</label>

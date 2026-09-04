@@ -115,7 +115,13 @@ var THEME_FREE = ["--on-dark","--tier-copper","--radius-card","--radius-button",
   "--space-xs","--space-sm","--space-md","--space-lg","--space-xl","--topbar-h","--nav-h"];
 
 var CONTRACT = Object.keys(CSS[":root"]).filter(function (k) { return THEME_FREE.indexOf(k) === -1; });
-chk(CONTRACT.length === 40, "contract is 40 colour tokens", "got " + CONTRACT.length);
+// --rail is v3.1 only (the band chart needs a rail edge; v3 has no band), so
+// the expected count differs by side. Stated rather than loosened to ">= 40" —
+// the point of this check is that a token cannot be added or dropped without
+// somebody noticing.
+var EXPECTED_TOKENS = CSS[":root"]["--rail"] ? 41 : 40;
+chk(CONTRACT.length === EXPECTED_TOKENS,
+    "contract is " + EXPECTED_TOKENS + " colour tokens", "got " + CONTRACT.length);
 
 // Each theme class must define exactly the contract — no more, no fewer. A
 // missing token falls through to :root's cream and paints one warm patch into
@@ -179,6 +185,24 @@ THEMES.forEach(function (t) {
 });
 chk(lowContrast.length === 0, THEMES.length + " themes x " + PAIRS.length + " pairs clear 4.5:1",
     lowContrast.join("\n          "));
+
+// ── The one NON-TEXT boundary that carries meaning ──────────────────────────
+// A budget slider's rail IS the scale — where the thumb sits along it is the
+// whole reading — so it has to be perceptible, and 4.5:1 is the wrong bar for a
+// hairline. It was drawn in --progress-bg, which is a FILL: 1.02-1.20:1 against
+// --card in every theme. Nothing rendered but a peer band and a thumb floating
+// in white space, and no check here would have caught it, because every text
+// pair was fine.
+if (CSS[":root"]["--rail"]) {
+var railLow = [];
+THEMES.forEach(function (t) {
+  var rail = resolve(t.cls, "--rail"), card = resolve(t.cls, "--card"), r = ratio(rail, card);
+  if (r === null || r < 2.0) railLow.push(t.id + " --rail on --card = " +
+    (r === null ? "unresolved" : r.toFixed(2) + ":1") + " (" + rail + " / " + card + ")");
+});
+chk(railLow.length === 0, "the slider rail clears 2.0:1 against the card in all four themes",
+    railLow.join("\n          "));
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 section("2. D19 — no screen renders empty, in any state");
@@ -469,8 +493,90 @@ if (typeof BB_STEPS !== "undefined") {
       "the builder's " + BB_STEPS.length + " steps cover all 12 exactly once",
       (bbMissing.length ? "never asked: " + bbMissing.join(", ") + ". " : "") +
       (bbTwice.length ? "asked twice: " + bbTwice.join(", ") : ""));
-  chk(BB_STEPS.every(function (s) { return s.input === "exact" || s.input === "range"; }),
-      "every step declares exact or range input");
+  // Every line is a slider — the steps group categories by how well a tester
+  // knows them, not by how the figure is entered. That was misread once and
+  // built as a number field on step 1.
+  state.budgetBuild = null;
+  bbStart();
+  var bbSliders = 0, bbFields = 0;
+  BB_STEPS.forEach(function (st, i) {
+    state.budgetBuild.step = i;
+    var html = renderBudgetBuild();
+    bbSliders += (html.match(/band-range/g) || []).length;
+    bbFields  += (html.match(/bb-exact/g) || []).length;
+  });
+  chk(bbSliders === CATEGORIES.length && bbFields === 0,
+      "all 12 lines render a slider, none a number field",
+      bbSliders + " sliders, " + bbFields + " number fields");
+
+  // The thumb opens on the peer figure, so it starts dead centre of the band
+  // drawn behind it. Opening on the no-lifestyle national figure instead left
+  // it visibly off its own band.
+  state.budgetBuild = null;
+  bbStart();
+  var bbOffBand = CATEGORIES.filter(function (c) {
+    return bbValue(c) !== benchPeerValue(c, benchOptsForUser());
+  });
+  chk(bbOffBand.length === 0,
+      "every slider opens on its own peer figure", bbOffBand.join(", "));
+
+  // "Budgeted so far" counts reviewed categories only, and grows step by step.
+  state.budgetBuild = null;
+  bbStart();
+  var bbCounts = BB_STEPS.map(function (_, i) {
+    state.budgetBuild.step = i;
+    return bbCategoriesSoFar().length;
+  });
+  chk(bbCounts[0] === 2 && bbCounts[1] === 7 && bbCounts[2] === 12 &&
+      bbCounts[2] === CATEGORIES.length,
+      "the header total is cumulative (2 -> 7 -> 12)", bbCounts.join(" -> "));
+  state.budgetBuild = null;
+
+// ── "Worth a look" surfaces OVER peers, never under ─────────────────────────
+// cmpWorthNoticing and cmpImpact both used Math.abs, so being far BELOW peers
+// scored identically to being far above — and the seeded persona is under peers
+// almost everywhere, so the section listed the biggest under-spends. Nothing
+// errored; the list was simply the wrong list. v3 still carries the Math.abs
+// version — it is the A/B control and does not get the fix — so this stays
+// inside the v3.1 guard with everything else.
+  var flagged = cmpAllRows().filter(cmpWorthNoticing)
+                            .sort(function (a, b) { return cmpImpact(b) - cmpImpact(a); });
+  var under = flagged.filter(function (r) { return r.user <= r.peer; });
+  chk(under.length === 0, "nothing under peers is ever flagged",
+      under.map(function (r) { return r.category; }).join(", "));
+
+  var descending = flagged.every(function (r, i) {
+    return i === 0 || cmpImpact(flagged[i - 1]) >= cmpImpact(r);
+  });
+  chk(descending && flagged.length > 0,
+      "flagged rows are ordered by dollars over peers, most first",
+      flagged.map(function (r) {
+        return r.category + " +" + Math.round(r.user - r.peer);
+      }).join(" · ") || "nothing flagged at all");
+
+  // ASSERT THE VALUE, NOT JUST THE ORDER. Once the filter keeps only over-peers
+  // rows, Math.abs(user - peer) equals user - peer for every row that survives,
+  // so an ordering check passes under the buggy implementation too and proves
+  // nothing. The two only diverge when a plan gap exceeds a peer gap — which
+  // the seeded persona happens not to produce. This catches it on any data.
+  var impactWrong = cmpAllRows().filter(function (r) {
+    if (r.peer == null) return cmpImpact(r) !== 0;
+    return cmpImpact(r) !== (r.user - r.peer);
+  });
+  chk(impactWrong.length === 0,
+      "cmpImpact is the signed peer gap, with no plan term and no Math.abs",
+      impactWrong.map(function (r) {
+        return r.category + ": got " + Math.round(cmpImpact(r)) +
+               ", want " + Math.round(r.user - (r.peer || 0));
+      }).join(" · "));
+
+  // Every flag must clear BOTH gates — dollars stop a trivial category
+  // qualifying on percentage, percentage stops Housing qualifying on size.
+  var weak = flagged.filter(function (r) {
+    return (r.user - r.peer) < CMP_ABS_THRESHOLD || r.vsPeer < CMP_PCT_THRESHOLD;
+  });
+  chk(weak.length === 0, "every flag clears both the dollar and the percent gate",
+      weak.map(function (r) { return r.category; }).join(", "));
   chk(CATEGORIES.every(function (c) { return typeof catLabel(c) === "string" && catLabel(c).length; }),
       "every category has a display label");
   chk(Object.keys(CATEGORY_LABELS).every(isCategory),

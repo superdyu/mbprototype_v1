@@ -24,10 +24,19 @@ started as a copy" cannot tell an intentional variation from a bug.
    questions and derives a budget from the answers; v3.1 opens on figures the
    tester adjusts, grouped into three steps, and asks questions **only about
    the lines they say they cannot estimate**.
-   - Step 1 Housing · Subscriptions, **exact** (a number field — these are
-     figures a tester can actually state). Steps 2 and 3 are **range** (the
-     band slider). Either way the budget is ONE figure; range describes how it
-     is entered, not a low–high pair being stored.
+   - **Every line is a slider**, on all three steps. The steps group categories
+     by how well a tester knows them — not by how the figure is entered. That
+     was misread once and built as a number field on step 1; "Housing — Exact"
+     means rent is a figure you can state, so it needs less dragging, not that
+     it needs a keyboard.
+   - **The thumb opens on `benchPeerValue()` for that profile**, the same
+     options the band behind it is drawn with, so it starts dead centre of its
+     own band. It used to open on the no-lifestyle national figure, which put
+     it visibly off the band for no reason a tester could see.
+   - **The header bar is cumulative** — `bbCategoriesSoFar()`, reviewed steps
+     only (2 → 7 → 12). Counting all twelve makes the bar open near-full
+     because ten unseen categories are already in it, and it then has nothing
+     left to show as the tester works.
    - `BB_STEPS` must **partition the taxonomy exactly**. A category in no step
      saves at whatever the peer model opened it on and is never put to the
      tester; one in two steps is asked twice and the second answer silently
@@ -82,6 +91,18 @@ started as a copy" cannot tell an intentional variation from a bug.
      identical in the Natural themes (#557B58 / #4B7650) — fine as separated
      bars, unreadable as marks on one track. Peers are the pale `--good-bg`
      wash, the budget a neutral `--muted` rule, `--accent` is the dot.
+   - **The rail is `--rail`, a token added for it, used as a 1px border.**
+     `--progress-bg` is a FILL and measures **1.02–1.20:1 against `--card`** in
+     every theme — no perceptible edge, so the sliders rendered as a thumb
+     floating in white space with no track under it. Nothing caught it: the
+     contrast block checks text pairs at 4.5:1, and every one of those passed.
+     `sweep.js` §1b now gates `--rail` at 2.0:1.
+   - **"Worth a look" is signed and peers-only.** `cmpWorthNoticing` and
+     `cmpImpact` both used `Math.abs`, so far *below* peers scored like far
+     above — and the seeded persona is under peers nearly everywhere, so the
+     section listed the biggest under-spends. A category over its own plan but
+     under peers no longer qualifies; both gaps still appear on the card, so
+     L11 holds.
 4. **`Health` displays as "Medical & Dental" — via a label, not a rename.**
    `CATEGORY_LABELS` + `catLabel()` in `js/taxonomy.js`. The data key is
    untouched everywhere, because `"Health"` is a join key across
@@ -209,6 +230,12 @@ All verified against the raw JSON on 2026-08-07.
   pauses are not in the word-count estimate. Both players now pass
   `playing: false` while held (`onbVideoHeld`, `lpHeld`), which pins the
   animation instead of fighting it.
+- **`--progress-bg` is a FILL, not an EDGE.** Against `--card` it is
+  1.02–1.20:1 in all four themes — invisible. Anything whose *outline* carries
+  meaning (a slider rail, where the thumb's position along it is the whole
+  reading) needs `--rail` instead, which is gated at 2.0:1 by `sweep.js` §1b.
+  The failure looks like a rendering bug — a thumb with no track — and no text
+  contrast check will ever catch it.
 - **`overflow-y: auto` is not a one-axis declaration.** When one axis is not
   `visible`, the other's `visible` **computes to `auto`** — so a rule meant to
   let a column scroll silently makes the element a scroll container

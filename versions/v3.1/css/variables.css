@@ -59,6 +59,11 @@
   --line:      #E7DFD3;
   --bar:       #DCD2C4;
   --progress-bg: #EFE8DC;
+  /* Slider rail edge. --progress-bg is a FILL and sits at 1.02-1.20:1
+     against --card in every theme, so a track drawn in it has no
+     perceptible edge — which is why the budget sliders read as a thumb
+     floating in space. This clears ~2.6:1 and is used as a hairline. */
+  --rail:      #A69E93;
 
   /* Interactive. Sage is the primary, but the raw pastel is too light to carry
      white text — buttons use sage FILL with ink text, and --accent is a
@@ -190,6 +195,7 @@
   --line:      #3E3830;
   --bar:       #4A4339;
   --progress-bg: #35302A;
+  --rail:      #716C64;
 
   --sage:      #7FA87C;
   --accent:        #9CC298;
@@ -246,6 +252,7 @@
   --line:      #D9DEE8;
   --bar:       #D0D5DD;
   --progress-bg: #E8EBF0;
+  --rail:      #9C9FA6;
 
   --sage:      #7EA0F0;      /* the "primary pastel" role, in blue */
   --accent:        #315EFB;
@@ -302,6 +309,7 @@
   --line:      #343844;
   --bar:       #3D4251;
   --progress-bg: #2A2D35;
+  --rail:      #676B77;
 
   --sage:      #6E8FD6;
   --accent:        #7DA0FF;

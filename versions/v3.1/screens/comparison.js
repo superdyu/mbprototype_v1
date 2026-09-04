@@ -52,13 +52,23 @@ function cmpAllRows() {
   return CATEGORIES.map(cmpRow);
 }
 
+// ─── "Worth a look" means OVER peers, not far from them ──────────────────────
+// This used Math.abs on both the gap and the ranking, so a category far BELOW
+// peers scored exactly like one far above. Against a persona who is under peers
+// almost everywhere — which the seeded one is, LA prices against a modest
+// budget — the section filled with the biggest UNDER-spends and presented them
+// as things to look at.
+//
+// Signed now, and peers-only. A category over your own plan but under peers no
+// longer qualifies; both gaps are still on the card, labelled distinctly, so
+// L11 holds — what changed is which rows earn a card, not what a card says.
 function cmpWorthNoticing(r) {
-  const notable = p => p != null && Math.abs(p) >= CMP_PCT_THRESHOLD;
-  // Guard the plan arm on r.plan: with no plan it is 0, and |user - 0| would
-  // make every category with any spend "material" on its own.
-  const material = (r.plan ? Math.abs(r.user - r.plan) >= CMP_ABS_THRESHOLD : false) ||
-                   (r.peer != null && Math.abs(r.user - r.peer) >= CMP_ABS_THRESHOLD);
-  return material && (notable(r.vsPlan) || notable(r.vsPeer));
+  if (r.peer == null) return false;
+  const over = r.user - r.peer;
+  // Both gates, as before: dollars stop a $6 gap on a $4 category qualifying,
+  // percent stops Housing qualifying for being Housing.
+  return over >= CMP_ABS_THRESHOLD &&
+         r.vsPeer != null && r.vsPeer >= CMP_PCT_THRESHOLD;
 }
 
 // Impact is measured in DOLLARS, not percent. A percentage ranking puts a $9
@@ -66,9 +76,11 @@ function cmpWorthNoticing(r) {
 // of "the top dollar areas" — the gap worth surfacing is the one moving real
 // money. The percentage thresholds above still decide what QUALIFIES; this only
 // decides the order.
+// Dollars OVER peers, descending. Signed for the same reason as the filter —
+// and dollars rather than percent, because a percentage ranking puts a $9 swing
+// on a $30 category above a $180 swing on Housing.
 function cmpImpact(r) {
-  return Math.max(r.plan ? Math.abs(r.user - r.plan) : 0,
-                  r.peer != null ? Math.abs(r.user - r.peer) : 0);
+  return r.peer == null ? 0 : (r.user - r.peer);
 }
 
 function renderComparison() {
@@ -160,8 +172,8 @@ function renderComparisonRow(r) {
         <span class="helper" style="font-size:11px;">${budgetFmt(r.user)} so far</span>
       </div>
 
-      ${renderBudgetBand({ category: r.category, budget: r.plan, actual: r.user, peer: r.peer })}
       ${cmpBandCaption(r)}
+      ${renderBudgetBand({ category: r.category, budget: r.plan, actual: r.user, peer: r.peer })}
 
       <div class="cmp-gaps">
         ${cmpGapPill(r.vsPlan, "vs your budget")}
@@ -186,7 +198,9 @@ function cmpBandCaption(r) {
     : `${budgetFmt(g.peerLo)}–${budgetFmt(g.peerHi)}`;
   return `
     <div class="band-caption">
-      ${r.hasPlan ? `<span>Budget <strong>${budgetFmt(r.plan)}</strong></span>` : `<span>No budget yet</span>`}
+      ${r.hasPlan
+        ? `<span>Budget <strong>${budgetFmt(r.plan)}</strong></span>`
+        : `<span>No budget yet</span>`}
       <span>${g.clipped ? "Peers sit above this chart — " : "Peers "}<strong>${h(peers)}</strong></span>
     </div>`;
 }
@@ -214,8 +228,8 @@ function renderComparisonFlag(r) {
         <span class="obs-figure">${overPeer ? "+" : ""}${budgetFmt(gap)}</span>
       </div>
 
-      ${renderBudgetBand({ category: r.category, budget: r.plan, actual: r.user, peer: r.peer })}
       ${cmpBandCaption(r)}
+      ${renderBudgetBand({ category: r.category, budget: r.plan, actual: r.user, peer: r.peer })}
 
       <div class="cmp-gaps">
         ${cmpGapPill(r.vsPlan, "vs your budget")}
@@ -256,8 +270,8 @@ function renderComparisonCompact(limit) {
           <span class="helper" style="font-size:11px;">${budgetFmt(r.user)} so far</span>
           ${cmpGapPill(r.vsPlan, "vs budget")}
         </div>
-        ${renderBudgetBand({ category: r.category, budget: r.plan, actual: r.user, peer: r.peer })}
         ${cmpBandCaption(r)}
+        ${renderBudgetBand({ category: r.category, budget: r.plan, actual: r.user, peer: r.peer })}
       </div>
     `).join("")}
     <button class="button secondary full" style="margin-top:12px;" type="button"
