@@ -92,6 +92,9 @@ window.onunhandledrejection = function(e) {
 <script src="data/seed-state.js"></script>
 <script src="data/journal-questions.js"></script>
 <script src="data/estimator-questions.js"></script>
+<!-- Help-me-out estimation trees: figures + their sources. The arithmetic
+     that consumes them lives in js/help-me-out.js. -->
+<script src="data/help-me-out.js"></script>
 <script src="data/card-apr.js"></script>
 <script src="data/peer-benchmarks.js"></script>
 <script src="data/zip-cost-of-living.js"></script>
@@ -128,6 +131,8 @@ window.onunhandledrejection = function(e) {
 <!-- Builder seam: the normalized baseline every budget builder writes through.
      Phase 2's lifestyle wizard becomes its only adapter (L6). -->
 <script src="js/budget-baseline.js"></script>
+<!-- Reads the trees above plus the peer model; screens/help-me-out.js renders it -->
+<script src="js/help-me-out.js"></script>
 
 <!-- 3. Shared components (before screens that use them) -->
 <script src="components/thermometer.js"></script>
@@ -153,6 +158,8 @@ window.onunhandledrejection = function(e) {
 <!-- v3.1: three steps + a Help me out toggle per line. Replaces the twelve
      sliders of spendingProfile and the six questions that followed it. -->
 <script src="screens/budget-build.js"></script>
+<!-- The estimation trees, asked one category at a time -->
+<script src="screens/help-me-out.js"></script>
 <script src="screens/budget-category.js"></script>
 <script src="screens/spend-estimator.js"></script>
 <script src="screens/lifestyle-wizard.js"></script>

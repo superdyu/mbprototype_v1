@@ -146,9 +146,21 @@ function bbPendingHelp() {
  * sitting on a peer figure the tester explicitly said they could not vouch for.
  */
 function bbNext() {
-  const b = bbSession();
   const pending = bbPendingHelp();
   if (pending.length) { bbRunHelp(pending[0]); return; }
+  bbAdvanceStep();
+}
+
+/**
+ * Move on — the next step, or save if this was the last.
+ *
+ * Split out because the Help-me-out queue calls it too. Handing three lines
+ * over used to walk you through one and drop you back on the step with the
+ * toggle still lit, so Continue had to be pressed again for a question that had
+ * already been answered. The queue now runs to the end and lands here.
+ */
+function bbAdvanceStep() {
+  const b = bbSession();
   if (b.step < BB_STEPS.length - 1) { b.step++; render(); return; }
   bbSubmit();
 }
@@ -170,15 +182,24 @@ function bbBack() {
  */
 function bbRunHelp(category) {
   if (!isCategory(category)) return;
-  estimatorStart(category, { target: "budget" });
+  hmoStart(category, { target: "budget" });
 }
 
-/** The estimator calls this back with the figure its questions reached. */
+/**
+ * The tree calls this back with the figure it reached.
+ *
+ * The toggle switches OFF. It stayed on before, leaving the row greyed with its
+ * figure hidden — so a line the tester had just answered four questions about
+ * looked exactly like one they had not started, and its own slider was still
+ * disabled. Handing it back is what "done" should look like: the figure is
+ * there, and it is theirs to move.
+ */
 function bbApplyHelp(category, amount) {
   const b = bbSession();
   if (!isCategory(category)) return;
   b.values[category] = Math.max(0, Math.round(Number(amount) || 0));
   b.helped[category] = true;
+  delete b.help[category];
 }
 
 /** Every category asked about up to and including the current step. */
@@ -323,10 +344,11 @@ function bbRow(category, step) {
 
       ${helping ? `
         <p class="helper" style="margin:6px 0 0;font-size:10px;">
-          ${done
-            ? "Worked out from what you told me. Toggle off to set it yourself."
-            : "I'll ask a couple of questions about this when you continue."}
-        </p>` : ""}
+          I'll ask a couple of questions about this when you continue.
+        </p>` : (done ? `
+        <p class="helper hmo-done" style="margin:6px 0 0;font-size:10px;">
+          Worked out from what you told me — move it if it looks wrong.
+        </p>` : "")}
     </div>
   `;
 }

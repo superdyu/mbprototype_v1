@@ -28,6 +28,7 @@ const destinations = [
   ["journalDone",    "Journal: Done"],
   ["aboutMe",        "Budget"],
   ["budgetBuild",    "Budget: Build (3 steps)"],
+  ["helpMeOut",      "Budget: Help me out"],
   ["spendingProfile","Budget: Spending Profile"],
   ["budgetCompare",  "Budget: Which is closer"],
   ["lifestyleWizard","Lifestyle Wizard"],
@@ -185,6 +186,9 @@ const state = {
   // v3.1 budget builder — three steps, per-line "Help me out". Holds the
   // figures until bbSubmit() puts them through the baseline seam (L6).
   budgetBuild: null,
+  // The Help-me-out run for ONE category: its answers, its stage, and the
+  // figure they land on. The queue of categories lives on budgetBuild.
+  helpMeOut: null,
 
   // Which of the six lifestyle dimensions the USER actually answered, as
   // opposed to inheriting from the persona. state.lifestyle is fully populated

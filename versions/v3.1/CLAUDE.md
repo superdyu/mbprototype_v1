@@ -110,13 +110,34 @@ started as a copy" cannot tell an intentional variation from a bug.
    zip-cost-of-living, and any file missed is a lookup that silently returns
    undefined. **`catLabel()` on every display site; the bare string for every
    lookup, object key, comparison and `onclick` argument.**
-5. **The spend estimator takes a target.** `estimatorStart(cat, {target})` —
-   `"mtd"` (default) writes what you spent, `"budget"` writes a builder line
-   through `bbApplyHelp()`. Same questions, two destinations. In budget mode
-   the day-clock cooldown does **not** apply (it exists to stop the journal
-   re-asking about today; letting it latch here would block the actuals path
-   for the rest of the session) and cancelling turns the row's Help-me-out
-   toggle back off, or Continue walks straight back into the flow just declined.
+5. **"Help me out" has its own engine** — `js/help-me-out.js` (model),
+   `data/help-me-out.json` (twelve trees, a source on every figure),
+   `screens/help-me-out.js` (one screen per category: progressive reveal, then
+   a confirm slider). It briefly rode on the actuals estimator and must not go
+   back — see the trap below.
+   - **FIGURES are data, ARITHMETIC is code.** A rate table belongs in JSON
+     where it can be re-sourced; multiplying it by a slider belongs where it
+     can be tested. `HMO_MODELS` reads every number out of `rates`; a literal
+     in a model is a figure with no source attached.
+   - **`col: "apply"` vs `col: "included"`.** Absolute trees get the category's
+     cost-of-living multiplier on the way out. Trees anchored on a peer figure
+     (Housing) or applying it per component (Utilities) declare `"included"`
+     and do it themselves — applying it twice squares it.
+   - **The confirm band is conditioned on the answers**, via
+     `hmoLifestyleFrom()` → `PEER_BENCHMARKS.lifestyleModifiers`. Somebody who
+     truthfully says "most nights" must not be shown a band built from people
+     who cook. Where lifestyle reaches nothing (Utilities, Subscriptions,
+     Medical, Personal care, Debt payments) it falls back to the profile band
+     and only the copy changes.
+   - **The trees are the only thing writing `state.lifestyle`** now that the
+     six lifestyle questions are gone. `hmoApplyLifestyle()` runs on accept.
+   - **Toggling several lines chains them.** `bbNext()` queues every pending
+     category on the step and `hmoAdvanceQueue()` walks it, then advances the
+     step. On accept the row's toggle switches **off** — a line you just
+     answered four questions about must not look like one you never started.
+   - **`screens/spend-estimator.js` still serves the actuals path** ("Update
+     what you've spent"), where month-to-date scaling is correct. Its
+     `target: "budget"` branch is no longer reached.
 6. **`renderSpendEstimator` has a real no-session fallback.** A D19 fix, owner
    decision to leave v3's dead end alone — it is recorded in `D19_ACCEPTED` in
    `scripts/sweep.js` so the control's sweep stays green and the exception stays
@@ -230,6 +251,25 @@ All verified against the raw JSON on 2026-08-07.
   pauses are not in the word-count estimate. Both players now pass
   `playing: false` while held (`onbVideoHeld`, `lpHeld`), which pins the
   animation instead of fighting it.
+- **A BUDGET IS A MONTH. Never pro-rate one.** The Help-me-out questions first
+  shipped on `estimatorCompute()`, which multiplies every option by
+  `estimatorMonthFraction()` — right for "what have you spent so far this
+  month", catastrophic for a budget. On the 4th of a 30-day month every answer
+  came out at 13% of itself: "light local driving" became **$10** of transport,
+  "a regular ongoing cost" became **$20** of healthcare, and picking the most
+  expensive option still *lowered* the category, because the peer default it
+  replaced was eight times larger than anything the sum could return. Nothing
+  in `js/help-me-out.js` reads a clock, and `sweep.js` §7 stubs
+  `estimatorMonthFraction` and asserts no tree's figure moves.
+- **Never reach past `benchColMultipliers()` to price a place.** The Utilities
+  model looked up `state.utilitiesRatio` itself to price local electricity —
+  but `benchColLocalModifier` already returns exactly that ratio for Utilities,
+  so the category multiplier carried it and the model squared it: Los Angeles
+  at 1.353 x 1.648 x 1.648, a 65% overstatement, every figure still looking
+  like a plausible power bill. Same shape as the retired `colTiers` trap.
+  Utilities now applies the multiplier itself, to **power and water only** —
+  broadband and a mobile plan are priced nationally, and a blanket multiplier
+  overstated them by more than the double-count did.
 - **`--progress-bg` is a FILL, not an EDGE.** Against `--card` it is
   1.02–1.20:1 in all four themes — invisible. Anything whose *outline* carries
   meaning (a slider rail, where the thumb's position along it is the whole

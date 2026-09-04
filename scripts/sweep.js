@@ -31,6 +31,73 @@ var SCREENS = (typeof ROUTED_SCREENS !== "undefined" && ROUTED_SCREENS.length)
      "lessonFraming","lesson","lessonQuiz","lessonSimulation","lessonReward","quiz","simulation",
      "marketplace","marketplaceDetail","reward","settings","chat","myDebts","debtAnalyzer"];
 
+/**
+ * A canonical set of answers for one tree — first option everywhere, sliders at
+ * their default. Not "typical", just REPRODUCIBLE: the gates below compare a
+ * tree against itself under different conditions, so what matters is that the
+ * same answers come back every time.
+ */
+function hmoBaselineAnswers(category) {
+  var a = hmoSeedAnswers(category);
+  var t = hmoTree(category);
+  if (!t) return a;
+  t.questions.forEach(function (q) {
+    if (q.type === "choice" && q.options && q.options.length) a[q.id] = q.options[0].id;
+  });
+  return a;
+}
+
+/**
+ * The answer set that makes a tree spend the most.
+ *
+ * Greedy, one question at a time. It exists because the inert-question gate
+ * below has to test a question with its PRECONDITIONS OPEN: "what kind of
+ * coffee" cannot move a figure when the answer above it is "I make it at
+ * home", and every Debt question is behind "nothing right now". Testing
+ * against a first-option baseline reported five perfectly good questions as
+ * broken. Maximising opens every gate by construction, because an open gate is
+ * what costs money.
+ */
+function hmoMaxAnswers(category) {
+  var t = hmoTree(category);
+  var a = hmoSeedAnswers(category);
+  if (!t) return a;
+
+  // SEED FROM THE LAST OPTION, not the first. Options are authored cheapest to
+  // priciest, so this opens every gate before anything is measured — and a
+  // gate has to be open for the greedy pass below to see what is behind it.
+  // Seeding from the first option deadlocked: "how often do you get coffee"
+  // looked inert because coffeeTier was unset, so every frequency multiplied
+  // by an undefined price and came out at zero.
+  t.questions.forEach(function (q) {
+    if (q.type === "choice" && q.options && q.options.length) {
+      a[q.id] = q.options[q.options.length - 1].id;
+    }
+  });
+
+  // Then improve to a fixed point. Answering one question can reveal another
+  // whose value changes what the first should be, so a single pass is not
+  // enough — three settles every tree here and the loop exits early anyway.
+  for (var pass = 0; pass < 3; pass++) {
+    var moved = false;
+    t.questions.forEach(function (q) {
+      if (q.type !== "choice" || !q.options) return;
+      if (!hmoQuestionShows(q, a)) return;
+      var best = a[q.id], bestVal = hmoCompute(category, a);
+      q.options.forEach(function (o) {
+        var trial = {};
+        Object.keys(a).forEach(function (k) { trial[k] = a[k]; });
+        trial[q.id] = o.id;
+        var v = hmoCompute(category, trial);
+        if (v > bestVal) { bestVal = v; best = o.id; }
+      });
+      if (best !== a[q.id]) { a[q.id] = best; moved = true; }
+    });
+    if (!moved) break;
+  }
+  return a;
+}
+
 function textOf(html) {
   return String(html)
     .replace(/<[^>]*>/g, " ")
@@ -553,6 +620,81 @@ if (typeof BB_STEPS !== "undefined") {
       flagged.map(function (r) {
         return r.category + " +" + Math.round(r.user - r.peer);
       }).join(" · ") || "nothing flagged at all");
+
+  // ── The Help-me-out trees ────────────────────────────────────────────────
+  if (typeof HELP_ME_OUT !== "undefined") {
+    var noTree = CATEGORIES.filter(function (c) { return !hmoHasTree(c); });
+    chk(noTree.length === 0, "every category has an estimation tree", noTree.join(", "));
+
+    var noSource = [];
+    CATEGORIES.forEach(function (c) {
+      var t = hmoTree(c);
+      if (!t || !t.rates || !t.rates._source) noSource.push(c);
+    });
+    chk(noSource.length === 0, "every tree cites where its figures came from", noSource.join(", "));
+
+    // A BUDGET IS A MONTH. The engine this replaced multiplied every figure by
+    // how far into the month we were, so on the 4th of a 30-day month "light
+    // local driving" came out at $10 of transport and picking the priciest
+    // option still LOWERED the category. Nothing in the model may read a clock.
+    var realFrac = estimatorMonthFraction;
+    var baseline = {}, drifted = {};
+    CATEGORIES.forEach(function (c) { baseline[c] = hmoCompute(c, hmoBaselineAnswers(c)); });
+    estimatorMonthFraction = function () { return 0.05; };
+    CATEGORIES.forEach(function (c) { drifted[c] = hmoCompute(c, hmoBaselineAnswers(c)); });
+    estimatorMonthFraction = realFrac;
+    var dated = CATEGORIES.filter(function (c) { return baseline[c] !== drifted[c]; });
+    chk(dated.length === 0, "no tree's figure depends on the date", dated.join(", "));
+
+    // A mistyped rate key returns undefined, becomes 0, and every option then
+    // produces the same number — a question that looks like it works and does
+    // nothing. If a question's options cannot move the figure, something is
+    // wired to a key that is not there.
+    var inert = [];
+    CATEGORIES.forEach(function (c) {
+      var t = hmoTree(c);
+      t.questions.forEach(function (q) {
+        if (q.type !== "choice" || !q.options || q.options.length < 2) return;
+        var base = hmoMaxAnswers(c);
+        // A question its own preconditions hide cannot be exercised at all.
+        if (!hmoQuestionShows(q, base)) return;
+        var seen = {};
+        q.options.forEach(function (o) {
+          var a = {};
+          Object.keys(base).forEach(function (k) { a[k] = base[k]; });
+          a[q.id] = o.id;
+          seen[hmoCompute(c, a)] = true;
+        });
+        // A question whose only job is to steer the peer band is allowed to be
+        // inert on the figure; one that carries rates is not.
+        if (Object.keys(seen).length < 2 && !q.lifestyle) inert.push(c + "." + q.id);
+      });
+    });
+    chk(inert.length === 0, "every rate-bearing question actually moves its figure",
+        inert.join(", "));
+
+    // Flat categories are priced nationally — a streaming plan and a loan
+    // repayment cost the same everywhere.
+    var flatWrong = ["Subscriptions", "Debt payments"].filter(function (c) {
+      return hmoColMultiplier(c) !== 1;
+    });
+    chk(flatWrong.length === 0, "flat categories carry no cost-of-living multiplier",
+        flatWrong.join(", "));
+
+    // Decimal slips survive lint and look like money. Every tree's baseline
+    // answers must land in the same order of magnitude as the peer figure.
+    var wild = [];
+    CATEGORIES.forEach(function (c) {
+      var peer = benchPeerValue(c, benchOptsForUser()) || 0;
+      if (!peer) return;
+      var v = baseline[c];
+      if (v > peer * 6 || (v > 0 && v < peer / 8)) {
+        wild.push(c + " " + Math.round(v) + " vs peer " + peer);
+      }
+    });
+    chk(wild.length === 0, "no tree lands an order of magnitude away from its peer figure",
+        wild.join(" · "));
+  }
 
   // ASSERT THE VALUE, NOT JUST THE ORDER. Once the filter keeps only over-peers
   // rows, Math.abs(user - peer) equals user - peer for every row that survives,

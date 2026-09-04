@@ -30,6 +30,7 @@ global_for() {
     seed-state)        echo "SEED_STATE" ;;
     journal-questions) echo "JOURNAL_QUESTIONS" ;;
     estimator-questions) echo "ESTIMATOR_QUESTIONS" ;;
+    help-me-out)       echo "HELP_ME_OUT" ;;
     card-apr)          echo "CARD_APR" ;;
     onboarding-script) echo "ONBOARDING_SCRIPT" ;;
     peer-benchmarks)   echo "PEER_BENCHMARKS" ;;

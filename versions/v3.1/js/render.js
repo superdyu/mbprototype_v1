@@ -58,6 +58,9 @@ function adminSubtitle() {
   if (state.screen === "lessonSimulation") return "Simulation — sandbox figures only, never the user's own.";
   if (state.screen === "lessonReward")   return "Reward — XP to every course the lesson belongs to.";
   if (state.screen === "aboutMe")        return "Budget — 12 flat categories, plan vs what the journal says.";
+  if (state.screen === "helpMeOut")       return "Help me out — " +
+                                                 (state.helpMeOut ? catLabel(state.helpMeOut.category) + ", " + state.helpMeOut.stage : "no session") +
+                                                 ". Habits in, a monthly figure out; never pro-rated.";
   if (state.screen === "budgetBuild")     return "v3.1 builder — " + bbStep().title.toLowerCase() +
                                                  " (step " + ((state.budgetBuild && state.budgetBuild.step || 0) + 1) +
                                                  " of " + BB_STEPS.length + "), Help me out per line.";
@@ -101,6 +104,7 @@ function renderScreen() {
   if (state.screen === "journalDone")       return renderJournalDone();
   if (state.screen === "home")              return renderHome();
   if (state.screen === "aboutMe")           return renderBudgetV3();
+  if (state.screen === "helpMeOut")         return renderHelpMeOut();
   if (state.screen === "budgetBuild")       return renderBudgetBuild();
   if (state.screen === "spendingProfile")   return renderSpendingProfile();
   if (state.screen === "budgetCompare")     return renderBudgetCompare();
@@ -163,6 +167,7 @@ function renderAdmin() {
   if (["lessonQuiz","lessonSimulation","lessonReward"].includes(state.screen)) return renderLessonOutcomeAdmin();
   if (state.screen === "reward")        return renderRewardAdmin();
   if (state.screen === "aboutMe")       return renderBudgetV3Admin();
+  if (state.screen === "helpMeOut")       return renderHelpMeOutAdmin();
   if (state.screen === "budgetBuild")     return renderBudgetBuildAdmin();
   if (state.screen === "spendingProfile") return renderLifestyleWizardAdmin();
   if (state.screen === "budgetCompare")   return renderBudgetCompareAdmin();
@@ -178,7 +183,7 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="navAdminJump(this.value)">
-          ${["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home","journalEntry","journalConfirm","journalDone","aboutMe","budgetCategory","spendEstimator","budgetBuild","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","myProgress","comparison",
+          ${["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home","journalEntry","journalConfirm","journalDone","aboutMe","budgetCategory","spendEstimator","budgetBuild","helpMeOut","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","myProgress","comparison",
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
              "goals","learn","topic","lessonFraming","lesson","lessonQuiz","lessonSimulation","lessonReward","quiz","simulation","marketplace",
              "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
@@ -191,7 +196,17 @@ function renderAdmin() {
   `;
 }
 
+// Module-level, not on `state`: the admin state inspector would serialise a
+// scroll offset it can do nothing with, and this is view bookkeeping rather
+// than app state.
+let lastPaintedScreen = null;
+let scrollHeld = null;
+
 function render() {
+  // Read the offset BEFORE anything replaces the markup that carries it.
+  const scrollEl = document.getElementById("screenRoot");
+  scrollHeld = scrollEl ? scrollEl.scrollTop : null;
+
   // Drop any repaint queued by a slider. Without this, a drag leaves a render
   // pending for up to 400ms, and if the user focuses a text input inside that
   // window the queued render wipes it mid-keystroke — silently, because
@@ -219,7 +234,7 @@ function render() {
   // Any new full-bleed screen should join an existing list, not add a call.
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");
   screenRoot.classList.toggle("journal-mode",     ["lessonFraming","lessonQuiz","lessonSimulation","lessonReward"].includes(state.screen) || screenRoot.classList.contains("journal-mode"));
-  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","budgetBuild","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","spendEstimator"].includes(state.screen));
+  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","budgetBuild","helpMeOut","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","spendEstimator"].includes(state.screen));
   screenRoot.classList.toggle("streak-mode",      state.screen === "streak");
   screenRoot.classList.toggle("login-mode",       state.screen === "login");
   screenRoot.classList.toggle("du-mode",          state.screen === "dailyUpdate");
@@ -317,7 +332,26 @@ function render() {
     renderSearch();
   }
 
-  scrollTop();
+  // ── Hold the scroll position across a re-render of the SAME screen ─────────
+  // render() replaces .screen's innerHTML, which zeroes scrollTop, and every
+  // state change routes through here. Two things broke on that:
+  //
+  //   · flipping a "Help me out" toggle on a row below the fold threw the
+  //     tester back to the top of the step
+  //   · debouncedRender() also lands here, so DRAGGING any slider below the
+  //     fold snapped the page to the top every 400ms, mid-gesture
+  //
+  // Scrolling to the top is right when the screen actually changes — a new
+  // screen should start at its beginning. It is never right when the same
+  // screen simply repaints. So: remember which screen was last painted, and
+  // only reset when that changes.
+  if (state.screen === lastPaintedScreen) {
+    const sr = document.getElementById("screenRoot");
+    if (sr && scrollHeld != null) sr.scrollTop = scrollHeld;
+  } else {
+    scrollTop();
+  }
+  lastPaintedScreen = state.screen;
 
   // Update admin footer — nav log and last error (skip when admin is collapsed)
   if (!state.adminCollapsed) {
