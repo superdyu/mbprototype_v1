@@ -2480,12 +2480,16 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 
 /* Where peers like you land. A wash, not a fill — it is context behind the
    figures, and a saturated band would out-shout the dot sitting on it. */
+/* --good-bg is a CARD background — against the rail fill it is barely a tint
+   (#EDF3EC on #EFE8DC in Natural Light) and the band read as a smudge.
+   --good-border is the lightest token that is unambiguously green on the rail
+   in all four themes, and still recessive enough that the dot sitting on it
+   stays the loudest thing on the track. */
 .band-peer {
   position: absolute;
   top: -1px;
   bottom: -1px;
-  background: var(--good-bg);
-  border: 1px solid var(--good-border);
+  background: var(--good-border);
   border-radius: 99px;
   box-sizing: border-box;
 }
@@ -2571,7 +2575,13 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    0–100%. Left alone, the thumb and the peer band it is being compared against
    are measured on two different scales and disagree by ~3% at the ends. Inset
    the marks by half the thumb and both travel the same distance. */
-.band-build { height: 44px; }          /* tap target, not decoration */
+/* The two numbers the thumb's vertical position is derived from. Declared
+   here so the calc below states the relationship instead of hiding a 13. */
+.band-build {
+  --band-h: 44px;                      /* tap target, not decoration */
+  --band-thumb: 18px;
+  height: var(--band-h);
+}
 .band-build .band-track {
   position: absolute;
   top: 50%;
@@ -2605,25 +2615,36 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .screen .band-range:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
 .screen .band-range::-webkit-slider-runnable-track { height: 100%; background: transparent; border: 0; }
 .screen .band-range::-moz-range-track  { height: 100%; background: transparent; border: 0; }
+/* ── THE THUMB HAS TO BE CENTRED BY HAND ────────────────────────────────────
+   With -webkit-appearance: none, WebKit aligns the thumb to the TOP of the
+   runnable track — it does not centre it. The track here is height: 100%, i.e.
+   the whole 44px tap target, so an 18px thumb sat at 9px while the visual rail
+   is centred at 22px: the dot floated above its own slider.
+   margin-top closes exactly that gap, and box-sizing keeps the 2px ring inside
+   the 18px rather than making the thumb 22px and the arithmetic wrong. */
 .screen .band-range::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
+  box-sizing: border-box;
+  width: var(--band-thumb, 18px);
+  height: var(--band-thumb, 18px);
+  margin-top: calc((var(--band-h, 44px) - var(--band-thumb, 18px)) / 2);
   border-radius: 50%;
   background: var(--accent);
   border: 2px solid var(--card);
   box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
   cursor: grab;
 }
+/* Firefox centres its own thumb on the track, so it takes no margin here —
+   adding one would shift it twice. */
 .screen .band-range::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
+  box-sizing: border-box;
+  width: var(--band-thumb, 18px);
+  height: var(--band-thumb, 18px);
   border-radius: 50%;
   background: var(--accent);
   border: 2px solid var(--card);
   box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
   cursor: grab;
-  box-sizing: border-box;
 }
 .screen .band-range:disabled::-webkit-slider-thumb { background: var(--muted); cursor: not-allowed; }
 .screen .band-range:disabled::-moz-range-thumb     { background: var(--muted); cursor: not-allowed; }
