@@ -163,6 +163,34 @@ started as a copy" cannot tell an intentional variation from a bug.
 
 Everything else is still the copy.
 
+### Shared with v3, deliberately
+
+**The nine starting profiles** (`js/profiles.js`, `data/test-profiles.json`,
+`screens/profile-picker.js`) are **identical in both versions** and are not part
+of what the A/B tests — they are the floor both sides stand on. Three
+cost-of-living tiers x three income levels, chosen empirically from
+`zip-cost-of-living.json` by BEA RPP with Census ACS county median incomes:
+
+| tier | ZIP | county | RPP | median | peers/mo |
+|---|---|---|---|---|---|
+| above | 95054 | Santa Clara, CA | 112.9 | $164,281 | $9.2k–12.0k |
+| at | 37203 | Davidson (Nashville), TN | 97.4 | $75,664 | $3.3k–5.5k |
+| below | 72201 | Pulaski (Little Rock), AR | 89.1 | $60,385 | $2.4k–3.1k |
+
+- **They are also the headless test matrix.** `sweep.js` §1c drives every screen,
+  the peer model, every Help-me-out tree and the whole builder through all nine.
+  Everything the app computes is anchored on a ZIP and an income, and until this
+  existed there was exactly one of each to test against — which is why "$10 of
+  transport" had to be found by hand.
+- **Household size is FIXED at 2 across all nine.** It drives groceries harder
+  than anything else, so varying it would confound the two axes the matrix
+  exists to isolate.
+- **`PROFILE_PICKER` in `js/config.js` is one line** and takes the screen out of
+  the flow; skip then applies `profileDefault()` silently and the matrix still
+  works. This is scaffolding and is meant to be removable.
+- **`SKIP_ONBOARDING` deliberately does NOT show the picker.** That flag exists
+  to reach Home fast; stopping it for two questions defeats it.
+
 ## Read first
 
 | File | Why |
@@ -251,6 +279,18 @@ All verified against the raw JSON on 2026-08-07.
   pauses are not in the word-count estimate. Both players now pass
   `playing: false` while held (`onbVideoHeld`, `lpHeld`), which pins the
   animation instead of fighting it.
+- **A skipped onboarding field falls back to a PROFILE, never to the persona.**
+  Every write in `onbFinish()` is guarded (`if (o.zip) …`), which is correct — an
+  unanswered field must not clobber an answered one. What was wrong was what sat
+  behind the guard: `bootV3`'s persona seed, so skipping quietly made the tester
+  Sam from Los Angeles on $68,000 and nothing on screen said so. Every figure
+  downstream was anchored on a profile nobody chose. `profileDefault()` is the
+  fallback now. Related: `o.name || "Buddy"` made the **tester** "Buddy", the
+  same as the dog — the person is "Me".
+- **An unnamed buddy had three different fallbacks.** `"Buddy"` on Home and in
+  Chat, `"Your buddy"` in the character frame. `onbFinish()` now names it once at
+  the source so every surface agrees; the display-time fallbacks stay as
+  belt-and-braces.
 - **A BUDGET IS A MONTH. Never pro-rate one.** The Help-me-out questions first
   shipped on `estimatorCompute()`, which multiplies every option by
   `estimatorMonthFraction()` — right for "what have you spent so far this

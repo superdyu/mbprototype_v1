@@ -28,6 +28,7 @@ const destinations = [
   ["journalDone",    "Journal: Done"],
   ["aboutMe",        "Budget"],
   ["lifestyleWizard","Lifestyle Wizard"],
+  ["profilePicker",  "Starting profile"],
   ["lifestyleWizardReview","Wizard: Review"],
   ["budgetDone",     "Budget: Saved"],
   ["myProgress",     "My Progress"],
@@ -180,6 +181,11 @@ const state = {
   planBuiltWith: null,
   planBuiltDate: null,
   lifestyleWizard: null,
+  // Which of the nine starting profiles is applied, or null for the persona
+  // seed. Written only by profileApply().
+  activeProfileId: null,
+  // The picker session — tier, then income level.
+  profilePick: null,
 
   // Which of the six lifestyle dimensions the USER actually answered, as
   // opposed to inheriting from the persona. state.lifestyle is fully populated

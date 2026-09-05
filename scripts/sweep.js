@@ -300,6 +300,111 @@ if (typeof __COMPONENTS_CSS === "string") {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+if (typeof TEST_PROFILES !== "undefined") {
+section("1c. The nine starting profiles — every feature, every profile");
+// Everything the app computes is anchored on a ZIP and an income, and until now
+// there was exactly ONE of each to test against: the persona's Los Angeles and
+// $68,000. That is why "$10 of transport" had to be found by hand. Peer spend
+// across these nine runs from about $2,500 a month to about $12,000.
+
+var __profileBefore = state.activeProfileId;
+var profiles = profileList();
+chk(profiles.length === 9, "nine profiles resolve", profiles.length + " did");
+
+// Cost of living must order strictly, whatever the income level does.
+var totalsByTier = {};
+profiles.forEach(function (p) {
+  profileApply(p.id);
+  (totalsByTier[p.tier.id] = totalsByTier[p.tier.id] || []).push(profilePeerTotal());
+});
+chk(Math.min.apply(null, totalsByTier.below) < Math.min.apply(null, totalsByTier.at) &&
+    Math.min.apply(null, totalsByTier.at) < Math.min.apply(null, totalsByTier.above),
+    "peer spending orders below < average < above",
+    ["below", "at", "above"].map(function (t) {
+      return t + " " + Math.min.apply(null, totalsByTier[t]);
+    }).join(" · "));
+
+// Every screen, every profile. The §1 loop covers four themes on one profile;
+// this covers nine profiles on one theme, which is the axis that was untested.
+var profileFails = [], peerBad = [], treeBad = [], nanSeen = [], planBad = [];
+profiles.forEach(function (p) {
+  profileApply(p.id);
+
+  SCREENS.forEach(function (sc) {
+    var html = renderSafe(sc);
+    if (html && html.__error) { profileFails.push(p.id + " " + sc + ": " + html.__error); return; }
+    // A figure that came out NaN still renders — as the word NaN, or as an
+    // inline style the browser silently drops. Neither throws.
+    if (/(NaN|undefined)/.test(String(html).replace(/undefined\s*<\/option>/g, ""))) {
+      if (/style="[^"]*(NaN|undefined)/.test(String(html)) || /\$NaN/.test(String(html))) {
+        nanSeen.push(p.id + " " + sc);
+      }
+    }
+  });
+
+  CATEGORIES.forEach(function (c) {
+    var v = benchPeerValue(c, benchOptsForUser());
+    if (!isFinite(v) || v <= 0) peerBad.push(p.id + " " + c + "=" + v);
+    if (typeof hmoHasTree === "function" && hmoHasTree(c)) {
+      var t = hmoCompute(c, hmoMaxAnswers(c));
+      if (!isFinite(t) || t < 0) treeBad.push(p.id + " " + c + "=" + t);
+    }
+  });
+
+  // The builder has to complete from any starting point, not just LA.
+  // v3.1 only — v3 is the control and has the six-question wizard instead.
+  if (typeof bbStart === "function" && typeof bbAdvanceStep === "function") {
+    state.planStatus = "empty";
+    state.budgetBuild = null;
+    bbStart();
+    BB_STEPS.forEach(function () { bbAdvanceStep(); });
+    var bad = CATEGORIES.filter(function (c) {
+      var v = catValue(state.plan, c);
+      return !isFinite(v) || v < 0;
+    });
+    if (bad.length) planBad.push(p.id + ": " + bad.join(", "));
+    state.budgetBuild = null;
+  }
+});
+
+chk(profileFails.length === 0, SCREENS.length + " screens x 9 profiles render",
+    profileFails.slice(0, 4).join("\n          "));
+chk(peerBad.length === 0, "the peer model is finite and positive everywhere",
+    peerBad.slice(0, 6).join(" · "));
+chk(treeBad.length === 0, "every Help-me-out tree returns a real figure in every ZIP",
+    treeBad.slice(0, 6).join(" · "));
+chk(nanSeen.length === 0, "no NaN reaches a rendered figure or inline style",
+    nanSeen.slice(0, 6).join(" · "));
+chk(planBad.length === 0, "the budget builder completes from any profile",
+    planBad.slice(0, 4).join(" · "));
+
+// The flat spots are a real property of a five-band model, not a fault — but
+// they must be VISIBLE, or a 25% raise that moves nothing reads as broken.
+var flat = [];
+["above", "at", "below"].forEach(function (t) {
+  var bands = profileLevels().map(function (l) {
+    return (profileResolve(profileId(t, l.id)) || {}).band;
+  });
+  if (bands[0] === bands[1] || bands[1] === bands[2]) flat.push(t + " " + bands.join("/"));
+});
+chk(flat.length > 0 && profiles.every(function (p) { return !!p.band; }),
+    "every profile resolves an income band, and the flat spots are known",
+    "shared bands: " + flat.join(" · "));
+
+// The skip fallback has to be one of the nine, or it is another silent default.
+var d = profileDefault();
+chk(!!d && profiles.some(function (p) { return p.id === d.id; }),
+    "the skip fallback is one of the nine", d ? d.id : "none");
+chk(d && d.name === "Me" && d.buddyName === "Buddy",
+    "the tester is 'Me' and only the dog is 'Buddy'",
+    d ? d.name + " / " + d.buddyName : "no default");
+
+state.activeProfileId = __profileBefore;
+state.planStatus = "complete";
+bootV3();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 section("2. D19 — no screen renders empty, in any state");
 // The states a tester can actually reach, not just the seeded one.
 var STATES = {

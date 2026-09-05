@@ -2891,3 +2891,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .hmo-check-price { font-size: 12px; color: var(--muted); }
 
 .hmo-done { color: var(--accent); }
+
+/* The income figure beside a profile option — a fact about the choice, not the
+   choice itself, so it sits under the label rather than competing with it. */
+.pp-figure { display: block; margin-top: 2px; font-size: 11px; color: var(--muted); }

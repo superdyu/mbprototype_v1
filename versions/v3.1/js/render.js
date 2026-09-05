@@ -58,6 +58,8 @@ function adminSubtitle() {
   if (state.screen === "lessonSimulation") return "Simulation — sandbox figures only, never the user's own.";
   if (state.screen === "lessonReward")   return "Reward — XP to every course the lesson belongs to.";
   if (state.screen === "aboutMe")        return "Budget — 12 flat categories, plan vs what the journal says.";
+  if (state.screen === "profilePicker")   return "Starting profile — 3 cost-of-living tiers x 3 income levels. " +
+                                                 "Shown on \"Skip all setup\"; PROFILE_PICKER turns it off.";
   if (state.screen === "helpMeOut")       return "Help me out — " +
                                                  (state.helpMeOut ? catLabel(state.helpMeOut.category) + ", " + state.helpMeOut.stage : "no session") +
                                                  ". Habits in, a monthly figure out; never pro-rated.";
@@ -104,6 +106,7 @@ function renderScreen() {
   if (state.screen === "journalDone")       return renderJournalDone();
   if (state.screen === "home")              return renderHome();
   if (state.screen === "aboutMe")           return renderBudgetV3();
+  if (state.screen === "profilePicker")     return renderProfilePicker();
   if (state.screen === "helpMeOut")         return renderHelpMeOut();
   if (state.screen === "budgetBuild")       return renderBudgetBuild();
   if (state.screen === "spendingProfile")   return renderSpendingProfile();
@@ -167,6 +170,7 @@ function renderAdmin() {
   if (["lessonQuiz","lessonSimulation","lessonReward"].includes(state.screen)) return renderLessonOutcomeAdmin();
   if (state.screen === "reward")        return renderRewardAdmin();
   if (state.screen === "aboutMe")       return renderBudgetV3Admin();
+  if (state.screen === "profilePicker")   return renderProfilePickerAdmin();
   if (state.screen === "helpMeOut")       return renderHelpMeOutAdmin();
   if (state.screen === "budgetBuild")     return renderBudgetBuildAdmin();
   if (state.screen === "spendingProfile") return renderLifestyleWizardAdmin();
@@ -183,7 +187,7 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="navAdminJump(this.value)">
-          ${["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home","journalEntry","journalConfirm","journalDone","aboutMe","budgetCategory","spendEstimator","budgetBuild","helpMeOut","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","myProgress","comparison",
+          ${["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home","journalEntry","journalConfirm","journalDone","aboutMe","budgetCategory","spendEstimator","budgetBuild","helpMeOut","profilePicker","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","myProgress","comparison",
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
              "goals","learn","topic","lessonFraming","lesson","lessonQuiz","lessonSimulation","lessonReward","quiz","simulation","marketplace",
              "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
@@ -234,7 +238,7 @@ function render() {
   // Any new full-bleed screen should join an existing list, not add a call.
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");
   screenRoot.classList.toggle("journal-mode",     ["lessonFraming","lessonQuiz","lessonSimulation","lessonReward"].includes(state.screen) || screenRoot.classList.contains("journal-mode"));
-  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","budgetBuild","helpMeOut","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","spendEstimator"].includes(state.screen));
+  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","budgetBuild","helpMeOut","profilePicker","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","spendEstimator"].includes(state.screen));
   screenRoot.classList.toggle("streak-mode",      state.screen === "streak");
   screenRoot.classList.toggle("login-mode",       state.screen === "login");
   screenRoot.classList.toggle("du-mode",          state.screen === "dailyUpdate");

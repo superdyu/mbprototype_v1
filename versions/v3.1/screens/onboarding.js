@@ -248,9 +248,17 @@ function onbSkipName() {
   render();
 }
 
-// "Skip all setup" — finish right here; blank name resolves to "Buddy".
+// "Skip all setup" — hand over to the profile picker, or, with the picker
+// switched off, finish right here on the default profile. Either way the tester
+// ends up with a profile somebody chose rather than the persona's by accident.
 function onbSkipAll() {
   state.onboarding.skipPrompt = false;
+  if (typeof PROFILE_PICKER !== "undefined" && PROFILE_PICKER &&
+      typeof ppStart === "function") { ppStart(); return; }
+  if (typeof profileDefault === "function") {
+    const d = profileDefault();
+    if (d) profileApply(d.id);
+  }
   onbFinish();
 }
 
@@ -531,8 +539,19 @@ function onbJoinAreas(areas) {
 function onbFinish() {
   const o = state.onboarding;
 
-  // Cosmetic name has no persona fallback — a skipped name is "Buddy", not "Sam".
-  state.profile.name = o.name || "Buddy";
+  // ── What a SKIPPED field falls back to ─────────────────────────────────────
+  // Every write below is guarded, which is correct — a field the tester left
+  // alone must not clobber one they answered. What was wrong is what sat behind
+  // the guard: the persona, so skipping quietly made you Sam from Los Angeles
+  // on $68,000 and nothing said so. The default profile is an explicit,
+  // documented starting point instead.
+  //
+  // And the name was its own bug: `o.name || "Buddy"` made the TESTER "Buddy",
+  // the same as the dog. The person is "Me"; only the dog is Buddy.
+  const fallback = (typeof profileDefault === "function" && profileDefault()) || null;
+  if (fallback && !state.activeProfileId) profileApply(fallback.id);
+
+  state.profile.name = o.name || (fallback ? fallback.name : "Me");
   if (o.zip) state.profile.zip = o.zip;
   if (o.householdSize) state.profile.householdSize = o.householdSize;
   // The slider's figure if they moved it, else the band's seed. This also
@@ -554,6 +573,15 @@ function onbFinish() {
   const transport = onbTransportMonthly(o);
   if (transport != null) state.lifestyleDetail.transportMonthly = transport;
   state.buddy = Object.assign({}, o.buddy);
+  // Name it here rather than leaving it blank for the screens to paper over.
+  // An unnamed buddy is currently "Buddy" on Home and in Chat but "Your buddy"
+  // in the character frame — three fallbacks for one empty string, which is two
+  // too many and one of them says something different. Setting it once means
+  // every surface agrees, and profileApply's earlier write survives this
+  // assign rather than being clobbered by o.buddy's empty name.
+  if (!state.buddy.name) {
+    state.buddy.name = (fallback && fallback.buddyName) || "Buddy";
+  }
 
   // The multi-select folds into the single strategic goal the app renders as
   // "What you're here for" (goals-v3.js). Keep the raw picks on `areas`.
@@ -1675,7 +1703,14 @@ function renderOnboardingAdmin() {
   return `
     <div class="admin-card">
       <p class="admin-card-title">Onboarding</p>
-      ${!o ? `<p class="helper">Not running. SKIP_ONBOARDING = ${SKIP_ONBOARDING}.</p>` : `
+      <!-- The profile is here as well as on the picker's own card: this is the
+           card you are looking at while wondering why a figure looks wrong, and
+           "which profile am I" is the first thing that answers it. -->
+      ${renderProfileAdminSwitcher()}
+      <p class="helper" style="font-size:10px;margin:0 0 12px;">
+        SKIP_ONBOARDING = ${SKIP_ONBOARDING} · PROFILE_PICKER = ${PROFILE_PICKER}
+      </p>
+      ${!o ? `<p class="helper">Not running.</p>` : `
         <div class="input-group">
           <label>Step ${o.step + 1}/${ONB_STEPS.length} — ${h(ONB_STEPS[o.step])}</label>
           <select onchange="state.onboarding.step=parseInt(this.value,10);state.onboarding.lwIndex=0;state.onboarding.buddyIndex=0;render()">

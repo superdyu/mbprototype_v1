@@ -29,6 +29,7 @@ const destinations = [
   ["aboutMe",        "Budget"],
   ["budgetBuild",    "Budget: Build (3 steps)"],
   ["helpMeOut",      "Budget: Help me out"],
+  ["profilePicker",  "Starting profile"],
   ["spendingProfile","Budget: Spending Profile"],
   ["budgetCompare",  "Budget: Which is closer"],
   ["lifestyleWizard","Lifestyle Wizard"],
@@ -189,6 +190,11 @@ const state = {
   // The Help-me-out run for ONE category: its answers, its stage, and the
   // figure they land on. The queue of categories lives on budgetBuild.
   helpMeOut: null,
+  // Which of the nine starting profiles is applied, or null for the persona
+  // seed. Written only by profileApply().
+  activeProfileId: null,
+  // The picker session — tier, then income level.
+  profilePick: null,
 
   // Which of the six lifestyle dimensions the USER actually answered, as
   // opposed to inheriting from the persona. state.lifestyle is fully populated
