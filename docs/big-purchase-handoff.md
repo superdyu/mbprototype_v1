@@ -1,360 +1,354 @@
-# Big Purchase Calculator — handoff (updated 2026-10-03)
+# Big Purchase Calculator: state of the build
 
-Everything below describes work that **already exists in this repo**, on branch
-`HoffDemo-Purchase`, in `versions/v3.1c/`. Nothing here needs rebuilding. This
-document is the state of play so a fresh session can pick up mid-flight.
-
-**Section 0 is the newest work (2026-09-28 to 10-03) and supersedes anything
-below it that disagrees.** Sections 1–10 were written 2026-09-27 and still
-hold for steps 1–4, the money model, the copy and layout rules and the traps.
-
----
-
-## 0. The new front (2026-09-28 → 10-03)
-
-**Direction change (owner):** the tool used to start from a car the user
-already wanted and hunt for a cheaper one. It now starts from the PERSON:
-what they want the car for, what peers spend, and a specific make and model,
-with the real cost to own. The original four steps stay, unchanged, at the end.
-
-```
-onboarding (ZIP, income, miles) → bpLanding → bpFinder → bpSetup (1) → bpCost (2) → bpFinance (3) → bpCommit (4)
-```
-
-Full rulings with the owner's words: `versions/v3.1c/CLAUDE.md`, section
-**"THE NEW FRONT"**. Summary:
-
-| Piece | State |
-|---|---|
-| **Onboarding** | 3 questions: ZIP, income (docked at the bottom, tap advances, band midpoint, no slider), miles. Household and place were added then removed again |
-| **Landing** (`screens/bp-landing.js`) | One-line header "Thinking about a big purchase?" (20px, nowrap), two lines of value copy, fund box that says why before it asks ("Before you buy", then the owner's verbatim line, question, three answers last), category list pinned to the bottom. Body is space-between, reading copy centred |
-| **Find your car** (`screens/bp-finder.js`, model `js/bp-finder.js`) | Views: start · know · quiz · cars · car |
-| start | Owner's banner `assets/img/buddy-car.jpg` (190px), title, lead, two path buttons pinned to the bottom. **No peer figures here** |
-| know | Car-site pattern: Make (A–Z) → Model (locked until make) → New / Used price tiles (20px bold) → "See the real cost to own". Make/Model open **bottom sheets**, not native selects (those dropped UP) |
-| quiz | 5 short fun questions → a type+use ("Adventure SUV") with two "Also fits" links → price range = tier + $ range, "Peers spend about here" tag → 3 specific cars, each a NEW and a USED price to tap |
-| car | Five lines (sticker · down · **total monthly**, highlighted · year 1 · 5 years), loan line + "See how we calculated this" (Buddy panel in `calc` mode, every figure editable, edits carry to steps 1–4), peers box (payment, total monthly, share of income, $ difference), two named cheaper cars (same car used; what peers' payment buys) |
-| **Data** (`data/big-purchase.json`) | `vehicle.finder`: 81 cars (Sedan/SUV/Truck × 3 uses × 3 tiers × 3), base trim, approx 2026 MSRP, each with `known` (its reputation, shown everywhere) and `why` (spec line, fallback). `vehicle.peerSpend`: peer payment + running cost by income band × household. `buddy-bp.json` step `pick`. All `_prototype` |
-
-**Hard rules from this stretch:**
-- **Peers are information, never a limit.** No "% of income is too high",
-  no threshold, anywhere (owner: legal risk, "full stop").
-- Suggested cars are "choices based on what you told us", never "best for you".
-- Used = about 3 years old at `alternatives.usedCut` (28%), the same cut the
-  options screen uses, so a used car costs the same on every screen.
-- Every finder figure comes from `bpBreakdown()`. Checked: F-150 new is
-  $1,250/mo, $22,900 year 1, $83,155 five years on the finder AND on step 2.
-- The finder car view must fit one screen at its tallest (quiz pick, new,
-  loan, both cheaper cars); measured 0 overflow incl. R1S electric at 40 mi.
-- One-handed: primary actions at the bottom of every screen; space-between
-  bodies with a small bottom inset (needs the three-class selector,
-  `.journal-shell.onb-pinned.<shell> .journal-body`, or it silently loses).
-- Household is no longer asked, so peers use the profile default (2) and the
-  peer line names city and income only.
-
-**Open items (not acted on):**
-1. **ZIP field infinite loop** in onboarding (`screens/onboarding.js` ~510):
-   at 5 digits it calls `kbdCommit()`, which dispatches `change`, which calls
-   the same handler again. Pre-existing in v3.1c, not in v3.1. One-line
-   re-entrancy guard offered, owner has not said yes.
-2. The finder start's middle gap is ~157px at 812; owner may want it tightened.
-3. Primary buttons are the theme's pale `--accent-fill`; can read as disabled.
-   Theme-wide if changed.
-4. "What peers' payment buys" row is hidden when that car would not cost less
-   a month (e.g. a used Ram vs a new F-150).
-5. `renderBpfPeerFact()` and `renderBpfModelList()` are unused, kept (house rule).
-6. **Screen 3 of the new front** has not been specified yet; the owner said
-   they would describe it next.
-7. Carried over from below: credit-band default (600-660), stale
-   `docs/big-purchase-spec.md`, ESF typed-field two-tap bug.
-8. **Nothing is committed.**
-
----
-
-## 1. Where the work is
+**Updated 2026-10-08.** This describes what exists in the prototype today. It
+replaces the 2026-10-03 handoff, whose sections on steps 1 to 4 no longer
+describe the flow a tester walks.
 
 | | |
 |---|---|
-| Branch | `HoffDemo-Purchase` (do not work on `main`) |
-| Version folder | `versions/v3.1c/` — **all work happens here** |
-| Gate label | `v3.1 (C)` — sits beside `v3 (A)` and `v3.1 (B)` |
-| Tooling env var | `MB_VERSION=v3.1c` (the scripts default to `v3.1`) |
-| Committed? | **No.** Every change sits in the working tree, uncommitted |
-
-`versions/v3.1c/` is v3.1 (B) plus the Big Purchase Calculator, copied so the
-gate can show the purchase build and the ESF/Buddy-chat build side by side.
-**v3, v3.1, v1 and v2 are untouched by this work and must stay that way.**
-
-### The authoritative record is already in the repo
-
-`versions/v3.1c/CLAUDE.md` (~1,160 lines) auto-loads when you work in that
-folder and carries **every ruling, trap and rationale** from the build,
-including all of the design review recorded here. Read it before touching
-anything. This handoff is the index; that file is the detail.
+| Repository | `superdyu/mbprototype_v1` |
+| Branch | **`HoffDemo-BigPurchase`** (commit `f84f142`). `HoffDemo-Purchase` holds the same work one commit behind. `main` is untouched |
+| Version folder | `versions/v3.1c/`, gate label **v3.1 (C)**. v1, v2, v3 and v3.1 are untouched |
+| Detailed rulings | `versions/v3.1c/CLAUDE.md`: every owner ruling, in the owner's words, with the reasoning and the traps |
+| Status | Clickable prototype. All figures marked `_prototype` are estimates, not quotes |
 
 ---
 
-## 2. How to run and verify
+## 1. What the tool is for
 
-- **No build step, no dependencies.** Pure static files.
-- The app normally opens as a `file://` page, so `fetch()` is blocked. Data
-  ships as `<script>`-loadable wrappers: edit `data/*.json`, then run
-  `MB_VERSION=v3.1c bash scripts/wrap-data.sh`.
-- **This machine has no `node` and no `python`**, so `scripts/check-syntax.sh`
-  cannot run and a headless harness is not an option.
-- **Verification is done in the browser instead**, and it works well:
-  `scripts/serve.ps1` serves the repo on port 8787, and the desktop app's
-  preview pane loads `http://localhost:8787/versions/v3.1c/index.html`.
-  Reloading bounces to the gate, so navigate to that URL directly each time.
-- The phone frame is 375x812 in testing. Its height follows the browser
-  window, so **layout must work at 812 and at 1000+**.
+The Big Purchase Calculator helps someone feel comfortable with a car they are
+about to buy. It starts from the **person** (what they use a car for, what
+people like them spend) and ends with a **savings goal** for the money they
+need up front. The question it answers is not "can I afford this" but "what
+does this really cost to own, beside people like me, and what would it take to
+get there".
 
-### The fit check that matters
-
-Steps 2, 3 and 4 must hold one screen with no scrolling. Measure, never
-eyeball:
-
-```js
-const b = document.querySelector('.journal-body');
-b.scrollHeight - b.clientHeight          // must be 0
-```
-
-**Tune against the TALLEST configuration** — premium SUV, electric, 40 miles a
-day, on a loan — and let the layout handle shorter ones. Tuning against an
-average car is what produced a dead band at the bottom of every cheaper one.
+**It never gives advice.** It shows figures and differences and lets the
+tester decide. Peers are shown as information and never as a limit.
 
 ---
 
-## 3. The flow as it stands
-
-**Updated 2026-09-29: a new front was added.** Onboarding is five questions
-(ZIP, income, household, place, miles), the landing states the tool's purpose,
-and **`bpFinder` ("Find your car") sits between the landing and step 1**. It
-starts from the person: pick a make and model, or a five-question quiz, then
-three specific cars, then the five lines beside what peers spend and two
-named cheaper cars. Details and rulings: `versions/v3.1c/CLAUDE.md`, "THE NEW
-FRONT". The steps below are unchanged and follow it.
+## 2. The flow
 
 ```
-onboarding (5) → bpLanding → bpFinder → bpSetup (1) → bpCost (2) → bpFinance (3) → bpCommit (4)
-
-(the original description, still accurate for steps 1-4:)
-bpLanding → bpSetup (1) → bpCost (2) → bpFinance (3) → bpCommit (4)
-                                   ↘ bpOptions (optional, no step number)
-bpQuiz — "Help me pick", reachable from step 1
+Onboarding (ZIP, income, miles)
+  → Landing: "Thinking about a big purchase?"
+  → Find your car
+       ├ Help me choose a car  → 5 questions + price range → 3 specific cars
+       └ I know what I want    → Make → Model → New or Used
+  → What it costs to own      (the expense table, peers, alternative cars)
+  → Your car                  (Paying for it + Planning for it, one screen)
+  → Goal saved → Goals tab
 ```
 
-**Four numbered steps.** "Ways to spend less" (`bpOptions`) is deliberately not
-one of them: it is optional, reached only by tapping **Explore** on step 2, and
-numbering it produced a flow that jumped from step 2 to step 4.
-
-| Screen | What it does |
-|---|---|
-| `bpLanding` | Emergency-fund box + the five categories (only *A vehicle* is built) |
-| `bpSetup` (1) | One question at a time, choices docked at the bottom |
-| `bpCost` (2) | Loan question, the six-row cost block, the saving callout, the running-cost table |
-| `bpOptions` | Used vs one tier down, apples-to-apples over five years |
-| `bpFinance` (3) | Price, loan settings, what it costs over five years, the cheaper options as savings |
-| `bpCommit` (4) | Amount to save, the date, the reminder |
-
----
-
-## 4. The money model — read this before touching a figure
-
-`bpBreakdown()` in `js/bp-engine.js` is the **single source**. It returns two
-groups that must never share a list:
-
-- **What it costs:** price · taxes/fees/setup · running · loan interest →
-  five-year total, with year one beside it.
-- **How you pay:** down payment · amount financed · monthly payment.
-
-A down payment and a loan are the *same money* as the price arriving in
-instalments. Printing them beside the price counts the car twice.
-
-### Rules that came out of review and must hold
-
-1. **Everything rounds the same way.** `bpMoney()` everywhere; `bpMoney100()`
-   is used nowhere. Two screens showed $800 and $760 for the same figure.
-2. **`bpAmortize()` rounds the payment once, at the source**, so the schedule,
-   the interest and every total are built from the payment the screens print.
-   Rounding the parts and rounding the total are different sums.
-3. **Year 1 ties exactly:** down payment + 12 payments + 12 months of running.
-4. **The five-year total is not 60 x the payment** and should not be — the last
-   payment of a rounded schedule is a stub, so it lands about $100 under.
-5. **No resale, anywhere.** The price is counted in full and nothing is
-   credited back. `bpVResale()` still exists; nothing reads it.
-6. **If a figure appears on two screens it must be the same figure.** Fix
-   apparent false precision by changing what is computed, never by rounding one
-   of the two places it is shown.
-7. **If a screen shows two numbers whose difference is the point, show the
-   difference.** We do the maths; the user makes the decision.
-
-### Verified, not a bug
-
-A $55,000 premium car showing ~$96,000 over five years was checked line by
-line: $55,000 + $4,395 tax/fees + $23,520 running + $12,909 interest. The same
-money counted as down payment + 60 payments + 60 months of running comes to
-$95,600, agreeing to a rounding stub. **The monthly payment row is the car
-arriving monthly, not a charge on top of it.**
-
----
-
-## 5. Data and figures (`data/big-purchase.json`)
-
-| Figure | Value | Why |
+| Screen id | File | What it does |
 |---|---|---|
-| `mpg` | car 24 · SUV 15 · minivan 19 · truck 14 | The owner's real-world figures, with their own arithmetic: 15 mi/day ÷ 15 mpg x $4/gal |
-| `pumpPricePerGallon` | **4.25** | This tool's own, not the emergency fund's $3.15. `bpVPerGallon()` takes the HIGHER of the two, so California keeps $4.65 |
-| `factors.insuranceFullCoverage` | **1.6** | The shared state figure is the average premium written, mostly liability-only on paid-off cars. Every car here is being bought |
-| `alternatives.usedCut` | **0.28** | A 1–3 year old car, not 20% |
-| Subscriptions row | **removed** | An opt-in add-on, not a cost of owning the car. Figures and `bpVSubscriptions()` remain; the row is out of `BP_VEHICLE_ROWS`, `bpCostLines()` and `BP_CMP_ROWS` |
-| Mileage | never asked | Read from the shared profile; `milesBandMidpoints` prices each onboarding band for a car |
-| Diesel | hidden for minivan and motorcycle | Neither is sold as a diesel in the US |
+| `onboarding` | `screens/onboarding.js` | Three questions under `BP_ENTRY`: ZIP, income (docked, tap answers and advances), miles a day |
+| `bpLanding` | `screens/bp-landing.js` | Purpose, the emergency-fund check, and the category list (only *A vehicle* is built) |
+| `bpFinder` | `screens/bp-finder.js`, model `js/bp-finder.js` | Views: `start`, `quiz` (questions, price range and the cars on one screen), `car` (the cost screen) |
+| `bpYourCar` | `screens/bp-yourcar.js` | Paying for it and Planning for it, then the goal |
+| sheets | `screens/bp-sheet.js` | Make list, model list, alternatives, peers' range, lease options, months, finance settings |
 
-**Open question for the owner:** the credit default is `600-660` at 9.71%, which
-puts $12,909 of interest on a $55,000 car. At `661-780` (6.15%) it is about
-$8,000. A buyer of a $55,000 premium car is more likely in the higher band. The
-default has not been changed, because it moves every figure in the tool.
+**The old numbered steps 1 to 4** (`bpSetup`, `bpCost`, `bpFinance`,
+`bpCommit`, plus `bpOptions` and `bpQuiz`) still exist in the code and still
+work, but **the flow no longer walks them**. Continue on the cost screen goes
+to `bpYourCar`. `bpCommit()` is still the function that saves the goal.
 
 ---
 
-## 6. Copy rules
+## 3. Screen by screen
 
-- **No em dashes in anything a tester reads.** They are an AI tell. Swept the
-  whole feature; the check is one line:
-  `(document.body.innerText.match(/—/g) || []).length` must be 0.
-  Code comments and internal docs keep theirs.
-- **No "it's not just X, it's Y" constructions.** Same tell.
-- **No financial advice, ever** (D26). Surface the figure and the gap; never
-  prescribe. No "you should", "we recommend", "the best option is".
-- **Never call a cost high.** State it.
-- **"You could have" is acceptable** for a projection: it is conditional, the
-  rate is printed beside every figure it produces ("worth $26,567 at 7%"), and
-  7% is documented as a long-run average. The line not to cross is a projected
-  figure with no rate attached.
-- **Owner-dictated copy is verbatim.** The six row labels on step 2 are theirs.
+### 3.1 Landing
+- Header: **"Thinking about a big purchase?"** (one line), then *"We'll show you
+  what it really costs to own, and help you find the one that fits your life."*
+- **Emergency fund box, "Before you buy"**, two short paragraphs (3 lines in
+  total):
+  - *"A big purchase adds a new monthly bill, so it may help to have an
+    Emergency Savings Fund first."*
+  - *"It helps pay your bills in hard times."*
+  - Then *"Do you have an Emergency Savings Fund?"* with Yes · Start One Now ·
+    Ask me later. It never blocks the flow.
+- **Category list** ("What are you thinking about buying?"), each option a
+  2px-bordered box. The category artwork is the owner's and must not be
+  redrawn.
+
+### 3.2 Find your car (start)
+Three sections with **equal space between them**:
+1. **Help me choose a car**: a warm apricot pill with **Buddy's face** (the
+   same art as the Ask button), an arrow, and the label.
+2. **I know what I want**: Make → Model → New / Used → *"See the real cost to
+   own"*.
+   - Make and Model open **bottom sheets** (native selects open upward at the
+     bottom of the phone). **The make list shows each maker's logo**, and so
+     does the Make field once chosen.
+   - **Choosing a make opens the Model list straight away.**
+   - New and Used show their price on one line (*"Used, ~3 yrs"*). Every box
+     in this section is the same 40px height.
+   - Once chosen, the car's name and what it is known for show above.
+3. The Back and Ask buttons.
+
+Above them: the owner's banner (Buddy and a car with a bow), shown **whole and
+never cropped**, the title *"Find the right car for you"*, and the lead line.
+
+### 3.3 Help me choose (the quiz)
+**Six question rows from the start** (the standing pattern, section 6.4):
+Weekends, Riders, Driving, Fuel, Vibe, **Price**. The question being asked is
+an open, outlined "Select one" row; the rest are locked; an answer fills its
+row in place. The question being asked and its answers sit in the dock at the
+bottom, **at the same height on every question**.
+
+| Question | Answers |
+|---|---|
+| 🗓️ On a typical weekend, what do you use your car for? | 🏕️ Trips to the trail or campsite · ⚽ Driving to games and practice · 📦 Hauling something big · 🛍️ Errands and short trips (each with a one-line description) |
+| 👥 Who's usually riding with you? | 🎧 Just me and my playlist · 👫 Me plus one · 👨‍👩‍👧 A full car, 3 to 5 · 🚌 The whole team, 6 or more |
+| 🚗 What's your everyday drive? | 🏙️ Short hops around town · 🛣️ Long highway miles · 🌄 Dirt roads and back roads · 🚤 Pulling a trailer or boat |
+| 🌱 How green are you feeling? | 🔌 Plug it in · 🍃 Hybrid's my speed · ⛽ Gas is fine · 🤷 Not sure yet |
+| ✨ Pick a vibe | 🏎️ Fun to drive · 🛋️ Smooth and quiet · 💪 Tough and capable · 🔧 Simple and reliable |
+| 💰 Price | Value · Standard · Premium, each with its dollar range and **the three cars in it by full name**; "Peers spend about here" tags the range peers fall in |
+
+- **Answers look like buttons**: all in one soft-blue box, each a white raised
+  button with a firm border and a round green arrow; the picked one turns
+  green. Every question uses the same format and the same colour. Emojis
+  live in the data (`emoji` on each question and answer), so they can change
+  without code.
+- Answered rows carry their emojis; once all six are in, they fold into one
+  *"Your answers"* row.
+- **Every picker has an X Close** at its foot (a question, the answers list,
+  the price range), so a tester can back out without choosing.
+- **The result**, on the same screen: the banner at 72% width; the folded
+  answers; a box *"Sounds like **Commuter sedan** / Standard · $25K to $30K /
+  Easy on gas for daily miles / Also fits: …"*; and **three car boxes**. Each
+  car box has the maker's logo, the full name, one line on what the car is
+  known for (centred, never wrapping), and **New** and **Used** buttons with the
+  price and the 5-year cost. The box colour says where the car sits by price:
+  **cheapest green**, then blue, then violet (no red or amber: a price is never
+  flagged as high).
+
+### 3.4 What it costs to own (the cost screen, finder view `car`)
+- Eyebrow *"What it costs to own"*; the maker's logo and **"Jeep Gladiator
+  (New)"**; the known-for line; then **$40,000 Sticker price | $8,000 Money
+  down** in large type (*Due at signing* on a lease).
+- **The expense table** (soft blue, 2px blue border, the thing to look at).
+  This car in bold, **Peers\*** in plain smaller type behind one continuous
+  vertical rule:
+
+  | Row | This car | Peers* |
+  |---|---|---|
+  | Car payment (*Lease payment* on a lease) | ✓ | ✓ |
+  | Cost of running it | ✓ | ✓ |
+  | **Total monthly payment** (green highlight) | ✓ | ✓ |
+  | Payment as % of income (the payment alone) | ✓ | ✓ |
+  | Year 1 cost | ✓ | ✓ |
+  | Cost over 5 years | ✓ | ✓ |
+
+  Then **"See how we calculated this"** (once, under the table) and the
+  footnote *"\* Based on peers in Nashville, estimated 15 miles a day."*
+- **"Alternative cars that can save you money"**, halfway between the table
+  and the buttons, with two columns: **Saved** *per month* and *over 5 years\**.
+  - *Your pick* (grey, $0 and $0, still tappable to go back)
+  - *Same car, used* (new cars only)
+  - *Cheapest in class* (only if another car in the class costs less)
+  - *What peers spend*: the peers' price range (never a single assumed car);
+    tapping opens the cars in that range
+  - The lowest monthly is green. Footnote: *"\* If the money you save is
+    invested at 7% a year."*
+  - **Tapping an option changes the costs above and outlines the row; the list
+    itself never changes**, and the original is always one tap away.
+- **"See how we calculated this"** opens Buddy's panel: price, taxes and fees,
+  **Loan / Cash / Lease**, the loan or lease settings, credit score, insurance,
+  fuel, upkeep, each editable, with the totals. Edits carry through to the next
+  screen.
+
+### 3.5 Your car (pay and plan, one screen)
+- The maker's logo and **"Hyundai Elantra Hybrid (New)"**, and the line
+  *"Choose how to pay, then plan your savings."*
+- **"Change your mind? / Choose a different car ›"**: one button that opens
+  the alternatives from the cost screen, plus *Search all cars*.
+- **Paying for it**: Price (right-aligned field), **Loan / Cash / Lease**, then
+  the settings as dropdown pills:
+  - Loan: Down payment, Loan length, Credit score → **Amount financed**
+  - Lease: Due at signing, Lease length, Miles a year, Credit score →
+    **Monthly lease payment** (Lease is dimmed on a used car)
+  - Cash: a one-line note
+- **Planning for it**:
+  - *"Do you need to save for the down payment?"* (*the purchase* for cash,
+    *signing costs* for a lease) **Yes / No**.
+  - Yes opens: Down payment, − Already saved (typed), **= Need to save**
+    (highlighted green), **Save it by** (a dropdown of the next 36 months), and
+    *"That is $434 a month for 12 months."*
+  - If savings already cover it, it says so.
+- **"Set goal: save $5,200 for the down payment"**, full width, above Back and
+  Ask. It becomes **Done** when nothing needs saving or the answer is No (no
+  goal is created).
+- The four blocks (strip, the two cards, the goal button) are spaced
+  **equally**.
+- **The saved goal names the car**: *"Save for the BMW X3 (new)"*, and records
+  `payMode: "lease"` when leased.
 
 ---
 
-## 7. Layout rules earned the hard way
+## 4. The money model
 
-- **Steps 2 and 3 fill the frame.** Both bodies are
-  `justify-content: space-between`; `gap` is a MINIMUM (11px / 8px), and
-  leftover height goes into the gaps. Safe in a scroll container because
-  space-between packs from the top when there is no free space — `center` and
-  `end` would push the first block out of reach.
-- **Step 3 has a shrinkable/growable spacer** at the foot of the body:
-  `flex: 1 1 0; max-height: 36px`. Surplus fills the bottom inset first (so the
-  last box sits ~2 lines clear of the menu), and the rest goes to the gaps. A
-  fixed `padding-bottom` cannot do this — the tallest configuration has no
-  spare height to give.
-- **Specificity trap:** `.journal-shell.onb-pinned .journal-body` is three
-  classes and beats a two-class `.bp-fin-shell .journal-body`. A rule that
-  looks applied in the stylesheet can be doing nothing. Measure
-  `footer.top - lastBox.bottom`.
-- **Take space from inside the boxes, never from the gaps between them.**
-- **One type system:** the display face for titles and the buttons that act,
-  Inter for everything read. **Arial is gone repo-wide in this version** (it was
-  seven undeliberate declarations). One size scale: 11 caption, 12.5 row, 15
-  figure, one hero per screen.
-  Check with: walk `.journal-shell *`, collect computed `fontFamily`, look at
-  the set. Three families means something inherited a default nobody chose.
+### 4.1 One source
+`bpBreakdown()` in `js/bp-engine.js` is the single source for loan and cash.
+`bpfFigures()` in `js/bp-finder.js` turns it into the screen figures (sticker,
+down, payment, running, monthly, year 1, 5 years). **If a figure appears on two
+screens it is the same figure.**
 
----
+Rules that hold (from earlier review, still true):
+- `bpMoney()` everywhere; one rounding.
+- `bpAmortize()` rounds the payment once, at the source.
+- Year 1 = down payment + 12 payments + 12 months of running it.
+- The 5-year total is not 60 × the payment (the last payment is a stub).
+- **No resale anywhere.** Nothing is credited back.
+- If two numbers' difference is the point, **show the difference**.
 
-## 8. Screen-by-screen state
+### 4.2 Peers (`bpfPeer()`, `data/big-purchase.json` → `vehicle.peerSpend`)
+- Peer car payment and running cost by **income band × household size**
+  (array index = size − 1). Running cost is scaled by the ZIP's transport
+  cost of living; the payment is not.
+- Household is no longer asked, so peers use the profile default (2).
+- **Peers' year 1 and 5 years** are estimated: the price peers' monthly
+  payment buys on this car's loan settings (`bpfPeerPrice`, found by bisection
+  against the engine), with the peers' running cost swapped in.
+- The peers column is **always loan-based**, even when the tester leases.
 
-### Landing (`screens/bp-landing.js`)
-- Emergency-fund box at the **top**, dashed border, eyebrow **"Tap one to
-  continue"** centred at 12px, question on one line, three identical options
-  (Yes · Start One Now · Ask me later) with **no highlighted answer** — a
-  tinted button among plain ones reads as already chosen. Answering collapses
-  it to a ticked one-line confirmation. It never blocks the flow.
-- Lead copy: *"The price is only the start. What you spend to run it and keep
-  it going can cost more than the thing itself."*
-- **Category icons are the owner's own artwork**, `assets/cat-*.png`, sliced
-  from an image they supplied. `bpCategoryIcon()` renders an `<img>`.
-  **Do not redraw them.** A sixth category needs a tile from the owner.
+### 4.3 Savings over 5 years
+`bpfSavings()`: the money an alternative saves is **kept and grown at 7% a
+year** (the session's `savingsRate`), not the plain price difference.
+- Loan and cash rows use the engine's `bpOpportunity()`, which counts the
+  up-front money and each month's difference.
+- Lease rows and the peers' range use `bpfGrowth()` from the figures on screen:
+  the up-front difference grown for 5 years plus the monthly difference as a
+  60-month annuity.
 
-### Step 1 — what you're buying (`screens/bp-setup.js`)
-One question at a time, choices docked at the bottom in thumb reach, answers
-collapsing into tappable dropdown rows. A persistent "Help me pick" link opens
-the five-question quiz, which fills type, brand, fuel and condition.
+### 4.4 Leasing (`js/bp-lease.js`), an estimate
+On while `pay.leasing` is set, for **new cars only**. The standard formula:
 
-### Step 2 — estimated costs (`screens/bp-cost.js`)
-Title: *"Estimated costs for a new SUV"*. In order:
+```
+capitalised cost = price - due at signing
+residual         = price x share (64% / 58% / 50% for 24 / 36 / 48 months at
+                   12,000 miles a year, minus 1 point per 1,000 extra miles)
+monthly          = ((cap cost - residual) / term + (cap cost + residual) x MF)
+                   x (1 + sales tax rate)
+money factor     = the credit tier's APR / 2400
+```
 
-1. **"Will you need a loan?"** — Yes, car loan / No, paying cash. **First on
-   the screen**, because every figure below it moves with the answer.
-2. **The six rows**, labels unbolded, italic bracket on the same line, one
-   figure column with tabular numerals, grouped by whitespace:
-   - Car Price *(car + accessories):*
-   - Down Payment *(20% of Car Price)*
-   - Monthly Car Payment *(car loan)*
-   - Monthly use and Maintenance
-   - **Year 1 Cost** *(all-in)* — tinted band, the larger figure
-   - **Cost over 5 Years** *(all-in)* — tinted band
-   No `/mo` suffix: the label already says "Monthly".
-   Car Price includes accessories (charger, riding gear), so the down-payment
-   percentage is computed from that figure rather than printed as a flat 20%.
-   Paying cash, rows 2 and 3 become one "Paid at purchase" row.
-3. **The saving callout** — Explore / Not interested.
-4. **The running-cost table** — "Estimated for Nashville, 15 miles a day"
-   directly under the heading.
-
-**Version A and Version B exist**, switched from the admin panel
-(`bpCostVariant()`): A puts the table before the callout, B puts the callout in
-the middle. **B is the default** (owner's pick). They differ by two lines in
-`renderBpCost()` and nothing else.
-
-### Step 3 — paying for it (`screens/bp-finance.js`)
-- Headline: down payment | per month *(car payment + running it)*, with a rule
-  between. The monthly figure is the **whole** monthly outgoing.
-- Financing box: price, Loan/Cash, three unbolded setting rows opening sheets,
-  and **"Amount financed"**.
-- "What the car costs you over 5 years": four rows that sum to the total.
-  **No year-one line** — this box answers one question.
-- "Spend less, and over 5 years you could have": two chips, each showing the
-  **saving** and what it is worth kept at 7%. Never each option's total, which
-  made the reader subtract two six-figure numbers.
-
-### Step 4 — plan for it (`screens/bp-commit.js`)
-"To save $X for the down payment, by when?" with the monthly figure labelled
-"to save".
-
-### Onboarding (`screens/onboarding.js`)
-`ONB_STEPS_BP = ["zip", "miles"]` under `BP_ENTRY`. The miles question is
-**docked at the bottom with no Continue** — the tap is the answer and the answer
-advances. Scoped to `BP_ENTRY` in `onbDocked()`, because the same renderer
-serves the emergency fund's longer run.
+On a lease, Year 1 = due at signing + 12 × (payment + running), and **5 years
+repeats the lease**. Options: due at signing $0 / $1,000 / $2,500 / $5,000,
+24 / 36 / 48 months, 10,000 / 12,000 / 15,000 miles. These are placeholder
+figures for the prototype.
 
 ---
 
-## 9. Known issues and open items
+## 5. Data
 
-1. **Nothing is committed.** The whole build and every revision sit in the
-   working tree on `HoffDemo-Purchase`.
-2. **The spec doc is stale.** `docs/big-purchase-spec.md` has not been updated
-   for the last several rounds (the six-row block, the A/B variants, the money
-   model, the data changes).
-3. **The credit-band default** (section 5) is waiting on an owner decision.
-4. **The ESF screens inherited from v3.1 still have the typed-field bug**:
-   typing a figure then tapping Continue needs two taps, because the field's
-   `change` fires on the blur the tap causes and `render()` replaces the button
-   mid-tap. The BP screens fix it with `bpFieldCommitted()`. Not fixed in the
-   ESF screens; it exists in v3.1 (B) as well.
+| File / key | What it holds |
+|---|---|
+| `data/big-purchase.json` → `vehicle.finder.models` | **81 cars**: Sedan, SUV, Truck × 3 uses × 3 tiers × 3, base trim, approximate 2026 MSRP. Each has `known` (its reputation, one short line, nine were shortened to fit one line) and `why` |
+| `vehicle.finder.quiz` | The five questions, their answers, scores per type and use, and the `emoji` for each |
+| `vehicle.peerSpend` | Peer payment and running cost (section 4.2) |
+| `alternatives.usedCut` | **0.28**: used = about 3 years old, the same everywhere |
+| `assets/img/logos/` | **23 maker logos**: 17 SVGs from Simple Icons, 6 PNGs (Genesis, GMC, Land Rover, Lexus, Mercedes-Benz, Rivian) from the open *car-logos-dataset*. Mapped in `BPF_LOGO_FILES`. Logos are the makers' trademarks, used here only to identify the cars in a prototype |
+| `assets/img/buddy-car.jpg` | The owner's banner |
+
+After editing any `data/*.json`, run `MB_VERSION=v3.1c bash scripts/wrap-data.sh`
+(the app loads data through generated `.js` wrappers because it runs from
+`file://`).
 
 ---
 
-## 10. Traps that fail silently
+## 6. Standing rules (owner rulings)
 
-- **`perl -0pi -e` double-encodes this repo's files.** Three rounds of mojibake
-  came from it. Use the Edit tool, or keep the replacement pure ASCII, or open
-  with explicit `:encoding(UTF-8)` layers. Check with `grep -c "Ã¢" <file>`.
+### 6.1 Content and legal
+- **No financial advice, ever.** No "you should", "we recommend", "best for you".
+  Suggested cars are *choices based on what you told us*.
+- **Peers are information, never a limit.** No "% of income is too high", no
+  threshold, anywhere (owner: legal risk, "full stop").
+- **Never call a cost high.** No red or amber on prices.
+- No em dashes in anything a tester reads. The owner's copy is verbatim.
+
+### 6.2 Type and colour
+- **Dark text by default.** Inside the purchase screens `--text` is the strong
+  ink and the base weight is 500; nothing a tester reads is grey.
+- **Descriptive copy is centred**; labels inside rows and tables are not.
+- **One font in tables and option lists**: Inter, regular and bold only, size
+  changes allowed. (Weights 500/600/800/900 render as different-looking cuts on
+  Windows and read as a font mix.)
+- **Every box has a 2px border**, so each reads as its own function. **Every
+  button has a visible border** so it looks pressable.
+
+### 6.3 Layout
+- **One screen, no scrolling.** Measured, never eyeballed:
+  `document.querySelector('.journal-body')` → `scrollHeight - clientHeight`
+  must be 0. Verified for all 81 cars, new and used, loan and lease, at a
+  900px-tall window (phone frame ~820px).
+- One-handed: primary actions at the bottom; choices docked; bottom sheets
+  instead of native selects.
+- **Spare height goes into equal gaps** between sections, never into the boxes.
+  Take space from inside boxes when tightening.
+
+### 6.4 Patterns to reuse
+- **Question rows** (`renderBpfAnsRow`): every question has its row from the
+  start; the one being asked is open; the rest are locked; answers fill in
+  place and nothing jumps. Used by the quiz, step 1 and the old Help me pick.
+  **Any new multi-question screen uses it.**
+- **Every picker in the dock ends in an X Close** (`bpfDockClose`).
+- **Options list with an original**: the tester's own choice stays at the top
+  so it is one tap away; trying an option never rebuilds the list
+  (`bpfOrigin`, `bpfChooseAlt`).
+
+---
+
+## 7. How to run and verify
+- No build step, no dependencies; pure static files.
+- On the owner's Windows machine there is no `node` or `python`. Verification is
+  in the browser: `scripts/serve.ps1` serves the repo on port 8787 (launch
+  config `prototype`); open
+  `http://localhost:8787/versions/v3.1c/index.html` directly (a reload bounces
+  to the gate).
+- Drive state with the page's own functions to reach a screen quickly, for
+  example `go('bpFinder'); bpfChoose(id, 'new')`, then `bpfContinue()`.
+
+---
+
+## 8. Open items
+
+1. **Onboarding ZIP field loop** (`screens/onboarding.js` ~510): at 5 digits
+   `kbdCommit()` dispatches `change`, which calls the same handler again. A
+   one-line re-entrancy guard is offered; not applied.
+2. **Credit-score default** is 600-660 (9.71%), which drives large interest
+   figures; 661-780 would be about two-thirds of it. Owner decision.
+3. **Lease and peer figures are placeholders.** Real residuals, money factors
+   and peer lease data would replace them.
+4. **Old steps 1 to 4 are dormant** in the code. Decide whether to remove them
+   or keep them for comparison.
+5. **Two long model names truncate** in the alternatives rows (*Colorado Trail
+   Boss*, *Tacoma TRD Off-Road*).
+6. **Short phones**: layouts are tuned at a ~820px phone. In a very short
+   window (~540px) the body scrolls.
+7. **Emoji rendering varies by platform** (the owner earlier rejected emoji
+   for category icons for this reason; the quiz now uses them by request).
+8. `docs/big-purchase-spec.md` is stale; this document is the current
+   description.
+9. The emergency-fund screens inherited from v3.1 still need two taps after a
+   typed field (`bpFieldCommitted()` fixes it on the purchase screens only).
+10. Unused renderers kept by house rule: `renderBpfPeerFact`,
+    `renderBpfModelList`, `renderBpfKnow`, `renderBpfLines`, `renderBpfPeerBox`.
+
+---
+
+## 9. Traps that fail silently
+- **Three-class selectors win**: `.journal-shell.onb-pinned .journal-body` beats
+  a two-class rule. Use `.journal-shell.onb-pinned.<shell> .journal-body`.
+- **A two-column grid quietly wraps a third item**: `.bp-seg` is a 2-column
+  grid; three segments need `.bp-seg3`.
+- **A grid label with `nowrap` pushes its row off the grid**; use `min-width: 0`.
+- **An inline SVG has no intrinsic size**; give it a width and height.
 - **A typed field followed by a tap** loses the tap unless it commits through
   `bpFieldCommitted()`.
-- **An inline SVG has no intrinsic size** and will take every pixel the row
-  offers.
-- **A grid label with `nowrap` pushes its own row off the grid** — a `1fr`
-  track has `min-width: auto`. Use `min-width: 0`.
-- **Everything is global.** One namespace across plain `<script>` tags; keep
-  names unique and feature-prefixed, and mind the load order in `index.html`.
+- **`perl -0pi -e` double-encodes this repo's UTF-8 files** (emoji and `·`
+  included). Use the Edit tool or `sed` with plain patterns.
+- **Everything is global**: one namespace across plain `<script>` tags; keep
+  names feature-prefixed and mind the load order in `index.html`
+  (`js/bp-lease.js` loads after `js/bp-finder.js`).
