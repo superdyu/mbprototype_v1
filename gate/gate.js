@@ -20,7 +20,10 @@ var VERSIONS = [
   { id: "v1", label: "v1", path: "versions/v1/index.html" },
   { id: "v2", label: "v2 (beta)", path: "versions/v2/index.html" },
   { id: "v3", label: "v3 (A)", path: "versions/v3/index.html" },
-  { id: "v3.1", label: "v3.1 (B)", path: "versions/v3.1/index.html" }
+  { id: "v3.1", label: "v3.1 (B)", path: "versions/v3.1/index.html" },
+  // v3.1 (C) is v3.1 plus the Big Purchase Calculator, in its own folder so the
+  // ESF/chat build on (B) stays viewable untouched beside it.
+  { id: "v3.1c", label: "v3.1 (C)", path: "versions/v3.1c/index.html" }
 ];
 
 function gateShowSelector() {

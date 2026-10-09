@@ -40,6 +40,8 @@ global_for() {
     daily-scripts)     echo "DAILY_SCRIPTS" ;;
     buddy-responses)   echo "BUDDY_RESPONSES" ;;
     buddy-esf)         echo "BUDDY_ESF" ;;
+    big-purchase)      echo "BIG_PURCHASE" ;;   # v3.1c only
+    buddy-bp)          echo "BUDDY_BP" ;;       # v3.1c only
     lessons)           echo "LESSONS_V3" ;;   # not LESSONS — v2's state.lessons still exists
     *)                 echo "" ;;
   esac

@@ -9,8 +9,11 @@ over abstraction, but keep the file structure clean (see Architecture).
 The repo root is a **passcode + version-selector gate** (`index.html`, `gate/`),
 not the app itself. Each major iteration is a fully self-contained, independently
 runnable copy of the app under `versions/<name>/` (currently `versions/v1/`,
-`versions/v2/`, `versions/v3/`, and `versions/v3.1/`). **New work happens in
-`versions/v3.1/`** unless told otherwise.
+`versions/v2/`, `versions/v3/`, `versions/v3.1/`, and `versions/v3.1c/`). **New work happens in
+`versions/v3.1/`** unless told otherwise. `versions/v3.1c/` is gate label `v3.1 (C)`: v3.1 plus
+the Big Purchase Calculator, kept in its own folder so it can be viewed beside
+the ESF/chat build. Its own `CLAUDE.md` says what it adds; tooling needs
+`MB_VERSION=v3.1c`.
 
 ### v3 and v3.1 are an A/B PAIR
 
