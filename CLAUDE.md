@@ -140,7 +140,8 @@ they conflict — several spec decisions are deliberately overridden.
 - In a headless environment with no browser, you cannot visually QA. Instead:
   - Syntax-check any file you touch: `bash scripts/check-syntax.sh <path>`
     (no args = all live versions + gate JS). **Which JS engine exists depends on the
-    machine** — the Mac has no `node` but ships JavaScriptCore (`jsc`), the
+    machine** — the Mac always ships JavaScriptCore (`jsc`) and now also has
+    `node` (Homebrew, for Codex/HyperFrames — so it prefers `node`), the
     Linux/WSL box has `node` (often only under `~/.nvm`, off PATH for
     non-interactive shells) and no `jsc`. The script detects whichever is
     present, so just run it; it was validated on both against a positive and a

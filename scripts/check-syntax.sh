@@ -2,8 +2,9 @@
 # JS syntax checker — the automated gate for this repo.
 #
 # WHY THIS EXISTS: this repo gets worked on from more than one machine, and the
-# two do not agree on which JS engine exists. The Mac has no node but ships
-# JavaScriptCore (`jsc`, which exposes checkSyntax()); the Linux/WSL box has node
+# two do not agree on which JS engine exists. The Mac always ships JavaScriptCore
+# (`jsc`, which exposes checkSyntax()) and now also has node via Homebrew, so it
+# prefers node; the Linux/WSL box has node
 # (often only under ~/.nvm, off PATH for non-interactive shells) and no jsc.
 # Hardcoding either one makes the repo's only automated gate fail outright on the
 # other machine, which is exactly what happened. So: use whichever is present.

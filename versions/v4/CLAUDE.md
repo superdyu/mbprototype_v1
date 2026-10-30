@@ -860,7 +860,7 @@ top-bar and nav offsets.
 ## Verifying
 
 No browser here — you cannot visually QA. **Which JS engine exists depends on the
-machine**: the Mac has `jsc` and no `node`; the Linux/WSL box has `node` (often
+machine**: the Mac has `jsc` and now also `node` (Homebrew); the Linux/WSL box has `node` (often
 only under `~/.nvm`, off PATH) and no `jsc`. Don't assume either.
 - `bash scripts/check-syntax.sh <path>` on everything you touch (no args = all
   v3 + gate JS). It's the only automated gate, and it detects both engines.
